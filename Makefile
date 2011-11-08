@@ -12,7 +12,10 @@ src/CCO/Imp/AG.hs : $(AG)
 haskell : src/CCO/Imp/AG.hs
 	cabal install
 
+doc : README
+	asciidoc -a toc -a numbered README
+
 dist:
 	tar tfz imp-$(VERSION).tar.gz $(AG)
 
-.PHONY : haskell dist
+.PHONY : haskell dist doc

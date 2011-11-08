@@ -1,22 +1,76 @@
-## Soft Typing 4 PHP
+Soft-typing for PHP5
+=====================
+:language: bash
 
-# Introduction
+NOTE: Look for the README.html file in the same folder, it contains a more
+      readable variant of this text file.
 
-This Experimentation Project (7.5 ECTS) was undertaken as part of my study Software Technology 
-at the University of Utrecht in May and June 2011. The goal of the project is to 
-statically infer types for every variable in a PHP program and to give suitable warnings 
-whenever a program is provably wrong. 
+Author
+-------
+Marcelo Sousa <dipython@gmail.com> (MSc. Computing Science student Utrecht Universiteit)
 
-This was realized by specifying the problem as a monotone framework instance and by solving
-the instance using a iterative work-list algorithm. The theory behind monotone frameworks is 
-described in Principles of Program Analysis by Nielson, Nielson & Hankin (NNH). 
+NOTE: Building the HTML version of this document requires `asciidoc` with either
+      pygments or gnu source highlight. asciidoc can be easily installed from 
+      source.
+
+Introduction
+------------
+This Experimentation Project is related to my MSc. Computing Science 
+at the University of Utrecht from October 2011 and it's based on previous work of
+Henk Erik van der Hoek (https://github.com/henkerik/typing). 
+The goal of the project continues to be static type inference of variables in 
+PHP programs to provide suitable warnings whenever a program is likely to be incorrect. 
+
+Installing
+----------
+All of these can be installed using cabal. The code itself can
+be compiled with the command:
+
+[source]
+----
+cabal configure && cabal build.
+----
+
+or simply:
+
+[source]
+----
+make
+----
+
+Running
+-------
+To analyze the file input.php use:
+
+[source]
+----
+./run
+----
+
+To run the testsuite type:
+
+[source]
+----
+typing_tester
+----
+
+The analysis
+------------
+The goal of the analysis is to find for each program-point in the program which
+variables are in scope and what their possible types are at that point.
+Following the initial approach by Henk Erik this was realized by specifying the 
+problem as a monotone framework instance for a forward analysis and by solving the instance using a iterative work-list algorithm. 
+The theory behind monotone frameworks is described in Principles of Program Analysis by Nielson, Nielson & Hankin (NNH). 
 During the execution of each transfer function constraints for the PHP expression at hand are generated, 
 and the type of an expression is found by resolving these constraints. This idea was described 
-by Camphuijsen in his thesis "Soft typing and analyses on PHP programs"
+by Camphuijsen in his thesis "Soft typing and analyses on PHP programs".
 
-# Code organization
 
-The code base is clearly separated between the monotone framework and a generic work-list algorithm
+General Architecture 
+--------------------
+(heavily based on Henk Erik's work)
+
+At the moment the code base is clearly separated between the monotone framework and a generic work-list algorithm
 on one side and the framework instances on the other side. Beside soft typing, several other analyses were
 implemented as well (*). This was done to get the boundary between framework and instances clear. 
 These additional analyses all operate on the While language, a small imperative language defined by NNH. 
@@ -24,30 +78,55 @@ These additional analyses all operate on the While language, a small imperative 
 The soft typing analyses contains two distinct phases. In the first phase an instance of the monotone
 framework is specified and solved. The result is a mapping between variable and type for any given 
 program point. In the second phase this result is used to check wether these types match the types 
-we expect. The second process doesn't specify or solve an monotone framework instance and could be 
-considered as a post processing step. 
+we expect. The second process doesn't specify or solve a monotone framework instance and could be 
+considered a post processing step. 
 
 The following files and directories might be of special interest:
+----
 
-src/MF/Core.hs                          Implements the work-list algorithm (look for the 'solve' function)
-src/MF/Languages/PHP/AG/Flow.ag         Implements the conversion of an AST to a flow graph
-src/MF/Languages/PHP/AG/Typing.ag       Implements the constraint generation, the transfer function and 
-                                        specifies an instance of the monotone framework
-src/MF/Languages/PHP/AG/Checking.ag     Implements the expected constraint generation and generates warnings
-                                        when the expected constraints don't match the types found by running
-                                        the work-list algorithm.
-src/MF/Language/While/                  Contains the implementation of the While language and several smaller 
-                                        analyses. Of these analyses, the detection of sign analysis is inter-
-                                        procedural. The While AST is currently implemented using a GADT.
-                                        
+| File or directory                      | Description                                                           |
+|:---------------------------------------|:----------------------------------------------------------------------|
+| src/MF/Core.hs                         | Implements the work-list algorithm (look for the 'solve' function)    |
+| src/MF/Languages/PHP/AG/Flow.ag        | Implements the conversion of an AST to a flow graph                   |
+| src/MF/Languages/PHP/AG/Typing.ag      | Implements the constraint generation, the transfer function and       |
+|                                        | specifies an instance of the monotone framework                       |
+| src/MF/Languages/PHP/AG/Checking.ag    | Implements the expected constraint generation and generates warnings  |
+|                                        | when the expected constraints don't match the types found by running  |
+|                                        | the work-list algorithm.	                                             |
+| src/MF/Language/While/                 | Contains the implementation of the While language and several smaller |
+|										 | analyses. Of these analyses, the detection of sign analysis is        |
+|										 | inter-procedural. The While AST is currently implemented using a GADT.|
+
+
 (*) : Currently these analyses additional analyses don't compile due to recent changes in the Flowable class
 
-# Compiling and running 
 
-To compile the program, simply type:
+Supported PHP5 features
+-----------------------
 
-$ make
+1. If-constructs
+2. While-construct
+3. Function calls
 
-To analyze the file input.php, simply type:
+Non-Supported PHP5 features
+---------------------------
 
-$ ./run
+Elaborate
+       
+The used lattice
+----------------
+
+MFP - Minimal Fixed Point
+--------------------------
+Elaborate
+
+Embellished monotone framework
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Usage and Graph Generation
+--------------------------
+
+Notes on the language
+---------------------
+
+* PHP and short-circuiting
