@@ -8,14 +8,10 @@ import Data.List as L
 
 import MF.Flowable
 
-
 type c :-> l = M.Map c l
 instance (Lattice l, Ord c) => Lattice (c :-> l) where
     join = M.unionWith join
     (<:) = M.isSubmapOfBy (<:)
-
-
-
 
 class Context a where
     lift :: (Lattice l, Lattice (a :-> l)) => (Block node -> l -> l) -> Block node -> (a :-> l) -> (a :-> l)

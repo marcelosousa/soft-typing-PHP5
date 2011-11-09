@@ -1,9 +1,9 @@
 Name:               analyses
-Version:            1.0
+Version:            2.0
 Cabal-Version:      >= 1.2
-Author:             Henk-Erik van der Hoek
-Synopsis:           Soft Typing 4 PHP
-Description:        Soft Typing 4 PHP
+Author:             Henk-Erik van der Hoek, Marcelo Sousa
+Synopsis:           Soft Typing for PHP5
+Description:        Soft Typing for PHP5
 Build-Type:         Simple
 
 
