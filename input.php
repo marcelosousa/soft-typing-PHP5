@@ -1,10 +1,11 @@
-<?php
-
-$a = 1;
-while (true) {
-    $a[1] = $a;
+<?php 
+// define variables 
+function printHello()
+{
+    echo "hello";
+    return true;
 }
-
-check ($a, "[TyArray (TyArray (TyArray (TyAny)))]");
-
-?>
+if(true || printHello()){
+    echo " marcelo\n";
+} 
+?> 
