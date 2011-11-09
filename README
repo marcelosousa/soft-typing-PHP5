@@ -7,6 +7,7 @@ NOTE: Look for the README.html file in the same folder, it contains a more
 
 Author
 -------
+Henk Erik van der Hoek (Initial Project (https://github.com/henkerik/typing))
 Marcelo Sousa <dipython@gmail.com> (MSc. Computing Science student Utrecht Universiteit)
 
 NOTE: Building the HTML version of this document requires `asciidoc` with either
