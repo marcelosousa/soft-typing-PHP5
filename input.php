@@ -1,11 +1,7 @@
-<?php 
-// define variables 
-function printHello()
-{
-    $h = "hello";
-    return true;
+<?
+function f(){
+return "hello";
 }
 
-$b = printHello();
 
-?> 
+?>

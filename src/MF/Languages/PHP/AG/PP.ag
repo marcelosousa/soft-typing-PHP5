@@ -7,9 +7,14 @@ import CCO.Printing as P hiding (render, join)
 -- Visualize the AST
 -------------------------------------------------------------------------------
 
-attr Node ParamList
+attr Node ParamList OptionalString
     syn pp use {>|<} {P.empty}:: {Doc}
     
+sem OptionalString
+    | Some
+        lhs.pp = text "\"" >|< text @value >|< text "\""
+    | None
+        lhs.pp = text "\"\""
     
 sem ParamList
     | Cons 
@@ -75,6 +80,16 @@ sem Node
         lhs.pp = @l.pp >|< text " || " >|< @r.pp
         
         
+    -- | String
+    | ConstantEncapsedString
+        lhs.pp = @n.pp
+    
+    | DoubleQuoted
+        lhs.pp = @n.pp
+    
+    | DQContent
+        lhs.pp = @value.pp
+                
     -- | Function call before simplification
     | FunctionCall 
         lhs.pp = @name.pp >|< text "()"
@@ -87,7 +102,7 @@ sem Node
         lhs.pp = text "function " >|< text @name >|< text "() {" >-< indent 4 @stmt.pp >-< text "}" 
     | Param
         lhs.pp = @e.pp
-        
+    
         
     -- Debugging & Unit testing
     | Expect
