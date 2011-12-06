@@ -10,3 +10,4 @@ tree.png
 # Ignore binaries
 dist
 dist/**/*
+
