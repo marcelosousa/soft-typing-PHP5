@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
 module MF.Languages.PHP.Types where
 
 import Data.Set as S

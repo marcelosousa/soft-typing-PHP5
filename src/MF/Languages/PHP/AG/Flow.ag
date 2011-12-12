@@ -22,7 +22,7 @@ attr Node ParamList
     syn nodes use {`IM.union`} {IM.empty} :: {IntMap Node}
 
 sem Node
-    | OpenTag CloseTag If While Skip Assign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return IsEqual Or Expect Return FunctionCall Param String Expr DQContent FunctionName Literal
+    | OpenTag CloseTag If While Skip Assign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return IsEqual Or Expect Return FunctionCall Param String Expr DQContent FunctionName Literal Echo
         loc.label :: uniqueref labels
         lhs.label = @loc.label
         +nodes    = IM.union $ IM.singleton @label @self

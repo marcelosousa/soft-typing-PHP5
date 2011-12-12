@@ -1,3 +1,7 @@
+optpragmas {
+{-# LANGUAGE TypeOperators #-}
+}
+
 imports
 {
 import MF.Languages.PHP.Types

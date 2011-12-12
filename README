@@ -87,6 +87,7 @@ The following files and directories might be of special interest:
 
 | File or directory                      | Description                                                           |
 |:---------------------------------------|:----------------------------------------------------------------------|
+| src/grammar                            | sglri php5 definitions (do not change)                                |
 | src/MF/Core.hs                         | Implements the work-list algorithm (look for the 'solve' function)    |
 | src/MF/Languages/PHP/AG/Flow.ag        | Implements the conversion of an AST to a flow graph                   |
 | src/MF/Languages/PHP/AG/Typing.ag      | Implements the constraint generation, the transfer function and       |
