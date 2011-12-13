@@ -1,6 +1,7 @@
 imports
 {
 import CCO.Printing as P hiding (render, join) 
+
 }
 
 -------------------------------------------------------------------------------
@@ -21,7 +22,7 @@ sem ParamList
         lhs.pp = @hd.pp >|< text "," >|< @tl.pp
     | Nil
         lhs.pp = P.empty
-
+    
 sem Node
     | Document 
         lhs.pp = text "<?" >-< @stmt.pp >-< text "?>"
@@ -107,6 +108,14 @@ sem Node
     -- Debugging & Unit testing
     | Expect
         lhs.pp = text "## Expect: " >|< @expr.pp >|< text " == " >|< text (show @ty)
+        
+    -- Echo
+    | Echo
+        lhs.pp = text "echo " >|< @e.pp
+    
+    -- Print
+    | Print
+        lhs.pp = text "print " >|< @e.pp
 
 {
 
