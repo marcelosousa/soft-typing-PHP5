@@ -99,6 +99,10 @@ data Node
     -- Print function
     | Print e :: Node
     
+    -- Heredoc
+--    | HereDoc hs :: HereDocStart hc :: HereDocContent 
+
+    
 deriving Node: Show
 deriving Node: Eq
 deriving Node: Ord
