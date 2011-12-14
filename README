@@ -116,7 +116,9 @@ Non-Supported PHP5 features
 2. Nowdoc
 3. TemplateDocument + InlineEcho <?= ... ?> notation
 4. Comments in the sense that they are removed by sglri
-       
+5. Floating-point types (tests/circumference.php)
+6. Use of $GLOBALS and variable scope
+
 The used lattice
 ----------------
 
