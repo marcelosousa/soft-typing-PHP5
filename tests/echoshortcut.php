@@ -1,1 +1,0 @@
-<?=$page_title="John Doe's Homepage";?>
