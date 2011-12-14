@@ -107,31 +107,41 @@ Supported PHP5 features
 1. If-constructs
 2. While-construct
 3. Function calls
+4. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
 
 Non-Supported PHP5 features
 ---------------------------
 
 0. Print, Echo functions (semantics, flow)
-1. Heredoc (tests/string/heredoc.php)
-2. Nowdoc (tests/string/nowdoc.php)
-3. TemplateDocument (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
-4. Comments in the sense that they are removed by sglri
-5. Floating-point types (tests/circumference.php)
 6. Use of $GLOBALS and variable scope (tests/varscope/globals*)
 7. IndirectReference not implemented (tests/indirectrefvar.php)
 8. InternalFunction not implemented (tests/varmanage/isset.php, tests/varmanage/empty.php)
-9. SingleQuoted strings not implemented (tests/string/litstring.php)
 10. Unset not implemented (tests/varmanage/unset.php)
 11. Superglobals (not sure because can't test since SingleQuoted is not working)
 12. DeclareGlobal not implemented (tests/varscope/global.php)
 13. PostInc not implemented (tests/postinc.php)
 14. DeclareStatic not implemented (tests/varscope/static.php)
 15. Recursive functions with static variables (tests/countTo10.php)
+16. Constant variables (tests/constantvar.php)
+
+Syntax
+------
+3. TemplateDocument (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
+4. Comments in the sense that they are removed by sglri
 16. InlineHTML not implemented (tests/syntax/advancedescaping.php)
 17. Error in ATerm: DQContent takes 1 arguments, but 3 were given. (tests/syntax/phptagsimple.php)
 18. ASPOpenTag not implemented (still runs because it's ignored) (tests/syntax/phptagasp.php)
 19. "In PHP 5.2 and earlier, the parser does not allow the <?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php, tests/syntax/instructionseparation.php)
 20. sglri does not allow combination of different sytles of open-close tags (tests/syntax/phptagcombination.php)
+
+
+Types
+-----
+9. SingleQuoted strings not implemented (tests/basicsdatatypes/scalar/string/litstring.php)
+1. Heredoc (tests/basicsdatatypes/scalar/string/heredoc.php)
+2. Nowdoc (tests/basicsdatatypes/scalar/string/nowdoc.php)
+
+5. Floating-point types (tests/circumference.php)
 
 
 The used lattice
