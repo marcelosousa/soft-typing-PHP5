@@ -10,7 +10,7 @@ $var might be assigned "1" instead of the expected value in $arg.
 */
 
 function myMethod(){
-    return 'test';
+    return "test";
 }
 
 if($val = myMethod()){

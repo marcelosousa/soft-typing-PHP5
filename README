@@ -103,15 +103,17 @@ The following files and directories might be of special interest:
 Supported PHP5 features
 -----------------------
 
-0. Supports HTML Embedding (tests/syntax/htmlembedding.php)
-1. If-constructs
+1. Supports HTML Embedding (tests/syntax/htmlembedding.php)
 2. While-construct
 3. Function calls
 4. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
+5. Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
+6. Creating/modifying with square bracket syntax
 
 Non-Supported PHP5 features
 ---------------------------
 
+1. If-constructs don't work if they don't have else clauses (tests/conditional.php)
 0. Print, Echo functions (semantics, flow)
 6. Use of $GLOBALS and variable scope (tests/varscope/globals*)
 7. IndirectReference not implemented (tests/indirectrefvar.php)
@@ -123,6 +125,7 @@ Non-Supported PHP5 features
 14. DeclareStatic not implemented (tests/varscope/static.php)
 15. Recursive functions with static variables (tests/countTo10.php)
 16. Constant variables (tests/constantvar.php)
+24. PlusAssign (tests/plusassign.php)
 
 Syntax
 ------
@@ -137,12 +140,32 @@ Syntax
 
 Types
 -----
-9. SingleQuoted strings not implemented (tests/basicsdatatypes/scalar/string/litstring.php)
+9. SingleQuoted strings not implemented (tests/basicsdatatypes/scalar/string/singlequoted.php)
 1. Heredoc (tests/basicsdatatypes/scalar/string/heredoc.php)
 2. Nowdoc (tests/basicsdatatypes/scalar/string/nowdoc.php)
+25. StringAccess not implemented (tests/basicsdatatypes/scalar/string/stringindex.php)
+21. Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+22. Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+23. Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+5. Floating-point types (tests/basicdatatypes/scalar/float/*)
+26. Standard array creation not implemented (tests/basicdatatypes/compound/array/arraycreation*.php)
+27. No support for classes/objects (tests/basicdatatypes/compound/object/*)
+28. Resources are not implemented (no test file)
+29. NULL type not implemented (tests/basicdatatypes/null.php)
 
-5. Floating-point types (tests/circumference.php)
+Control Structures
+------------------
+28. Foreach not implemented (tests/foreach.php)
 
+Useful functions
+-------------
+vamanage functions (tests/varmanage/*)
+var_dump (tests/basicdatatypes/scalar/boolean/boolcheck.php)
+gettype  (tests/basicdatatypes/gettype.php)
+error_reporting(E_ALL);
+ini_set('display_errors', true);
+ini_set('html_errors', false);
+settype()
 
 The used lattice
 ----------------
