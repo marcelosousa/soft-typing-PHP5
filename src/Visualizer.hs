@@ -13,3 +13,4 @@ visualizer :: Component Node String
 visualizer = component $ return . visualize
 
 main = ioWrap (parser >>> reader >>> annotator >>> simplifier >>> visualizer)
+--main = ioWrap (parser >>> reader >>> visualizer)

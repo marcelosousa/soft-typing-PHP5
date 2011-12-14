@@ -16,8 +16,6 @@ import Data.List   as L
 import Data.Maybe
 
 import qualified Debug.Trace as T
-
-
 }
 
 -------------------------------------------------------------------------------

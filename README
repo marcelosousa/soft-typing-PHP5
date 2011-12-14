@@ -103,6 +103,7 @@ The following files and directories might be of special interest:
 Supported PHP5 features
 -----------------------
 
+0. Supports HTML Embedding
 1. If-constructs
 2. While-construct
 3. Function calls
@@ -110,7 +111,11 @@ Supported PHP5 features
 Non-Supported PHP5 features
 ---------------------------
 
-Elaborate
+0. Print, Echo functions (semantics, flow)
+1. Heredoc
+2. Nowdoc
+3. TemplateDocument + InlineEcho <?= ... ?> notation
+4. Comments in the sense that they are removed by sglri
        
 The used lattice
 ----------------

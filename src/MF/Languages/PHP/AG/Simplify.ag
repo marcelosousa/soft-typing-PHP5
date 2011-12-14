@@ -16,7 +16,6 @@ sem Node
     | DQContent
         lhs.simplified = String @value.value
 
-
 attr OptionalString
     syn value :: {String}
 
@@ -94,7 +93,6 @@ sem Node
     
 
 {
-        
 
 buildVariable label = Variable $ Simple $ "#" ++ show label 
 
