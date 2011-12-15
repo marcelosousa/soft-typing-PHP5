@@ -115,17 +115,12 @@ Non-Supported PHP5 features
 
 1. If-constructs don't work if they don't have else clauses (tests/conditional.php)
 0. Print, Echo functions (semantics, flow)
-6. Use of $GLOBALS and variable scope (tests/varscope/globals*)
-7. IndirectReference not implemented (tests/indirectrefvar.php)
-8. InternalFunction not implemented (tests/varmanage/isset.php, tests/varmanage/empty.php)
-10. Unset not implemented (tests/varmanage/unset.php)
-11. Superglobals (not sure because can't test since SingleQuoted is not working)
-12. DeclareGlobal not implemented (tests/varscope/global.php)
 13. PostInc not implemented (tests/postinc.php)
 14. DeclareStatic not implemented (tests/varscope/static.php)
 15. Recursive functions with static variables (tests/countTo10.php)
 16. Constant variables (tests/constantvar.php)
 24. PlusAssign (tests/plusassign.php)
+33. XorAssign not implemented (tests/efficientswap.php)
 
 Syntax
 ------
@@ -155,6 +150,16 @@ Types
 29. NULL type not implemented (tests/basicdatatypes/null.php)
 31. Callback (tests/basicdatatypes/callback/callback.php)
 32. tests/basicdatatypes/typejuggling.php analysis is wrong
+
+Variables
+---------
+6. Use of $GLOBALS and variable scope (tests/variables/varscope/globals*)
+7. IndirectReference not implemented (tests/variables/indirectrefvar.php)
+31. ReferenceAssign not implemented (tests/variables/varreference.php)
+8. InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php)
+10. Unset not implemented (tests/variables/varmanage/unset.php)
+11. Superglobals (not sure because can't test since SingleQuoted is not working)
+12. DeclareGlobal not implemented (tests/variables/varscope/global.php)
 
 Control Structures
 ------------------
