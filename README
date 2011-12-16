@@ -115,6 +115,9 @@ Supported PHP5 features
 Non-Supported PHP5 features
 ---------------------------
 
+General
+~~~~~~~
+
 0. Print, Echo functions (semantics, flow)
 13. PreInc and PostInc not implemented (tests/postinc.php, tests/preposincrement.php)
 24. PlusAssign (tests/plusassign.php)
@@ -122,7 +125,7 @@ Non-Supported PHP5 features
 37. Greater, GreaterEqual, Less (tests/controlstruct/elseif.php)
 
 Syntax
-------
+~~~~~~
 3. TemplateDocument (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
 4. Comments in the sense that they are removed by sglri
 16. InlineHTML not implemented (tests/syntax/advancedescaping.php)
@@ -133,7 +136,7 @@ Syntax
 
 
 Types
------
+~~~~~
 9. SingleQuoted strings not implemented (tests/basicsdatatypes/scalar/string/singlequoted.php)
 1. Heredoc (tests/basicsdatatypes/scalar/string/heredoc.php)
 2. Nowdoc (tests/basicsdatatypes/scalar/string/nowdoc.php)
@@ -151,7 +154,7 @@ Types
 32. tests/basicdatatypes/typejuggling.php analysis is wrong
 
 Variables
----------
+~~~~~~~~~
 6. Use of $GLOBALS and variable scope (tests/variables/varscope/globals*)
 7. IndirectReference not implemented (tests/variables/indirectrefvar.php)
 31. ReferenceAssign not implemented (tests/variables/varreference.php)
@@ -164,7 +167,7 @@ Variables
 14. DeclareStatic not implemented (tests/varscope/static.php)
 
 Control Structures
-------------------
+~~~~~~~~~~~~~~~~~~
 28. Foreach not implemented (tests/foreach.php)
 1. If-constructs don't work if they don't have else clauses (tests/controlstruct/if.php)
 35. Ternary conditional operator not implemented (tests/ternaryconditionalop.php)
@@ -182,24 +185,14 @@ Control Structures
 49. empty block (tests/functions/funconditional.php)
 
 Functions
----------
+~~~~~~~~~
 30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php)
 15. Recursive functions with static variables (tests/functions/countTo10.php)
 50. conditional functions (tests/functions/funconditional.php)
 51. function within a function (tests/functions/funfun.php)
 
-Useful functions
-----------------
-vamanage functions (tests/varmanage/*)
-var_dump (tests/basicdatatypes/scalar/boolean/boolcheck.php)
-gettype  (tests/basicdatatypes/gettype.php)
-error_reporting(E_ALL);
-ini_set('display_errors', true);
-ini_set('html_errors', false);
-settype()
-
 TODO
-~~~~
+----
 1. Extend test suite
 1.1 It would be nice to have a golden suite to check consistency of the project in case of major changes
 2. Improve output visualization
@@ -212,12 +205,22 @@ MFP - Minimal Fixed Point
 Elaborate
 
 Embellished monotone framework
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Elaborate
 
 Usage and Graph Generation
 --------------------------
 
 Notes on the language
 ---------------------
+PHP 5 is a high-order language.
 
-* PHP and short-circuiting
+.Useful functions
+* vamanage functions (tests/varmanage/*)
+* var_dump (tests/basicdatatypes/scalar/boolean/boolcheck.php)
+* gettype  (tests/basicdatatypes/gettype.php)
+* error_reporting(E_ALL);
+* ini_set('display_errors', true);
+* ini_set('html_errors', false);
+* settype()
+
