@@ -116,7 +116,6 @@ Non-Supported PHP5 features
 
 0. Print, Echo functions (semantics, flow)
 13. PreInc and PostInc not implemented (tests/postinc.php, tests/preposincrement.php)
-15. Recursive functions with static variables (tests/countTo10.php)
 24. PlusAssign (tests/plusassign.php)
 33. XorAssign not implemented (tests/efficientswap.php)
 37. Greater, GreaterEqual, Less (tests/controlstruct/elseif.php)
@@ -130,7 +129,6 @@ Syntax
 18. ASPOpenTag not implemented (still runs because it's ignored) (tests/syntax/phptagasp.php)
 19. "In PHP 5.2 and earlier, the parser does not allow the <?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php, tests/syntax/instructionseparation.php)
 20. sglri does not allow combination of different sytles of open-close tags (tests/syntax/phptagcombination.php)
-30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php)
 
 
 Types
@@ -180,9 +178,16 @@ Control Structures
 46. Switch (tests/controlstruct/switch.php)
 47. Declare (tests/controlstruct/declare.php)
 48. sglri does not support Goto (tests/controlstruct/goto.php)
+49. empty block (tests/functions/funconditional.php)
+
+Functions
+---------
+30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php)
+15. Recursive functions with static variables (tests/functions/countTo10.php)
+50. conditional functions (tests/functions/funconditional.php)
 
 Useful functions
--------------
+----------------
 vamanage functions (tests/varmanage/*)
 var_dump (tests/basicdatatypes/scalar/boolean/boolcheck.php)
 gettype  (tests/basicdatatypes/gettype.php)
