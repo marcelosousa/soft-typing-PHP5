@@ -707,7 +707,7 @@ Supports HTML Embedding (tests/syntax/htmlembedding.php)
 </li>
 <li>
 <p>
-While-construct
+While-construct (tests/controlstruct/while.php)
 </p>
 </li>
 <li>
@@ -730,6 +730,11 @@ Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
 Creating/modifying with square bracket syntax
 </p>
 </li>
+<li>
+<p>
+Ifelse constructs (tests/controlstruct/ifelse.php)
+</p>
+</li>
 </ol></div>
 </div>
 </div>
@@ -739,32 +744,17 @@ Creating/modifying with square bracket syntax
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-If-constructs don&#8217;t work if they don&#8217;t have else clauses (tests/conditional.php)
-</p>
-</li>
-<li>
-<p>
 Print, Echo functions (semantics, flow)
 </p>
 </li>
 <li>
 <p>
-PostInc not implemented (tests/postinc.php)
-</p>
-</li>
-<li>
-<p>
-DeclareStatic not implemented (tests/varscope/static.php)
+PreInc and PostInc not implemented (tests/postinc.php, tests/preposincrement.php)
 </p>
 </li>
 <li>
 <p>
 Recursive functions with static variables (tests/countTo10.php)
-</p>
-</li>
-<li>
-<p>
-Constant variables (tests/constantvar.php)
 </p>
 </li>
 <li>
@@ -775,6 +765,11 @@ PlusAssign (tests/plusassign.php)
 <li>
 <p>
 XorAssign not implemented (tests/efficientswap.php)
+</p>
+</li>
+<li>
+<p>
+Greater, GreaterEqual, Less (tests/controlstruct/elseif.php)
 </p>
 </li>
 </ol></div>
@@ -878,6 +873,11 @@ Standard array creation not implemented (tests/basicdatatypes/compound/array/arr
 </li>
 <li>
 <p>
+ListAssign (tests/controlstruct/whilebreak.php)
+</p>
+</li>
+<li>
+<p>
 No support for classes/objects (tests/basicdatatypes/compound/object/*)
 </p>
 </li>
@@ -925,7 +925,7 @@ ReferenceAssign not implemented (tests/variables/varreference.php)
 </li>
 <li>
 <p>
-InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php)
+InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php, tests/include.php)
 </p>
 </li>
 <li>
@@ -943,6 +943,21 @@ Superglobals (not sure because can&#8217;t test since SingleQuoted is not workin
 DeclareGlobal not implemented (tests/variables/varscope/global.php)
 </p>
 </li>
+<li>
+<p>
+define function for constants not implemented (tests/variables/constantvar2.php)
+</p>
+</li>
+<li>
+<p>
+Constant variables (tests/constantvar.php)
+</p>
+</li>
+<li>
+<p>
+DeclareStatic not implemented (tests/varscope/static.php)
+</p>
+</li>
 </ol></div>
 </div>
 </div>
@@ -953,6 +968,71 @@ DeclareGlobal not implemented (tests/variables/varscope/global.php)
 <li>
 <p>
 Foreach not implemented (tests/foreach.php)
+</p>
+</li>
+<li>
+<p>
+If-constructs don&#8217;t work if they don&#8217;t have else clauses (tests/controlstruct/if.php)
+</p>
+</li>
+<li>
+<p>
+Ternary conditional operator not implemented (tests/ternaryconditionalop.php)
+</p>
+</li>
+<li>
+<p>
+Short-circuiting
+</p>
+</li>
+<li>
+<p>
+Else-if (tests/controlstruct/elseif.php)
+</p>
+</li>
+<li>
+<p>
+AltIf (tests/controlstruct/ifelsealt.php)
+</p>
+</li>
+<li>
+<p>
+AltWhile (tests/controlstruct/while3.php)
+</p>
+</li>
+<li>
+<p>
+DoWhile (tests/controlstruct/dowhile.php, tests/controlstruct/dowhilebreak.php)
+</p>
+</li>
+<li>
+<p>
+For (tests/controlstruct/for.php)
+</p>
+</li>
+<li>
+<p>
+Break (tests/controlstruct/whilebreak.php)
+</p>
+</li>
+<li>
+<p>
+Continue (tests/controlstruct/whilecontinue.php)
+</p>
+</li>
+<li>
+<p>
+Switch (tests/controlstruct/switch.php)
+</p>
+</li>
+<li>
+<p>
+Declare (tests/controlstruct/declare.php)
+</p>
+</li>
+<li>
+<p>
+sglri does not support Goto (tests/controlstruct/goto.php)
 </p>
 </li>
 </ol></div>
@@ -1001,7 +1081,7 @@ PHP and short-circuiting
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2011-12-15 14:15:50 EET
+Last updated 2011-12-16 12:06:21 EET
 </div>
 </div>
 </body>

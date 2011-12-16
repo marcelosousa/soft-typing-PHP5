@@ -179,6 +179,7 @@ Control Structures
 45. Continue (tests/controlstruct/whilecontinue.php)
 46. Switch (tests/controlstruct/switch.php)
 47. Declare (tests/controlstruct/declare.php)
+48. sglri does not support Goto (tests/controlstruct/goto.php)
 
 Useful functions
 -------------
