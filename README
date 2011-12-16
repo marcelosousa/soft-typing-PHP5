@@ -110,6 +110,7 @@ Supported PHP5 features
 5. Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
 6. Creating/modifying with square bracket syntax
 7. Ifelse constructs (tests/controlstruct/ifelse.php)
+8. User-defined functions without parameters (tests/functions/simple.php)
 
 Non-Supported PHP5 features
 ---------------------------
@@ -185,6 +186,7 @@ Functions
 30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php)
 15. Recursive functions with static variables (tests/functions/countTo10.php)
 50. conditional functions (tests/functions/funconditional.php)
+51. function within a function (tests/functions/funfun.php)
 
 Useful functions
 ----------------
@@ -196,8 +198,14 @@ ini_set('display_errors', true);
 ini_set('html_errors', false);
 settype()
 
-The used lattice
-----------------
+TODO
+~~~~
+1. Extend test suite
+1.1 It would be nice to have a golden suite to check consistency of the project in case of major changes.
+2. Improve output visualization
+2.1 Allow both usage of check and full analysis
+2.2 Allow visualization of the flow with a graph (difficult to debug functions at the moment)
+3. Implement items not supported
 
 MFP - Minimal Fixed Point
 --------------------------
