@@ -4,7 +4,7 @@ VERSION					:= 0.0.5
 
 AG						:= src/MF/Languages/PHP/AG.ag src/MF/Languages/PHP/AG/Base.ag src/MF/Languages/PHP/AG/Flow.ag src/MF/Languages/PHP/AG/Visualizer.ag src/MF/Languages/PHP/AG/PP.ag src/MF/Languages/PHP/AG/Checking.ag src/MF/Languages/PHP/AG/Typing.ag src/MF/Languages/PHP/AG/Simplify.ag src/MF/Languages/PHP/AG/Debugging.ag 
 
-all : haskell
+all : haskell doc
 
 src/CCO/Imp/AG.hs : $(AG)
 	uuagc -Hdcfws --self -P src/MF/Languages/PHP src/MF/Languages/PHP/AG.ag

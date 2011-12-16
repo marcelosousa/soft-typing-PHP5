@@ -104,23 +104,22 @@ Supported PHP5 features
 -----------------------
 
 1. Supports HTML Embedding (tests/syntax/htmlembedding.php)
-2. While-construct
+2. While-construct (tests/controlstruct/while.php)
 3. Function calls
 4. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
 5. Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
 6. Creating/modifying with square bracket syntax
+7. Ifelse constructs (tests/controlstruct/ifelse.php)
 
 Non-Supported PHP5 features
 ---------------------------
 
-1. If-constructs don't work if they don't have else clauses (tests/conditional.php)
 0. Print, Echo functions (semantics, flow)
-13. PostInc not implemented (tests/postinc.php)
-14. DeclareStatic not implemented (tests/varscope/static.php)
+13. PreInc and PostInc not implemented (tests/postinc.php, tests/preposincrement.php)
 15. Recursive functions with static variables (tests/countTo10.php)
-16. Constant variables (tests/constantvar.php)
 24. PlusAssign (tests/plusassign.php)
 33. XorAssign not implemented (tests/efficientswap.php)
+37. Greater, GreaterEqual, Less (tests/controlstruct/elseif.php)
 
 Syntax
 ------
@@ -145,6 +144,7 @@ Types
 23. Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
 5. Floating-point types (tests/basicdatatypes/scalar/float/*)
 26. Standard array creation not implemented (tests/basicdatatypes/compound/array/arraycreation*.php)
+43. ListAssign (tests/controlstruct/whilebreak.php)
 27. No support for classes/objects (tests/basicdatatypes/compound/object/*)
 28. Resources are not implemented (no test file)
 29. NULL type not implemented (tests/basicdatatypes/null.php)
@@ -156,14 +156,29 @@ Variables
 6. Use of $GLOBALS and variable scope (tests/variables/varscope/globals*)
 7. IndirectReference not implemented (tests/variables/indirectrefvar.php)
 31. ReferenceAssign not implemented (tests/variables/varreference.php)
-8. InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php)
+8. InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php, tests/include.php)
 10. Unset not implemented (tests/variables/varmanage/unset.php)
 11. Superglobals (not sure because can't test since SingleQuoted is not working)
 12. DeclareGlobal not implemented (tests/variables/varscope/global.php)
+34. define function for constants not implemented (tests/variables/constantvar2.php)
+16. Constant variables (tests/constantvar.php)
+14. DeclareStatic not implemented (tests/varscope/static.php)
 
 Control Structures
 ------------------
 28. Foreach not implemented (tests/foreach.php)
+1. If-constructs don't work if they don't have else clauses (tests/controlstruct/if.php)
+35. Ternary conditional operator not implemented (tests/ternaryconditionalop.php)
+36. Short-circuiting 
+38. Else-if (tests/controlstruct/elseif.php)
+39. AltIf (tests/controlstruct/ifelsealt.php)
+40. AltWhile (tests/controlstruct/while3.php)
+41. DoWhile (tests/controlstruct/dowhile.php, tests/controlstruct/dowhilebreak.php)
+42. For (tests/controlstruct/for.php)
+44. Break (tests/controlstruct/whilebreak.php)
+45. Continue (tests/controlstruct/whilecontinue.php)
+46. Switch (tests/controlstruct/switch.php)
+47. Declare (tests/controlstruct/declare.php)
 
 Useful functions
 -------------

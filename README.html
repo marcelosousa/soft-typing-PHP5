@@ -590,7 +590,8 @@ footnotes: function () {
 <div class="sect1">
 <h2 id="_author">1. Author</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Marcelo Sousa &lt;<a href="mailto:dipython@gmail.com">dipython@gmail.com</a>&gt; (MSc. Computing Science student Utrecht Universiteit)</p></div>
+<div class="paragraph"><p>Henk Erik van der Hoek (Initial Project (<a href="https://github.com/henkerik/typing">https://github.com/henkerik/typing</a>))
+Marcelo Sousa &lt;<a href="mailto:dipython@gmail.com">dipython@gmail.com</a>&gt; (MSc. Computing Science student Utrecht Universiteit)</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
@@ -683,6 +684,7 @@ considered a post processing step.</p></div>
 <div class="content">
 <pre><tt>| File or directory                      | Description                                                           |
 |:---------------------------------------|:----------------------------------------------------------------------|
+| src/grammar                            | sglri php5 definitions (do not change)                                |
 | src/MF/Core.hs                         | Implements the work-list algorithm (look for the 'solve' function)    |
 | src/MF/Languages/PHP/AG/Flow.ag        | Implements the conversion of an AST to a flow graph                   |
 | src/MF/Languages/PHP/AG/Typing.ag      | Implements the constraint generation, the transfer function and       |
@@ -690,9 +692,6 @@ considered a post processing step.</p></div>
 | src/MF/Languages/PHP/AG/Checking.ag    | Implements the expected constraint generation and generates warnings  |
 |                                        | when the expected constraints don't match the types found by running  |
 |                                        | the work-list algorithm.                                                  |
-| src/MF/Language/While/                 | Contains the implementation of the While language and several smaller |
-|                                                                                | analyses. Of these analyses, the detection of sign analysis is        |
-|                                                                                | inter-procedural. The While AST is currently implemented using a GADT.|
 
 
 (*) : Currently these analyses additional analyses don't compile due to recent changes in the Flowable class
@@ -703,7 +702,7 @@ Supported PHP5 features</tt></pre>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
-If-constructs
+Supports HTML Embedding (tests/syntax/htmlembedding.php)
 </p>
 </li>
 <li>
@@ -716,36 +715,278 @@ While-construct
 Function calls
 </p>
 </li>
+<li>
+<p>
+Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
+</p>
+</li>
+<li>
+<p>
+Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
+</p>
+</li>
+<li>
+<p>
+Creating/modifying with square bracket syntax
+</p>
+</li>
 </ol></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_non_supported_php5_features">7. Non-Supported PHP5 features</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Elaborate</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+If-constructs don&#8217;t work if they don&#8217;t have else clauses (tests/conditional.php)
+</p>
+</li>
+<li>
+<p>
+Print, Echo functions (semantics, flow)
+</p>
+</li>
+<li>
+<p>
+PostInc not implemented (tests/postinc.php)
+</p>
+</li>
+<li>
+<p>
+DeclareStatic not implemented (tests/varscope/static.php)
+</p>
+</li>
+<li>
+<p>
+Recursive functions with static variables (tests/countTo10.php)
+</p>
+</li>
+<li>
+<p>
+Constant variables (tests/constantvar.php)
+</p>
+</li>
+<li>
+<p>
+PlusAssign (tests/plusassign.php)
+</p>
+</li>
+<li>
+<p>
+XorAssign not implemented (tests/efficientswap.php)
+</p>
+</li>
+</ol></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_used_lattice">8. The used lattice</h2>
+<h2 id="_syntax">8. Syntax</h2>
 <div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+TemplateDocument (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
+</p>
+</li>
+<li>
+<p>
+Comments in the sense that they are removed by sglri
+</p>
+</li>
+<li>
+<p>
+InlineHTML not implemented (tests/syntax/advancedescaping.php)
+</p>
+</li>
+<li>
+<p>
+Error in ATerm: DQContent takes 1 arguments, but 3 were given. (tests/syntax/phptagsimple.php)
+</p>
+</li>
+<li>
+<p>
+ASPOpenTag not implemented (still runs because it&#8217;s ignored) (tests/syntax/phptagasp.php)
+</p>
+</li>
+<li>
+<p>
+"In PHP 5.2 and earlier, the parser does not allow the &lt;?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php, tests/syntax/instructionseparation.php)
+</p>
+</li>
+<li>
+<p>
+sglri does not allow combination of different sytles of open-close tags (tests/syntax/phptagcombination.php)
+</p>
+</li>
+<li>
+<p>
+sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php)
+</p>
+</li>
+</ol></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_mfp_minimal_fixed_point">9. MFP - Minimal Fixed Point</h2>
+<h2 id="_types">9. Types</h2>
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+SingleQuoted strings not implemented (tests/basicsdatatypes/scalar/string/singlequoted.php)
+</p>
+</li>
+<li>
+<p>
+Heredoc (tests/basicsdatatypes/scalar/string/heredoc.php)
+</p>
+</li>
+<li>
+<p>
+Nowdoc (tests/basicsdatatypes/scalar/string/nowdoc.php)
+</p>
+</li>
+<li>
+<p>
+StringAccess not implemented (tests/basicsdatatypes/scalar/string/stringindex.php)
+</p>
+</li>
+<li>
+<p>
+Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+</p>
+</li>
+<li>
+<p>
+Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+</p>
+</li>
+<li>
+<p>
+Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+</p>
+</li>
+<li>
+<p>
+Floating-point types (tests/basicdatatypes/scalar/float/*)
+</p>
+</li>
+<li>
+<p>
+Standard array creation not implemented (tests/basicdatatypes/compound/array/arraycreation*.php)
+</p>
+</li>
+<li>
+<p>
+No support for classes/objects (tests/basicdatatypes/compound/object/*)
+</p>
+</li>
+<li>
+<p>
+Resources are not implemented (no test file)
+</p>
+</li>
+<li>
+<p>
+NULL type not implemented (tests/basicdatatypes/null.php)
+</p>
+</li>
+<li>
+<p>
+Callback (tests/basicdatatypes/callback/callback.php)
+</p>
+</li>
+<li>
+<p>
+tests/basicdatatypes/typejuggling.php analysis is wrong
+</p>
+</li>
+</ol></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_variables">10. Variables</h2>
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Use of $GLOBALS and variable scope (tests/variables/varscope/globals*)
+</p>
+</li>
+<li>
+<p>
+IndirectReference not implemented (tests/variables/indirectrefvar.php)
+</p>
+</li>
+<li>
+<p>
+ReferenceAssign not implemented (tests/variables/varreference.php)
+</p>
+</li>
+<li>
+<p>
+InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php)
+</p>
+</li>
+<li>
+<p>
+Unset not implemented (tests/variables/varmanage/unset.php)
+</p>
+</li>
+<li>
+<p>
+Superglobals (not sure because can&#8217;t test since SingleQuoted is not working)
+</p>
+</li>
+<li>
+<p>
+DeclareGlobal not implemented (tests/variables/varscope/global.php)
+</p>
+</li>
+</ol></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_control_structures">11. Control Structures</h2>
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Foreach not implemented (tests/foreach.php)
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Useful functions</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>vamanage functions (tests/varmanage/*)
+var_dump (tests/basicdatatypes/scalar/boolean/boolcheck.php)
+gettype  (tests/basicdatatypes/gettype.php)
+error_reporting(E_ALL);
+ini_set('display_errors', true);
+ini_set('html_errors', false);
+settype()
+
+The used lattice</tt></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mfp_minimal_fixed_point">12. MFP - Minimal Fixed Point</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>Elaborate</p></div>
 <div class="sect2">
-<h3 id="_embellished_monotone_framework">9.1. Embellished monotone framework</h3>
+<h3 id="_embellished_monotone_framework">12.1. Embellished monotone framework</h3>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_usage_and_graph_generation">10. Usage and Graph Generation</h2>
+<h2 id="_usage_and_graph_generation">13. Usage and Graph Generation</h2>
 <div class="sectionbody">
 </div>
 </div>
 <div class="sect1">
-<h2 id="_notes_on_the_language">11. Notes on the language</h2>
+<h2 id="_notes_on_the_language">14. Notes on the language</h2>
 <div class="sectionbody">
 <div class="ulist"><ul>
 <li>
@@ -760,7 +1001,7 @@ PHP and short-circuiting
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2011-11-08 18:52:24 CET
+Last updated 2011-12-15 14:15:50 EET
 </div>
 </div>
 </body>
