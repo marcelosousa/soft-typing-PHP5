@@ -201,9 +201,9 @@ settype()
 TODO
 ~~~~
 1. Extend test suite
-1.1 It would be nice to have a golden suite to check consistency of the project in case of major changes.
+1.1 It would be nice to have a golden suite to check consistency of the project in case of major changes
 2. Improve output visualization
-2.1 Allow both usage of check and full analysis
+2.1 Allow both usage of check and visualization of var -> set of types at the end of the program
 2.2 Allow visualization of the flow with a graph (difficult to debug functions at the moment)
 3. Implement items not supported
 
