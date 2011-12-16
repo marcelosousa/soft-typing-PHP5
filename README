@@ -111,6 +111,8 @@ Supported PHP5 features
 6. Creating/modifying with square bracket syntax
 7. Ifelse constructs (tests/controlstruct/ifelse.php)
 8. User-defined functions without parameters (tests/functions/simple.php)
+9. Recursive functions (I believe not all recursive functions are supported) (tests/functions/fac.php)
+10. Return statement (tests/functions/fac.php)
 
 Non-Supported PHP5 features
 ---------------------------
@@ -123,6 +125,9 @@ General
 24. PlusAssign (tests/plusassign.php)
 33. XorAssign not implemented (tests/efficientswap.php)
 37. Greater, GreaterEqual, Less (tests/controlstruct/elseif.php)
+55. Exceptions (tests/exceptions/*)
+56. Not (tests/exceptions/exception.php)
+57. Classes and Objects (tests/oo/*)
 
 Syntax
 ~~~~~~
@@ -186,14 +191,17 @@ Control Structures
 
 Functions
 ~~~~~~~~~
-30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php)
+30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php, tests/functions/lambda.php)
 15. Recursive functions with static variables (tests/functions/countTo10.php)
 50. conditional functions (tests/functions/funconditional.php)
 51. function within a function (tests/functions/funfun.php)
+52. function with array as parameter (tests/functions/funtakesarray.php)
+53. function with default parameter (tests/functions/fundefaultpar.php)
+54. FunctionDeclRef (tests/functions/funretref.php)
 
 TODO
 ----
-1. Extend test suite
+1. Extend test suite (missing test cases for classes and objects)
 1.1 It would be nice to have a golden suite to check consistency of the project in case of major changes
 2. Improve output visualization
 2.1 Allow both usage of check and visualization of var -> set of types at the end of the program
@@ -216,11 +224,12 @@ Notes on the language
 PHP 5 is a high-order language.
 
 .Useful functions
-* vamanage functions (tests/varmanage/*)
+* varmanage functions (tests/varmanage/*)
 * var_dump (tests/basicdatatypes/scalar/boolean/boolcheck.php)
 * gettype  (tests/basicdatatypes/gettype.php)
 * error_reporting(E_ALL);
 * ini_set('display_errors', true);
 * ini_set('html_errors', false);
 * settype()
+* function_exists()
 
