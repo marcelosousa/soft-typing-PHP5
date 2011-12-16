@@ -69,7 +69,7 @@ data Node
     | ConstantEncapsedString n :: Node
     | DoubleQuoted n :: Node
     | DQContent value :: OptionalString
-    | String value :: String                    -- The Simplify AG turns every qouted character sequences into a String node 
+    | String value :: String                    -- The Simplify AG turns every quoted character sequences into a String node 
     
     -- Introduced by the simplifier: result = name (params)
     | SimplifiedFunctionCall name :: String params :: ParamList result :: {Maybe Node}

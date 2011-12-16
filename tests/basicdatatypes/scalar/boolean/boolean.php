@@ -3,12 +3,12 @@
 $condition = true;
 
 if($condition){
-    $name = "John";
+    $name = 1;
 }else{
-    $surname = "Doe";
+    $surname = 2;
 }
     
-echo $name, $surname;
+#echo $name, $surname;
 
 check ($condition, "[TyBool]");
 

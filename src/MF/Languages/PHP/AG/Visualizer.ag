@@ -51,6 +51,8 @@ sem Node
         lhs.edgeList = [(@label, @rv.label, ()), (@label, @e.label, ())] ++ @e.edgeList
     | Variable 
         +nodeList = (++) [(@label, "$" ++ render @n.pp)]
+    | String
+        +nodeList = (++) [(@label, @value)]
     -- Arithmetic
     | Deci
         +nodeList = (++) [(@label, show @value)]    
