@@ -1,7 +1,7 @@
 imports 
 {
 import CCO.Tree             (ATerm (App), Tree (fromTree, toTree))
-import CCO.Tree.Parser      (parseTree, app, arg)
+import CCO.Tree.Parser      (parseTree, app, arg, ArgumentParser, TreeParser)
 import Control.Applicative  (Applicative ((<*>)), (<$>), pure)
 import Prelude              hiding (sequence)
 import MF.Languages.PHP.Types
@@ -12,19 +12,19 @@ import MF.Languages.PHP.Types
 -------------------------------------------------------------------------------
 
 data OptionalString
-    | Some value :: {String}
+    | Some value :: String
     | None
 
 deriving OptionalString: Show
 deriving OptionalString: Eq
 deriving OptionalString: Ord
 
-
 type ParamList = [Node]
 
 data Node
     -- Document
-    | Document before :: {[Node]} open :: Node stmt :: Node close :: Node after :: {[Node]}
+    | Document before :: {[Node]} opentag :: Node stmt :: Node closetag :: Node after :: {[Node]}
+    
     | OpenTag
     | CloseTag
     
@@ -67,7 +67,6 @@ data Node
 
     -- Strings
     | ConstantEncapsedString n :: Node
-    | DoubleQuoted n :: Node
     | DQContent value :: OptionalString
     | String value :: String                    -- The Simplify AG turns every quoted character sequences into a String node 
     
@@ -115,13 +114,11 @@ sequence [x]    = x
 sequence xs     = foldr Sequence (last xs) (L.init xs)
 
 
-buildDocument before open stmts = Document before open (sequence stmts)
-
+buildDocument before opentag stmts = Document before opentag (sequence stmts)
 
 instance Tree OptionalString where
     fromTree = undefined
     toTree = parseTree [ app "Some" (Some <$> arg), app "None" (pure None)]
-
 
 instance Tree Node where
     fromTree = undefined    

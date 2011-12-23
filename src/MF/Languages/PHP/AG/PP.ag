@@ -84,9 +84,7 @@ sem Node
     -- | String
     | ConstantEncapsedString
         lhs.pp = @n.pp
-    
-    | DoubleQuoted
-        lhs.pp = @n.pp
+
     
     | DQContent
         lhs.pp = @value.pp
