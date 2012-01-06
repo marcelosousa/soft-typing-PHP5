@@ -60,7 +60,7 @@ sem Node
         lhs.constraints = S.singleton (@label :==: S.singleton TyBool)
     | Plus Min Mod Mul
         +constraints    = S.union $ S.singleton (@label :==: S.singleton TyInt)  
-    | IsEqual Or
+    | IsEqual Or GreaterEqual
         +constraints    = S.union $ S.singleton (@label :==: S.singleton TyBool)
     | Variable
         +constraints    = S.union $ S.singleton (@label :<=: @n.label) 

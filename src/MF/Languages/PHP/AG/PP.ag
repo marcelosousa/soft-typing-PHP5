@@ -72,6 +72,8 @@ sem Node
     -- Compare
     | IsEqual
         lhs.pp = @l.pp >|< text " == " >|< @r.pp        
+    | GreaterEqual
+        lhs.pp = @l.pp >|< text " >= " >|< @r.pp        
     -- Logical
     | LTrue
         lhs.pp = text "true"

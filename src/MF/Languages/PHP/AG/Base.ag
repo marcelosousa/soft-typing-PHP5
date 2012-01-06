@@ -57,6 +57,7 @@ data Node
     
     -- Compare
     | IsEqual l :: Node r :: Node
+    | GreaterEqual l :: Node r :: Node
     
     -- Logical
     | Or l :: Node r :: Node
@@ -159,6 +160,7 @@ instance Tree Node where
                        , app "Mod"           (Mod <$> arg <*> arg)
                        
                        , app "IsEqual"       (IsEqual <$> arg <*> arg)
+                       , app "GreaterEqual"  (GreaterEqual <$> arg <*> arg)
                        , app "Or"            (Or <$> arg <*> arg)
                        , app "FunctionCall"  (buildFunctionCall <$> arg <*> arg)
                        

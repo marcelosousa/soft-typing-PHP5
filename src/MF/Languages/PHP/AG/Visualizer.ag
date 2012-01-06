@@ -67,6 +67,8 @@ sem Node
     -- Compare
     | IsEqual
         +nodeList = (++) [(@label, "==")]
+    | GreaterEqual
+        +nodeList = (++) [(@label, ">=")]
     -- Logical
     | LTrue
         +nodeList = (++) [(@label, "true")]
