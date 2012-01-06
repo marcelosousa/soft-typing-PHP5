@@ -140,7 +140,8 @@ instance Tree Node where
                        , app "Expr"          (Expr <$> arg)
                        , app "While"         (While <$> arg <*> arg)
                        , app "Block"         (sequence <$> arg)
-                       , app "If"            (If <$> arg <*> arg <*> arg <*> arg)
+                       , app "If"            (If <$> arg <*> arg <*> (pure []) <*> (pure Skip))
+                       , app "IfElse"        (If <$> arg <*> arg <*> arg <*> arg)
                        , app "Return"        (Return <$> arg)
                        
                          -- ElseIfStatement
