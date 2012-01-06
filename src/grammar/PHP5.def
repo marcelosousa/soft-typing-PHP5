@@ -7661,11 +7661,11 @@ exports
      'if'     "(" Expr ")" TopStatementBlock  -> Statement {prefer, cons("If")}
 
      'if'     "(" Expr ")" TopStatementBlock
-     ElseIfStatement+                         -> Statement {prefer, cons("If")}
+     ElseIfStatement+                         -> Statement {prefer, cons("IfElse")}
 
      'if'     "(" Expr ")" TopStatementBlock
      ElseIfStatement*
-     'else' TopStatementBlock                 -> Statement {cons("If")}
+     'else' TopStatementBlock                 -> Statement {cons("IfElse")}
 
     'elseif' "(" Expr ")" TopStatementBlock   -> ElseIfStatement {cons("ElseIf")}
 

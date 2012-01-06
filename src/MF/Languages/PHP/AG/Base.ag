@@ -106,8 +106,7 @@ deriving Node: Show
 deriving Node: Eq
 deriving Node: Ord
 
-{
-
+{    
 sequence :: [Node] -> Node
 sequence []     = Skip
 sequence [x]    = x
