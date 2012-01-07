@@ -76,6 +76,8 @@ sem Node
         +nodeList = (++) [(@label, "false")]
     | Or
         +nodeList = (++) [(@label, "||")]
+    | Echo
+        +nodeList = (++) [(@label, "echo")]
 
     -- | Connect binary operators
     | Plus Min Mul Mod IsEqual Or

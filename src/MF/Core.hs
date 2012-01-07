@@ -9,7 +9,6 @@ import           Prelude hiding (lookup, init, all)
 
 import           MF.Flowable
 import           MF.Context
-import           MF.Utils
 
 data Direction = Forward | Backward
 type ValueMap property = IM.IntMap property
@@ -24,6 +23,13 @@ lookup l m = case IM.lookup l m of
 reverseFlow :: Flow -> Flow
 reverseFlow = map (\(l, l') -> (l', l))
 
+
+mergeWith :: (a -> b -> c) -> IM.IntMap a -> IM.IntMap b -> IM.IntMap c
+mergeWith f left = IM.mapWithKey (\k -> f $ func $ IM.lookup k left)
+    where
+        func a = case a of 
+                     Just t  -> t
+                     Nothing -> error "Couldn't merge"
 
 -- | Helper function to apply the transfer function to all values in a ValueMap
 all :: (Flowable node, Lattice l) => (Block node -> l -> l) -> node -> ValueMap l -> ValueMap l

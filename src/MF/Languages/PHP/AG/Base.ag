@@ -1,7 +1,7 @@
 imports 
 {
 import CCO.Tree             (ATerm (App), Tree (fromTree, toTree))
-import CCO.Tree.Parser      (parseTree, app, arg, ArgumentParser, TreeParser)
+import CCO.Tree.Parser      (parseTree, app, arg, ArgumentParser, TreeParser, list)
 import Control.Applicative  (Applicative ((<*>)), (<$>), pure)
 import Prelude              hiding (sequence)
 import MF.Languages.PHP.Types

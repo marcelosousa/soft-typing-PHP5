@@ -1,7 +1,7 @@
 imports
 {
 import CCO.Component
-import MF.Utils
+import MF.Core (mergeWith)
 }
 
 -------------------------------------------------------------------------------

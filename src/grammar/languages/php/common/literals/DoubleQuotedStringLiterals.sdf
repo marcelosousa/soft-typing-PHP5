@@ -1,9 +1,9 @@
 %%
 %% Double quoted string literals are more difficult to parse because there are certian
-%% escapes that should be performed. In order to mimick this, a double wuoted string is
+%% escapes that should be performed. In order to mimic this, a double quoted string is
 %% parsed as a list of things that can be in a doublequoted string. These things are
 %% the escapes like '\n' or '\01'. The variables that can be in a string enclosed in
-%% curly braces are also parsed seperatly. Everything that is not special but just a
+%% curly braces are also parsed separately. Everything that is not special but just a
 %% part of the string is parsed as a Literal.
 %%
 %% @author Eric Bouwers
@@ -35,7 +35,7 @@ exports
     EscapeVariable         -> DoubleQuotedPartSpecial
     BracedVariable         -> DoubleQuotedPartSpecial
 
-%% Literals. Notice that a slash or the dollar should only be parsed seperatly if
+%% Literals. Notice that a slash or the dollar should only be parsed separately if
 %% they actually escape something. If they do not escape anything, the characters must
 %% appear in the literal.
   sorts SlashCharLit DollarCharLit CurlyBracketLit DoubleQuotedLit
@@ -54,7 +54,7 @@ exports
 
 
 %% A Literal Slash may not be followed by something that it can escape. This
-%% makes sure that the escapes are parsed to seperate strings. Otherwise the
+%% makes sure that the escapes are parsed to separate strings. Otherwise the
 %% escapes would just appear as part of the literal
   lexical restrictions
     SlashCharLit -/- [\\\$\"rnt\']
@@ -108,7 +108,7 @@ exports
     OctaCharacterTwo   -/- [0-7]
 
 %% Variable escapes. Partly rebuild of VariableLiterals, but other cases are too general.
-%% Only one-dimensional array's and single object-acces are allowed in simple syntax
+%% Only one-dimensional array's and single object-access are allowed in simple syntax
 %% This is only for simple syntax
   sorts EscapeVariable TVariable String CompoundVariable EscapeSimpleVariable EmbeddedString
   syntax
