@@ -8,6 +8,4 @@ if (true) {
 
 $b = 2;
 
-check ($a, "[TyBool,TyInt]");
-
 ?>

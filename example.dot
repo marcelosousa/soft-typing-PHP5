@@ -1,0 +1,25 @@
+digraph structs {
+    node [shape=record];
+    node1 [label="init", shape=circle]
+    node2 [label="final", shape=circle, style=filled, fillcolor=gray]
+    struct1 [label="<f0> if |<f1> true \n ()"];
+    struct2 [label="<f0> $a \n () |<f1> = \n ('a' \=\> \{TyInt\}) |<f2> 1 \n ()"];
+    struct3 [label="<f0> $a \n () |<f1> = \n ('a' \=\> \{TyBool\}) |<f2> true \n ()"];
+    struct4 [label="<f0> $b \n ('a' \=\> \{TyInt, TyBool\}) |<f1> = \n ('a' \=\> \{TyInt, TyBool\}, 'b' \=\> \{TyInt\}) |<f2> 2 \n ('a' \=\> \{TyInt, TyBool\}) "];
+
+    node1 -> struct1:f1;
+    struct1:f1 -> struct2:f2;
+    struct2:f2 -> struct2:f0;
+    struct2:f0 -> struct2:f1;
+
+    struct1:f1 -> struct3:f2;
+    struct3:f2 -> struct3:f0;
+    struct3:f0 -> struct3:f1;
+    
+    struct2:f1 -> struct4:f2;    
+    struct3:f1 -> struct4:f2;    
+
+    struct4:f2 -> struct4:f0;
+    struct4:f0 -> struct4:f1;
+    struct4:f1 -> node2;
+}
