@@ -1,6 +1,6 @@
 <?php
 
-$name = "hello";
+$name = "hello\n";
 
 check ($name, "[TyString]");
 
