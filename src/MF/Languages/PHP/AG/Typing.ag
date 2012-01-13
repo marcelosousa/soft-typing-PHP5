@@ -128,4 +128,32 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
 
         toName :: Node -> String
         toName (Variable (Simple name)) = name
+        
+-------------------------------------------------------------------------------
+-- Typing
+-------------------------------------------------------------------------------
+     
+typer :: Component Node (ValueMap (Identifier :-> TypeSet))
+typer = component $ return . typing
+             
+typing :: Node -> ValueMap (Identifier :-> TypeSet)
+typing p = trace ("mappings: " ++ show mappings) $ mappings
+    where
+        solve = MF.Languages.PHP.AG.solve
+        mappings = IM.map (M.fold join M.empty) (solve p)        
+
+-------------------------------------------------------------------------------
+-- Report Typing
+-------------------------------------------------------------------------------
+
+reporterty :: Component (ValueMap (Identifier :-> TypeSet)) Doc
+reporterty = component $ return . reporty     
+             
+
+reporty ::ValueMap (Identifier :-> TypeSet) -> Doc
+reporty vm = IM.foldWithKey foldvm P.empty vm
+            where foldvm i m r = text "Node num " >|< text (show i) >-< (M.foldrWithKey displayTypes P.empty m) >-< text "-----------" >-< r
+
+displayTypes id ty r = text (show id) >|< text (show ty) >-< r
+
 }

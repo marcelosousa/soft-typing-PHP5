@@ -9,7 +9,7 @@ import MF.Flowable
 import MF.Core    
 import MF.Context
 
--- trace = T.trace
+--trace = T.trace
 trace _ = id
 
 -------------------------------------------------------------------------------

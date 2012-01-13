@@ -106,7 +106,7 @@ check p = trace ("mappings: " ++ show mappings) $ concat . L.map S.toList . IM.e
         mappings = IM.map (M.fold join M.empty) (solve p)
         nodes' = IM.map toNode (blocks p)
         
-        findWarnings node mapping = trace ("finding warings for " ++ show node ++ " with " ++ show mapping) $ warnings_Syn_Node . execute mapping $ node
+        findWarnings node mapping = trace ("finding warnings for " ++ show node ++ " with " ++ show mapping) $ warnings_Syn_Node . execute mapping $ node
 
 -------------------------------------------------------------------------------
 -- Reporting

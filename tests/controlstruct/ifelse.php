@@ -6,6 +6,8 @@ if (true) {
   $a = true;
 }
 
+$b = 2;
+
 check ($a, "[TyBool,TyInt]");
 
 ?>
