@@ -54,7 +54,7 @@ sem Node
         lhs.callMapping = IM.singleton @label @self        
 
 
--- Function exstraction
+-- Function extraction
 attr Node OptionalString ParamList
     syn exstractFunctions :: SELF
 

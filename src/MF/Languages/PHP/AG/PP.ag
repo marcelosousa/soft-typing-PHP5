@@ -1,11 +1,10 @@
 imports
 {
 import CCO.Printing as P hiding (render, join) 
-
 }
 
 -------------------------------------------------------------------------------
--- Visualize the AST
+-- Printing out the code
 -------------------------------------------------------------------------------
 
 attr Node ParamList OptionalString

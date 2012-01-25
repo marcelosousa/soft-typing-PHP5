@@ -15,7 +15,7 @@ reader = component toTree
 --render = component $ return . render_ 80
 
 debugger :: Component Node String
---debugger = component $ \doc -> return $ "Dic: " ++ (show doc) ++ "Init: " ++ (show . init $ doc) ++ ", Final: " ++ (show . final $ doc) ++ ", Flow: " ++ (show . flow $ doc)
+--debugger = component $ \doc -> return $ "Doc: " ++ (show doc) ++ "Init: " ++ (show . init $ doc) ++ ", Final: " ++ (show . final $ doc) ++ ", Flow: " ++ (show . flow $ doc)
 debugger = component $ return . visualizecf
 
 main = ioWrap (parser >>> reader >>> annotator >>> simplifier >>> debugger)
