@@ -1,3 +1,0 @@
-#!/bin/bash
-cat $1 | sglri -p src/grammar/PHP5.tbl
-
