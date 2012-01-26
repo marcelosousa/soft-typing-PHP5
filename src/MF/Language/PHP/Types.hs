@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
-module MF.Languages.PHP.Types where
+module MF.Language.PHP.Types where
 
 import Data.Set as S
 import Data.Map as M

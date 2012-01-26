@@ -5,7 +5,7 @@ import CCO.Tree                  (ATerm, Tree (toTree, fromTree), parser)
 import CCO.Printing              (render_, Doc)
 import Control.Arrow             (Arrow (arr), (>>>))
 import Control.Monad             
-import MF.Languages.PHP.AG       (Node, solve, simplifier, typer, reporterty, annotator)
+import MF.Language.PHP.AG       (Node, solve, simplifier, typer, reporterty, annotator)
 import Debug.Trace
 
 reader :: Component ATerm Node

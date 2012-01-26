@@ -100,7 +100,7 @@ checker = component $ return . check
 check :: Node -> [Warning]
 check p = trace ("mappings: " ++ show mappings) $ concat . L.map S.toList . IM.elems $ mergeWith findWarnings nodes' mappings
     where
-        solve = MF.Languages.PHP.AG.solve
+        solve = MF.Language.PHP.AG.solve
 
         -- Maybe it makes more sense to check each context individually, instead of folding
         mappings = IM.map (M.fold join M.empty) (solve p)

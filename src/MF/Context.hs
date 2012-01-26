@@ -19,7 +19,6 @@ class Context a where
 instance Context Label where
     lift transfer stmt = M.map (transfer stmt)
 
-
 type Stack = [Int]
 
 instance Context Stack where

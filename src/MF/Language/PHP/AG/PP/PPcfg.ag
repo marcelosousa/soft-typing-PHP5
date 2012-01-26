@@ -1,0 +1,79 @@
+imports
+{
+import CCO.Printing as P hiding (render, join) 
+import Data.IntMap as IM
+}
+
+-------------------------------------------------------------------------------
+-- Pretty Printer for control flow graph
+-------------------------------------------------------------------------------
+
+attr Node
+    syn ppcfg use {>|<} {P.empty} :: {Doc}
+    syn labstruct use {`IM.union`} {IM.empty} :: {IntMap String}
+    syn flowpp use {>|<} {P.empty} :: {Doc}
+    inh struct :: String
+        
+sem Node
+    | Document 
+        lhs.ppcfg = text "digraph structs {" >-< 
+                    text "node [shape=Mrecord];" >-<
+                    text "init [label=\"init\", shape=circle]" >-<
+                    text "final [label=\"final\", shape=circle, style=filled, fillcolor=gray]" >-<
+                    @stmt.ppcfg >-<
+                    @loc.flowp >-<                    
+                    text "}"
+        loc.flowp = text "init -> " >|< text (buildLabelRef @stmt.labstruct (fromJust @init)) >|< text ";" >-<
+                    above [text (buildLabelRef @stmt.labstruct f) >|< text "-> final;" | f <- fromJust @final] >-<
+                    @stmt.flowpp
+
+    -- Sequence (lists in the grammar are converted to a sequence by Base.ag) 
+    | Sequence 
+        lhs.ppcfg = @f.ppcfg >-< @s.ppcfg
+        +flowpp = (>-<) $ above [text (buildLabelRef @loc.lstr l) >|< text "-> " >|< text (buildLabelRef @loc.lstr l') >|< text ";" | (l,l') <- @loc.flow]  
+        loc.lstr = @f.labstruct `IM.union` @s.labstruct 
+        lhs.labstruct = @loc.lstr
+
+    -- Variables
+    | Variable 
+        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< text "$" >|< @n.ppcfg
+        +labstruct = IM.union $ IM.singleton @label @lhs.struct
+            
+    | Expr
+        lhs.ppcfg = text ("struct" ++ show @label) >|< text " [label=\"" >|<
+                    @e.ppcfg >|< text "\"];"
+        e.struct = "struct" ++ show @label
+                    
+    | Simple
+        lhs.ppcfg = text @value
+        
+    | Assign
+        lhs.ppcfg = @rv.ppcfg >|< 
+                    text " | <" >|< text (show @label) >|< text "> = | " >|< 
+                    @e.ppcfg
+        lhs.flowpp = above [text (buildLabelRef @loc.lstr l) >|< text "-> " >|< text (buildLabelRef @loc.lstr l') >|< text ";" | (l,l') <- @loc.flow]
+        rv.struct = @lhs.struct
+        e.struct = @lhs.struct        
+        loc.lstr = @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
+        +labstruct = IM.union @loc.lstr
+        
+    -- Arithmetic
+    | Deci
+        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< text (show @value)
+        +labstruct = IM.union $ IM.singleton @label @lhs.struct
+
+
+{
+
+buildLabelRef :: IntMap String -> Label -> String
+buildLabelRef imap l = case IM.lookup l imap of
+                            Just s -> s ++ ":" ++ (show l)
+                            Nothing -> error $ show imap ++ show l
+
+cfgprinter :: Component Node Doc
+cfgprinter = component $ return . cfgprint
+             
+cfgprint = ppcfg_Syn_Node . execute M.empty
+
+
+}      

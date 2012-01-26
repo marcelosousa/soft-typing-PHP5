@@ -4,7 +4,7 @@ optpragmas {
 
 imports
 {
-import MF.Languages.PHP.Types
+import MF.Language.PHP.Types
 
 import MF.Core as C
 import MF.Context
@@ -139,7 +139,7 @@ typer = component $ return . typing
 typing :: Node -> ValueMap (Identifier :-> TypeSet)
 typing p = trace ("mappings: " ++ show mappings) $ mappings
     where
-        solve = MF.Languages.PHP.AG.solve
+        solve = MF.Language.PHP.AG.solve
         mappings = IM.map (M.fold join M.empty) (solve p)        
 
 -------------------------------------------------------------------------------

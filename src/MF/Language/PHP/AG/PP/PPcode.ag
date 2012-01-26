@@ -4,7 +4,7 @@ import CCO.Printing as P hiding (render, join)
 }
 
 -------------------------------------------------------------------------------
--- Printing out the code
+-- Pretty printer for input code
 -------------------------------------------------------------------------------
 
 attr Node ParamList OptionalString

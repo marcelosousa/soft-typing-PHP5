@@ -4,7 +4,7 @@ import CCO.Component             (Component, component, printer, ioWrap)
 import CCO.Tree                  (ATerm, Tree (toTree, fromTree), parser)
 import Control.Arrow             (Arrow (arr), (>>>))
 import Control.Monad             
-import MF.Languages.PHP.AG       (Node, simplifier, annotator, visualizecf)
+import MF.Language.PHP.AG       (Node, simplifier, annotator, visualizecf)
 import MF.Flowable
 import Prelude                   hiding (init)
 

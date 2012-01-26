@@ -7,7 +7,7 @@ import Control.Arrow             (Arrow (arr), (>>>))
 import Control.Monad             
 import Control.Applicative       (liftA2)
 import System.IO                 (stderr)
-import MF.Languages.PHP.AG       (Node)
+import MF.Language.PHP.AG       (Node)
 
 reader :: Component ATerm Node
 reader = component toTree
@@ -15,8 +15,8 @@ reader = component toTree
 debugger :: Component Node String
 debugger = component $ \doc -> return $ show doc
 
---main = ioWrap (parser >>> reader >>> printer)
-main = ioWrap (parser >>> reader >>> (debugger <+> printer))
+main = ioWrap (parser >>> reader >>> printer)
+--main = ioWrap (parser >>> reader >>> (debugger <+> printer))
 
 (<+>) :: Component Node [a] -> Component Node [a] -> Component Node [a]
 (C f) <+> (C g) = C $ \doc -> do 
