@@ -93,9 +93,7 @@ runAnalysis :: ProgramOptions -> IO ()
 runAnalysis options = do let filename = input options
                          str <- readFile filename                         
                          str' <- readProcess "sglri" ["-p", "src/grammar/PHP5.tbl"] str
-                         foldr (\opt r -> (runOption opt str') >> r ) (return ()) (typeoutput options)
-                         
-
+                         foldr (\opt r -> (runOption opt str') >> r ) (return ()) (typeoutput options)                      
                          
 usage :: String
 usage = unlines ["PHP-5 Analysis"]

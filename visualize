@@ -1,2 +1,3 @@
 #!/bin/bash
-typing_cfgprint -t=Visualize $1 | dot -Tpng > $2
+php5analysis -t=Visualize $1 | dot -Tpng > $2
+php5analysis -t=ASTGraph $1 | dot -Tpng > $3
