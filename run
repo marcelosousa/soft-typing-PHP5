@@ -1,8 +1,0 @@
-#!/bin/bash
-cat $1 | sglri -p src/grammar/PHP5.tbl | typing_printer
-cat $1 | sglri -p src/grammar/PHP5.tbl | typing_debugger | dot -Tpng > cf.png
-cat $1 | sglri -p src/grammar/PHP5.tbl | typing_visualizer | dot -Tpng > tree.png
-cat $1 | sglri -p src/grammar/PHP5.tbl | typing_inferencer
-cat $1 | sglri -p src/grammar/PHP5.tbl | typing_typer
-
-#cat tree.dot | dot -Tpng > tree.png

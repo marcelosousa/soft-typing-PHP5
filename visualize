@@ -1,0 +1,2 @@
+#!/bin/bash
+typing_cfgprint -t=Visualize $1 | dot -Tpng > $2
