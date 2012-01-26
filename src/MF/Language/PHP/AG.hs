@@ -70,7 +70,7 @@ import CCO.Printing as P hiding (render, join)
 import CCO.Printing as P hiding (render, join) 
 import Data.IntMap as IM
 {-# LINE 73 "src/MF/Language/PHP/AG.hs" #-}
-{-# LINE 14 "src/MF/Language/PHP/AG.ag" #-}
+{-# LINE 13 "src/MF/Language/PHP/AG.ag" #-}
 
 execute mapping p = wrap_Node (sem_Node p) inh
     where
@@ -233,7 +233,23 @@ visualizecf p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeLis
         
 {-# LINE 235 "src/MF/Language/PHP/AG.hs" #-}
 
-{-# LINE 95 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+{-# LINE 21 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+
+
+buildExpect params = Expect expr (read $ "fromList" ++ value)
+    where
+        (Param expr)                     = params !! 0
+        (Param (DQContent (Some value))) = params !! 1
+        
+
+annotator :: Component Node Node
+annotator = component $ return . annotate
+
+annotate = annotated_Syn_Node . execute M.empty
+
+{-# LINE 251 "src/MF/Language/PHP/AG.hs" #-}
+
+{-# LINE 123 "src/MF/Language/PHP/AG/Simplify.ag" #-}
 
 
 buildVariable label = Variable $ Simple $ "#" ++ show label 
@@ -280,7 +296,7 @@ simplifier :: Component Node Node
 simplifier = component $ return . simplify
 
 
-{-# LINE 284 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 300 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 25 "src/MF/Language/PHP/AG/Typing.ag" #-}
 
@@ -290,7 +306,7 @@ levels (Variable n)           = 0
 name   (ArrayAccess rv index) = name rv
 name   (Variable n)           = name n
 name   (Simple value)         = value
-{-# LINE 294 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 310 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 94 "src/MF/Language/PHP/AG/Typing.ag" #-}
 
@@ -358,12 +374,12 @@ reporty vm = IM.foldWithKey foldvm P.empty vm
 
 displayTypes id ty r = text (show id) >|< text (show ty) >-< r
 
-{-# LINE 362 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 378 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 11 "src/MF/Language/PHP/AG/Checking.ag" #-}
  
 tyNum = S.fromList [TyInt, TyFloat] 
-{-# LINE 367 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 383 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 59 "src/MF/Language/PHP/AG/Checking.ag" #-}
             
@@ -454,22 +470,6 @@ displayWarning (UnequalType stmt left right resolvedLeft resolvedRight) =
     text "In the statement: " >-<
         indent 4 (pp stmt)
         
-{-# LINE 458 "src/MF/Language/PHP/AG.hs" #-}
-
-{-# LINE 14 "src/MF/Language/PHP/AG/Debugging.ag" #-}
-
-
-buildExpect params = Expect expr (read $ "fromList" ++ value)
-    where
-        (Param expr)                     = params !! 0
-        (Param (DQContent (Some value))) = params !! 1
-        
-
-annotator :: Component Node Node
-annotator = component $ return . annotate
-
-annotate = annotated_Syn_Node . execute M.empty
-
 {-# LINE 474 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 86 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
@@ -814,7 +814,7 @@ sem_Node_ArrayAccess rv_ index_  =
                    {-# LINE 815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIcallMapping `IM.union` _indexIcallMapping
                    {-# LINE 820 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -884,7 +884,7 @@ sem_Node_ArrayAccess rv_ index_  =
                    {-# LINE 885 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIparamMapping `IM.union` _indexIparamMapping
                    {-# LINE 890 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -899,56 +899,56 @@ sem_Node_ArrayAccess rv_ index_  =
                    {-# LINE 900 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIannotated _indexIannotated
                    {-# LINE 905 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIexstractFunctions _indexIexstractFunctions
                    {-# LINE 910 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIexstractParameters _indexIexstractParameters
                    {-# LINE 915 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIremoved _indexIremoved
                    {-# LINE 920 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   ArrayAccess _rvIself _indexIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIsimplified _indexIsimplified
                    {-# LINE 927 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 932 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 937 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 942 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 947 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 954 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1255,7 +1255,7 @@ sem_Node_Assign rv_ e_  =
                    {-# LINE 1256 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIcallMapping `IM.union` _eIcallMapping
                    {-# LINE 1261 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1295,7 +1295,7 @@ sem_Node_Assign rv_ e_  =
                    {-# LINE 1296 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIparamMapping `IM.union` _eIparamMapping
                    {-# LINE 1301 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1305,56 +1305,56 @@ sem_Node_Assign rv_ e_  =
                    {-# LINE 1306 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIannotated _eIannotated
                    {-# LINE 1311 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIexstractFunctions _eIexstractFunctions
                    {-# LINE 1316 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIexstractParameters _eIexstractParameters
                    {-# LINE 1321 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIremoved _eIremoved
                    {-# LINE 1326 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Assign _rvIself _eIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIsimplified _eIsimplified
                    {-# LINE 1333 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 1338 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 1343 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 1348 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 1353 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 1360 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1500,7 +1500,7 @@ sem_Node_Block s_  =
                    {-# LINE 1501 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _sIcallMapping
                    {-# LINE 1506 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1560,7 +1560,7 @@ sem_Node_Block s_  =
                    {-# LINE 1561 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _sIparamMapping
                    {-# LINE 1566 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1580,56 +1580,56 @@ sem_Node_Block s_  =
                    {-# LINE 1581 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIannotated
                    {-# LINE 1586 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIexstractFunctions
                    {-# LINE 1591 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIexstractParameters
                    {-# LINE 1596 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIremoved
                    {-# LINE 1601 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Block _sIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIsimplified
                    {-# LINE 1608 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 1613 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 1618 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 1623 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 1628 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 1635 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1752,7 +1752,7 @@ sem_Node_CloseTag  =
                    {-# LINE 1753 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 1758 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1822,7 +1822,7 @@ sem_Node_CloseTag  =
                    {-# LINE 1823 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 1828 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1842,56 +1842,56 @@ sem_Node_CloseTag  =
                    {-# LINE 1843 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
                    {-# LINE 1848 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
                    {-# LINE 1853 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
                    {-# LINE 1858 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
                    {-# LINE 1863 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   CloseTag
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
                    {-# LINE 1870 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 1875 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 1880 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 1885 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 1890 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 1897 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -1983,7 +1983,7 @@ sem_Node_ConstantEncapsedString n_  =
                    {-# LINE 1984 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIcallMapping
                    {-# LINE 1989 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2053,7 +2053,7 @@ sem_Node_ConstantEncapsedString n_  =
                    {-# LINE 2054 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIparamMapping
                    {-# LINE 2059 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2068,56 +2068,56 @@ sem_Node_ConstantEncapsedString n_  =
                    {-# LINE 2069 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIannotated
                    {-# LINE 2074 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIexstractFunctions
                    {-# LINE 2079 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIexstractParameters
                    {-# LINE 2084 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIremoved
                    {-# LINE 2089 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   ConstantEncapsedString _nIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIsimplified
                    {-# LINE 2096 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 2101 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 2106 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 2111 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 2116 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 2123 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2233,7 +2233,7 @@ sem_Node_DQContent value_  =
                    {-# LINE 2234 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOsimplified =
-                  ({-# LINE 17 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 45 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String _valueIvalue
                    {-# LINE 2239 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2260,7 +2260,7 @@ sem_Node_DQContent value_  =
                    {-# LINE 2261 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 2266 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2330,7 +2330,7 @@ sem_Node_DQContent value_  =
                    {-# LINE 2331 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _valueIparamMapping
                    {-# LINE 2336 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2345,49 +2345,49 @@ sem_Node_DQContent value_  =
                    {-# LINE 2346 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIannotated
                    {-# LINE 2351 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIexstractFunctions
                    {-# LINE 2356 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIexstractParameters
                    {-# LINE 2361 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIremoved
                    {-# LINE 2366 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   DQContent _valueIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIsimplified
                    {-# LINE 2373 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 2378 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 2383 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 2388 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 2393 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2523,7 +2523,7 @@ sem_Node_Deci value_  =
                    {-# LINE 2524 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 2529 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2573,7 +2573,7 @@ sem_Node_Deci value_  =
                    {-# LINE 2574 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 2579 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2583,56 +2583,56 @@ sem_Node_Deci value_  =
                    {-# LINE 2584 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
                    {-# LINE 2589 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
                    {-# LINE 2594 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
                    {-# LINE 2599 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
                    {-# LINE 2604 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Deci value_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
                    {-# LINE 2611 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 2616 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 2621 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 2626 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 2631 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 2638 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2839,7 +2839,7 @@ sem_Node_Document before_ opentag_ stmt_ closetag_ after_  =
                    {-# LINE 2840 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _opentagIcallMapping `IM.union` _stmtIcallMapping `IM.union` _closetagIcallMapping
                    {-# LINE 2845 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2899,7 +2899,7 @@ sem_Node_Document before_ opentag_ stmt_ closetag_ after_  =
                    {-# LINE 2900 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _opentagIparamMapping `IM.union` _stmtIparamMapping `IM.union` _closetagIparamMapping
                    {-# LINE 2905 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -2909,56 +2909,56 @@ sem_Node_Document before_ opentag_ stmt_ closetag_ after_  =
                    {-# LINE 2910 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIannotated _stmtIannotated _closetagIannotated after_
                    {-# LINE 2915 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIexstractFunctions _stmtIexstractFunctions _closetagIexstractFunctions after_
                    {-# LINE 2920 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIexstractParameters _stmtIexstractParameters _closetagIexstractParameters after_
                    {-# LINE 2925 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIremoved _stmtIremoved _closetagIremoved after_
                    {-# LINE 2930 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Document before_ _opentagIself _stmtIself _closetagIself after_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIsimplified _stmtIsimplified _closetagIsimplified after_
                    {-# LINE 2937 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 2942 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 2947 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 2952 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 2957 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 2964 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3175,7 +3175,7 @@ sem_Node_Echo e_  =
                    {-# LINE 3176 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
                    {-# LINE 3181 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3245,7 +3245,7 @@ sem_Node_Echo e_  =
                    {-# LINE 3246 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
                    {-# LINE 3251 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3260,56 +3260,56 @@ sem_Node_Echo e_  =
                    {-# LINE 3261 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIannotated
                    {-# LINE 3266 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIexstractFunctions
                    {-# LINE 3271 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIexstractParameters
                    {-# LINE 3276 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIremoved
                    {-# LINE 3281 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Echo _eIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIsimplified
                    {-# LINE 3288 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 3293 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 3298 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 3303 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 3308 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 3315 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3458,7 +3458,7 @@ sem_Node_ElseIf e_ s_  =
                    {-# LINE 3459 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping `IM.union` _sIcallMapping
                    {-# LINE 3464 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3528,7 +3528,7 @@ sem_Node_ElseIf e_ s_  =
                    {-# LINE 3529 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping `IM.union` _sIparamMapping
                    {-# LINE 3534 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3548,56 +3548,56 @@ sem_Node_ElseIf e_ s_  =
                    {-# LINE 3549 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIannotated _sIannotated
                    {-# LINE 3554 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIexstractFunctions _sIexstractFunctions
                    {-# LINE 3559 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIexstractParameters _sIexstractParameters
                    {-# LINE 3564 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIremoved _sIremoved
                    {-# LINE 3569 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   ElseIf _eIself _sIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIsimplified _sIsimplified
                    {-# LINE 3576 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 3581 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 3586 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 3591 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 3596 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 3603 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3838,7 +3838,7 @@ sem_Node_Expect expr_ ty_  =
                    {-# LINE 3839 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exprIcallMapping
                    {-# LINE 3844 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3893,7 +3893,7 @@ sem_Node_Expect expr_ ty_  =
                    {-# LINE 3894 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exprIparamMapping
                    {-# LINE 3899 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -3903,56 +3903,56 @@ sem_Node_Expect expr_ ty_  =
                    {-# LINE 3904 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIannotated ty_
                    {-# LINE 3909 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIexstractFunctions ty_
                    {-# LINE 3914 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIexstractParameters ty_
                    {-# LINE 3919 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIremoved ty_
                    {-# LINE 3924 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Expect _exprIself ty_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIsimplified ty_
                    {-# LINE 3931 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 3936 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 3941 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 3946 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 3951 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 3958 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4123,7 +4123,7 @@ sem_Node_Expr e_  =
                    {-# LINE 4124 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 37 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 65 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    case _eIself of
                        (Assign rv (FunctionCall (FunctionName name) params)) -> SimplifiedFunctionCall name params $ Just rv
                        (FunctionCall (FunctionName name) params)             -> SimplifiedFunctionCall name params Nothing
@@ -4131,7 +4131,7 @@ sem_Node_Expr e_  =
                    {-# LINE 4132 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 63 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 91 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    exstractFunctions (Expr _eIexstractFunctions) _eIcallMapping
                    {-# LINE 4137 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4184,7 +4184,7 @@ sem_Node_Expr e_  =
                    {-# LINE 4185 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
                    {-# LINE 4190 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4244,7 +4244,7 @@ sem_Node_Expr e_  =
                    {-# LINE 4245 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
                    {-# LINE 4250 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4254,46 +4254,46 @@ sem_Node_Expr e_  =
                    {-# LINE 4255 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIannotated
                    {-# LINE 4260 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIexstractFunctions
                    {-# LINE 4265 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIexstractParameters
                    {-# LINE 4270 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIremoved
                    {-# LINE 4275 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Expr _eIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIsimplified
                    {-# LINE 4282 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 4287 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 4292 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 4299 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4342,9 +4342,9 @@ sem_Node_FunctionCall name_ params_  =
        _lhsIstruct ->
          (let _lhsOnodes :: (IntMap Node)
               _lhsOlabel :: Label
+              _lhsOannotated :: Node 
               _lhsOcallMapping :: (IntMap Node)
               _lhsOexstractFunctions :: Node 
-              _lhsOannotated :: Node 
               _lhsOpp :: Doc
               __tup9 :: ((Label,Label))
               _nameOlabels :: Label
@@ -4438,21 +4438,21 @@ sem_Node_FunctionCall name_ params_  =
                    _label
                    {-# LINE 4440 "src/MF/Language/PHP/AG.hs" #-}
                    )
-              _lhsOcallMapping =
-                  ({-# LINE 54 "src/MF/Language/PHP/AG/Simplify.ag" #-}
-                   IM.singleton _label _self
-                   {-# LINE 4445 "src/MF/Language/PHP/AG.hs" #-}
-                   )
-              _lhsOexstractFunctions =
-                  ({-# LINE 71 "src/MF/Language/PHP/AG/Simplify.ag" #-}
-                   buildVariable _label
-                   {-# LINE 4450 "src/MF/Language/PHP/AG.hs" #-}
-                   )
               _lhsOannotated =
-                  ({-# LINE 10 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 17 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    case _nameIself of
                        (FunctionName "check")   -> buildExpect _paramsIself
                        otherwise                -> _self
+                   {-# LINE 4447 "src/MF/Language/PHP/AG.hs" #-}
+                   )
+              _lhsOcallMapping =
+                  ({-# LINE 82 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                   IM.singleton _label _self
+                   {-# LINE 4452 "src/MF/Language/PHP/AG.hs" #-}
+                   )
+              _lhsOexstractFunctions =
+                  ({-# LINE 99 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                   buildVariable _label
                    {-# LINE 4457 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
@@ -4543,7 +4543,7 @@ sem_Node_FunctionCall name_ params_  =
                    {-# LINE 4544 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nameIparamMapping `IM.union` _paramsIparamMapping
                    {-# LINE 4549 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4558,46 +4558,46 @@ sem_Node_FunctionCall name_ params_  =
                    {-# LINE 4559 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIannotated _paramsIannotated
                    {-# LINE 4564 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIexstractFunctions _paramsIexstractFunctions
                    {-# LINE 4569 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIexstractParameters _paramsIexstractParameters
                    {-# LINE 4574 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIremoved _paramsIremoved
                    {-# LINE 4579 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   FunctionCall _nameIself _paramsIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIsimplified _paramsIsimplified
                    {-# LINE 4586 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 4591 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 4596 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 4603 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4880,7 +4880,7 @@ sem_Node_FunctionDecl name_ params_ stmt_  =
                    {-# LINE 4881 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIcallMapping `IM.union` _stmtIcallMapping
                    {-# LINE 4886 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4940,7 +4940,7 @@ sem_Node_FunctionDecl name_ params_ stmt_  =
                    {-# LINE 4941 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIparamMapping `IM.union` _stmtIparamMapping
                    {-# LINE 4946 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -4950,56 +4950,56 @@ sem_Node_FunctionDecl name_ params_ stmt_  =
                    {-# LINE 4951 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIannotated _stmtIannotated
                    {-# LINE 4956 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIexstractFunctions _stmtIexstractFunctions
                    {-# LINE 4961 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIexstractParameters _stmtIexstractParameters
                    {-# LINE 4966 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIremoved _stmtIremoved
                    {-# LINE 4971 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   FunctionDecl name_ _paramsIself _stmtIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIsimplified _stmtIsimplified
                    {-# LINE 4978 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 4983 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 4988 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 4993 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 4998 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 5005 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5145,7 +5145,7 @@ sem_Node_FunctionName value_  =
                    {-# LINE 5146 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 5151 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5215,7 +5215,7 @@ sem_Node_FunctionName value_  =
                    {-# LINE 5216 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 5221 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5230,56 +5230,56 @@ sem_Node_FunctionName value_  =
                    {-# LINE 5231 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
                    {-# LINE 5236 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
                    {-# LINE 5241 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
                    {-# LINE 5246 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
                    {-# LINE 5251 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   FunctionName value_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
                    {-# LINE 5258 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 5263 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 5268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 5273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 5278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 5285 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5455,7 +5455,7 @@ sem_Node_GreaterEqual l_ r_  =
                    {-# LINE 5456 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 5461 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5525,7 +5525,7 @@ sem_Node_GreaterEqual l_ r_  =
                    {-# LINE 5526 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 5531 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5540,56 +5540,56 @@ sem_Node_GreaterEqual l_ r_  =
                    {-# LINE 5541 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIannotated _rIannotated
                    {-# LINE 5546 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 5551 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIexstractParameters _rIexstractParameters
                    {-# LINE 5556 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIremoved _rIremoved
                    {-# LINE 5561 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   GreaterEqual _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIsimplified _rIsimplified
                    {-# LINE 5568 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 5573 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 5578 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 5583 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 5588 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 5595 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5920,7 +5920,7 @@ sem_Node_If c_ l_ elseIfs_ r_  =
                    {-# LINE 5921 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIcallMapping `IM.union` _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 5926 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5975,7 +5975,7 @@ sem_Node_If c_ l_ elseIfs_ r_  =
                    {-# LINE 5976 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIparamMapping `IM.union` _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 5981 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -5985,56 +5985,56 @@ sem_Node_If c_ l_ elseIfs_ r_  =
                    {-# LINE 5986 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIannotated _lIannotated elseIfs_ _rIannotated
                    {-# LINE 5991 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIexstractFunctions _lIexstractFunctions elseIfs_ _rIexstractFunctions
                    {-# LINE 5996 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIexstractParameters _lIexstractParameters elseIfs_ _rIexstractParameters
                    {-# LINE 6001 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIremoved _lIremoved elseIfs_ _rIremoved
                    {-# LINE 6006 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   If _cIself _lIself elseIfs_ _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIsimplified _lIsimplified elseIfs_ _rIsimplified
                    {-# LINE 6013 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 6018 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 6023 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 6028 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 6033 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 6040 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6326,7 +6326,7 @@ sem_Node_IsEqual l_ r_  =
                    {-# LINE 6327 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 6332 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6396,7 +6396,7 @@ sem_Node_IsEqual l_ r_  =
                    {-# LINE 6397 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 6402 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6411,56 +6411,56 @@ sem_Node_IsEqual l_ r_  =
                    {-# LINE 6412 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIannotated _rIannotated
                    {-# LINE 6417 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 6422 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIexstractParameters _rIexstractParameters
                    {-# LINE 6427 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIremoved _rIremoved
                    {-# LINE 6432 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   IsEqual _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIsimplified _rIsimplified
                    {-# LINE 6439 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 6444 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 6449 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 6454 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 6459 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 6466 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6625,7 +6625,7 @@ sem_Node_LFalse  =
                    {-# LINE 6626 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 6631 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6690,7 +6690,7 @@ sem_Node_LFalse  =
                    {-# LINE 6691 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 6696 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6705,56 +6705,56 @@ sem_Node_LFalse  =
                    {-# LINE 6706 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
                    {-# LINE 6711 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
                    {-# LINE 6716 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
                    {-# LINE 6721 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
                    {-# LINE 6726 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   LFalse
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
                    {-# LINE 6733 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 6738 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 6743 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 6748 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 6753 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 6760 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6855,7 +6855,7 @@ sem_Node_LTrue  =
                    {-# LINE 6856 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 6861 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6920,7 +6920,7 @@ sem_Node_LTrue  =
                    {-# LINE 6921 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 6926 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -6935,56 +6935,56 @@ sem_Node_LTrue  =
                    {-# LINE 6936 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
                    {-# LINE 6941 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
                    {-# LINE 6946 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
                    {-# LINE 6951 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
                    {-# LINE 6956 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   LTrue
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
                    {-# LINE 6963 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 6968 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 6973 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 6978 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 6983 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 6990 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7066,7 +7066,7 @@ sem_Node_Literal value_  =
                    {-# LINE 7067 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 7072 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7136,7 +7136,7 @@ sem_Node_Literal value_  =
                    {-# LINE 7137 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 7142 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7156,56 +7156,56 @@ sem_Node_Literal value_  =
                    {-# LINE 7157 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
                    {-# LINE 7162 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
                    {-# LINE 7167 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
                    {-# LINE 7172 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
                    {-# LINE 7177 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Literal value_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
                    {-# LINE 7184 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 7189 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 7194 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 7199 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 7204 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 7211 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7401,7 +7401,7 @@ sem_Node_Min l_ r_  =
                    {-# LINE 7402 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 7407 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7471,7 +7471,7 @@ sem_Node_Min l_ r_  =
                    {-# LINE 7472 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 7477 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7486,56 +7486,56 @@ sem_Node_Min l_ r_  =
                    {-# LINE 7487 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIannotated _rIannotated
                    {-# LINE 7492 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 7497 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIexstractParameters _rIexstractParameters
                    {-# LINE 7502 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIremoved _rIremoved
                    {-# LINE 7507 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Min _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIsimplified _rIsimplified
                    {-# LINE 7514 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 7519 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 7524 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 7529 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 7534 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 7541 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7795,7 +7795,7 @@ sem_Node_Mod l_ r_  =
                    {-# LINE 7796 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 7801 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7865,7 +7865,7 @@ sem_Node_Mod l_ r_  =
                    {-# LINE 7866 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 7871 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -7880,56 +7880,56 @@ sem_Node_Mod l_ r_  =
                    {-# LINE 7881 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIannotated _rIannotated
                    {-# LINE 7886 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 7891 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIexstractParameters _rIexstractParameters
                    {-# LINE 7896 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIremoved _rIremoved
                    {-# LINE 7901 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Mod _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIsimplified _rIsimplified
                    {-# LINE 7908 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 7913 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 7918 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 7923 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 7928 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 7935 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8189,7 +8189,7 @@ sem_Node_Mul l_ r_  =
                    {-# LINE 8190 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 8195 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8259,7 +8259,7 @@ sem_Node_Mul l_ r_  =
                    {-# LINE 8260 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 8265 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8274,56 +8274,56 @@ sem_Node_Mul l_ r_  =
                    {-# LINE 8275 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIannotated _rIannotated
                    {-# LINE 8280 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 8285 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIexstractParameters _rIexstractParameters
                    {-# LINE 8290 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIremoved _rIremoved
                    {-# LINE 8295 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Mul _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIsimplified _rIsimplified
                    {-# LINE 8302 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 8307 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 8312 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 8317 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 8322 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 8329 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8468,7 +8468,7 @@ sem_Node_OpenTag  =
                    {-# LINE 8469 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 8474 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8538,7 +8538,7 @@ sem_Node_OpenTag  =
                    {-# LINE 8539 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 8544 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8558,56 +8558,56 @@ sem_Node_OpenTag  =
                    {-# LINE 8559 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
                    {-# LINE 8564 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
                    {-# LINE 8569 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
                    {-# LINE 8574 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
                    {-# LINE 8579 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   OpenTag
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
                    {-# LINE 8586 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 8591 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 8596 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 8601 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 8606 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 8613 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8803,7 +8803,7 @@ sem_Node_Or l_ r_  =
                    {-# LINE 8804 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 8809 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8873,7 +8873,7 @@ sem_Node_Or l_ r_  =
                    {-# LINE 8874 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 8879 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -8888,56 +8888,56 @@ sem_Node_Or l_ r_  =
                    {-# LINE 8889 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIannotated _rIannotated
                    {-# LINE 8894 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 8899 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIexstractParameters _rIexstractParameters
                    {-# LINE 8904 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIremoved _rIremoved
                    {-# LINE 8909 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Or _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIsimplified _rIsimplified
                    {-# LINE 8916 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 8921 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 8926 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 8931 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 8936 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 8943 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9100,7 +9100,7 @@ sem_Node_Param e_  =
                    {-# LINE 9101 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 84 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 112 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.singleton _label _eIself
                    {-# LINE 9106 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9127,7 +9127,7 @@ sem_Node_Param e_  =
                    {-# LINE 9128 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
                    {-# LINE 9133 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9207,56 +9207,56 @@ sem_Node_Param e_  =
                    {-# LINE 9208 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIannotated
                    {-# LINE 9213 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIexstractFunctions
                    {-# LINE 9218 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIexstractParameters
                    {-# LINE 9223 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIremoved
                    {-# LINE 9228 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Param _eIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIsimplified
                    {-# LINE 9235 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 9240 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 9245 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 9250 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 9255 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 9262 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9484,7 +9484,7 @@ sem_Node_Plus l_ r_  =
                    {-# LINE 9485 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
                    {-# LINE 9490 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9554,7 +9554,7 @@ sem_Node_Plus l_ r_  =
                    {-# LINE 9555 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
                    {-# LINE 9560 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9569,56 +9569,56 @@ sem_Node_Plus l_ r_  =
                    {-# LINE 9570 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIannotated _rIannotated
                    {-# LINE 9575 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIexstractFunctions _rIexstractFunctions
                    {-# LINE 9580 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIexstractParameters _rIexstractParameters
                    {-# LINE 9585 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIremoved _rIremoved
                    {-# LINE 9590 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Plus _lIself _rIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIsimplified _rIsimplified
                    {-# LINE 9597 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 9602 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 9607 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 9612 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 9617 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 9624 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9803,7 +9803,7 @@ sem_Node_Print e_  =
                    {-# LINE 9804 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
                    {-# LINE 9809 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9873,7 +9873,7 @@ sem_Node_Print e_  =
                    {-# LINE 9874 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
                    {-# LINE 9879 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -9888,56 +9888,56 @@ sem_Node_Print e_  =
                    {-# LINE 9889 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIannotated
                    {-# LINE 9894 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIexstractFunctions
                    {-# LINE 9899 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIexstractParameters
                    {-# LINE 9904 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIremoved
                    {-# LINE 9909 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Print _eIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIsimplified
                    {-# LINE 9916 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 9921 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 9926 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 9931 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 9936 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 9943 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10118,7 +10118,7 @@ sem_Node_Return e_  =
                    {-# LINE 10119 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 65 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 93 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    exstractFunctions (Return _eIexstractFunctions) _eIcallMapping
                    {-# LINE 10124 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10170,7 +10170,7 @@ sem_Node_Return e_  =
                    {-# LINE 10171 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
                    {-# LINE 10176 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10230,7 +10230,7 @@ sem_Node_Return e_  =
                    {-# LINE 10231 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
                    {-# LINE 10236 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10240,51 +10240,51 @@ sem_Node_Return e_  =
                    {-# LINE 10241 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIannotated
                    {-# LINE 10246 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIexstractFunctions
                    {-# LINE 10251 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIexstractParameters
                    {-# LINE 10256 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIremoved
                    {-# LINE 10261 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Return _eIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIsimplified
                    {-# LINE 10268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 10273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 10278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 10283 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 10290 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10537,7 +10537,7 @@ sem_Node_Sequence f_ s_  =
                    {-# LINE 10538 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _fIcallMapping `IM.union` _sIcallMapping
                    {-# LINE 10543 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10592,7 +10592,7 @@ sem_Node_Sequence f_ s_  =
                    {-# LINE 10593 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _fIparamMapping `IM.union` _sIparamMapping
                    {-# LINE 10598 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10602,56 +10602,56 @@ sem_Node_Sequence f_ s_  =
                    {-# LINE 10603 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIannotated _sIannotated
                    {-# LINE 10608 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIexstractFunctions _sIexstractFunctions
                    {-# LINE 10613 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIexstractParameters _sIexstractParameters
                    {-# LINE 10618 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIremoved _sIremoved
                    {-# LINE 10623 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Sequence _fIself _sIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIsimplified _sIsimplified
                    {-# LINE 10630 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 10635 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 10640 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 10645 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 10650 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 10657 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10814,7 +10814,7 @@ sem_Node_Simple value_  =
                    {-# LINE 10815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 10820 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10879,7 +10879,7 @@ sem_Node_Simple value_  =
                    {-# LINE 10880 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 10885 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -10889,56 +10889,56 @@ sem_Node_Simple value_  =
                    {-# LINE 10890 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
                    {-# LINE 10895 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
                    {-# LINE 10900 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
                    {-# LINE 10905 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
                    {-# LINE 10910 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Simple value_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
                    {-# LINE 10917 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 10922 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 10927 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 10932 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 10937 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 10944 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11066,12 +11066,12 @@ sem_Node_SimplifiedFunctionCall name_ params_ result_  =
                    {-# LINE 11067 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 69 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 97 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    exstractFunctions (SimplifiedFunctionCall name_ _paramsIexstractFunctions result_) _paramsIcallMapping
                    {-# LINE 11072 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 91 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 119 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    exstractParameters _self _paramsIparamMapping
                    {-# LINE 11077 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11120,7 +11120,7 @@ sem_Node_SimplifiedFunctionCall name_ params_ result_  =
                    {-# LINE 11121 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIcallMapping
                    {-# LINE 11126 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11180,7 +11180,7 @@ sem_Node_SimplifiedFunctionCall name_ params_ result_  =
                    {-# LINE 11181 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIparamMapping
                    {-# LINE 11186 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11195,46 +11195,46 @@ sem_Node_SimplifiedFunctionCall name_ params_ result_  =
                    {-# LINE 11196 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIannotated result_
                    {-# LINE 11201 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIexstractFunctions result_
                    {-# LINE 11206 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIexstractParameters result_
                    {-# LINE 11211 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIremoved result_
                    {-# LINE 11216 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   SimplifiedFunctionCall name_ _paramsIself result_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIsimplified result_
                    {-# LINE 11223 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 11228 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 11233 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 11240 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11382,7 +11382,7 @@ sem_Node_Skip  =
                    {-# LINE 11383 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 11388 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11442,7 +11442,7 @@ sem_Node_Skip  =
                    {-# LINE 11443 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 11448 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11457,56 +11457,56 @@ sem_Node_Skip  =
                    {-# LINE 11458 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
                    {-# LINE 11463 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
                    {-# LINE 11468 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
                    {-# LINE 11473 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
                    {-# LINE 11478 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Skip
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
                    {-# LINE 11485 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 11490 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 11495 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 11500 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 11505 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 11512 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11603,7 +11603,7 @@ sem_Node_String value_  =
                    {-# LINE 11604 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 11609 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11673,7 +11673,7 @@ sem_Node_String value_  =
                    {-# LINE 11674 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 11679 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11688,56 +11688,56 @@ sem_Node_String value_  =
                    {-# LINE 11689 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
                    {-# LINE 11694 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
                    {-# LINE 11699 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
                    {-# LINE 11704 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
                    {-# LINE 11709 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   String value_
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
                    {-# LINE 11716 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 11721 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 11726 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 11731 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 11736 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 11743 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11908,7 +11908,7 @@ sem_Node_Variable n_  =
                    {-# LINE 11909 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIcallMapping
                    {-# LINE 11914 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11968,7 +11968,7 @@ sem_Node_Variable n_  =
                    {-# LINE 11969 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIparamMapping
                    {-# LINE 11974 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -11978,56 +11978,56 @@ sem_Node_Variable n_  =
                    {-# LINE 11979 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIannotated
                    {-# LINE 11984 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIexstractFunctions
                    {-# LINE 11989 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIexstractParameters
                    {-# LINE 11994 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIremoved
                    {-# LINE 11999 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Variable _nIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIsimplified
                    {-# LINE 12006 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 12011 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 12016 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 12021 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 12026 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 12033 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12238,7 +12238,7 @@ sem_Node_While c_ s_  =
                    {-# LINE 12239 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 67 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 95 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    exstractFunctions (While _cIexstractFunctions _sIexstractFunctions) _cIcallMapping
                    {-# LINE 12244 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12290,7 +12290,7 @@ sem_Node_While c_ s_  =
                    {-# LINE 12291 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIcallMapping `IM.union` _sIcallMapping
                    {-# LINE 12296 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12345,7 +12345,7 @@ sem_Node_While c_ s_  =
                    {-# LINE 12346 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIparamMapping `IM.union` _sIparamMapping
                    {-# LINE 12351 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12355,51 +12355,51 @@ sem_Node_While c_ s_  =
                    {-# LINE 12356 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIannotated _sIannotated
                    {-# LINE 12361 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIexstractFunctions _sIexstractFunctions
                    {-# LINE 12366 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIexstractParameters _sIexstractParameters
                    {-# LINE 12371 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIremoved _sIremoved
                    {-# LINE 12376 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   While _cIself _sIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIsimplified _sIsimplified
                    {-# LINE 12383 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 12388 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 12393 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 12398 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 12405 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12506,7 +12506,7 @@ sem_OptionalString_None  =
          _lhsOself :: OptionalString 
          _lhsOsimplified :: OptionalString 
          _lhsOvalue =
-             ({-# LINE 26 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 54 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               ""
               {-# LINE 12512 "src/MF/Language/PHP/AG.hs" #-}
               )
@@ -12516,61 +12516,61 @@ sem_OptionalString_None  =
               {-# LINE 12517 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOparamMapping =
-             ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               IM.empty
               {-# LINE 12522 "src/MF/Language/PHP/AG.hs" #-}
               )
          _annotated =
-             ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
               {-# LINE 12527 "src/MF/Language/PHP/AG.hs" #-}
               )
          _exstractFunctions =
-             ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
               {-# LINE 12532 "src/MF/Language/PHP/AG.hs" #-}
               )
          _exstractParameters =
-             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
               {-# LINE 12537 "src/MF/Language/PHP/AG.hs" #-}
               )
          _removed =
-             ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
               {-# LINE 12542 "src/MF/Language/PHP/AG.hs" #-}
               )
          _self =
              None
          _simplified =
-             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
               {-# LINE 12549 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOannotated =
-             ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _annotated
               {-# LINE 12554 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOexstractFunctions =
-             ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _exstractFunctions
               {-# LINE 12559 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOexstractParameters =
-             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _exstractParameters
               {-# LINE 12564 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOremoved =
-             ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _removed
               {-# LINE 12569 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOself =
              _self
          _lhsOsimplified =
-             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _simplified
               {-# LINE 12576 "src/MF/Language/PHP/AG.hs" #-}
               )
@@ -12588,7 +12588,7 @@ sem_OptionalString_Some value_  =
          _lhsOself :: OptionalString 
          _lhsOsimplified :: OptionalString 
          _lhsOvalue =
-             ({-# LINE 24 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 52 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               value_
               {-# LINE 12594 "src/MF/Language/PHP/AG.hs" #-}
               )
@@ -12598,61 +12598,61 @@ sem_OptionalString_Some value_  =
               {-# LINE 12599 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOparamMapping =
-             ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               IM.empty
               {-# LINE 12604 "src/MF/Language/PHP/AG.hs" #-}
               )
          _annotated =
-             ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
               {-# LINE 12609 "src/MF/Language/PHP/AG.hs" #-}
               )
          _exstractFunctions =
-             ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
               {-# LINE 12614 "src/MF/Language/PHP/AG.hs" #-}
               )
          _exstractParameters =
-             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
               {-# LINE 12619 "src/MF/Language/PHP/AG.hs" #-}
               )
          _removed =
-             ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
               {-# LINE 12624 "src/MF/Language/PHP/AG.hs" #-}
               )
          _self =
              Some value_
          _simplified =
-             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
               {-# LINE 12631 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOannotated =
-             ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _annotated
               {-# LINE 12636 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOexstractFunctions =
-             ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _exstractFunctions
               {-# LINE 12641 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOexstractParameters =
-             ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _exstractParameters
               {-# LINE 12646 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOremoved =
-             ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _removed
               {-# LINE 12651 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOself =
              _self
          _lhsOsimplified =
-             ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+             ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _simplified
               {-# LINE 12658 "src/MF/Language/PHP/AG.hs" #-}
               )
@@ -12780,7 +12780,7 @@ sem_ParamList_Cons hd_ tl_  =
                    {-# LINE 12781 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _hdIcallMapping `IM.union` _tlIcallMapping
                    {-# LINE 12786 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12795,61 +12795,61 @@ sem_ParamList_Cons hd_ tl_  =
                    {-# LINE 12796 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _hdIparamMapping `IM.union` _tlIparamMapping
                    {-# LINE 12801 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIannotated _tlIannotated
                    {-# LINE 12806 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIexstractFunctions _tlIexstractFunctions
                    {-# LINE 12811 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIexstractParameters _tlIexstractParameters
                    {-# LINE 12816 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIremoved _tlIremoved
                    {-# LINE 12821 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   (:) _hdIself _tlIself
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIsimplified _tlIsimplified
                    {-# LINE 12828 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 12833 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 12838 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 12843 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 12848 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 12855 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12964,7 +12964,7 @@ sem_ParamList_Nil  =
                    {-# LINE 12965 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
-                  ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 78 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 12970 "src/MF/Language/PHP/AG.hs" #-}
                    )
@@ -12979,61 +12979,61 @@ sem_ParamList_Nil  =
                    {-# LINE 12980 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
-                  ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 108 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
                    {-# LINE 12985 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
                    {-# LINE 12990 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
                    {-# LINE 12995 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
                    {-# LINE 13000 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
                    {-# LINE 13005 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   []
               _simplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
                    {-# LINE 13012 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
-                  ({-# LINE 6 "src/MF/Language/PHP/AG/Debugging.ag" #-}
+                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _annotated
                    {-# LINE 13017 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractFunctions =
-                  ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractFunctions
                    {-# LINE 13022 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexstractParameters =
-                  ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 115 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exstractParameters
                    {-# LINE 13027 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
-                  ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 61 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
                    {-# LINE 13032 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
-                  ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
+                  ({-# LINE 41 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
                    {-# LINE 13039 "src/MF/Language/PHP/AG.hs" #-}
                    )

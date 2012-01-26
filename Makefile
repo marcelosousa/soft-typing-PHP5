@@ -2,7 +2,7 @@ CABAL-CONFIGURE-FLAGS 	:= --user
 CABAL-BUILD-FLAGS     	:=
 VERSION					:= 0.0.5
 
-AG						:= src/MF/Language/PHP/AG.ag src/MF/Language/PHP/AG/Base.ag src/MF/Language/PHP/AG/Flow.ag src/MF/Language/PHP/AG/PP/PPast.ag src/MF/Language/PHP/AG/PP/PPcode.ag src/MF/Language/PHP/AG/Checking.ag src/MF/Language/PHP/AG/Typing.ag src/MF/Language/PHP/AG/Simplify.ag src/MF/Language/PHP/AG/Debugging.ag src/MF/Language/PHP/AG/PP/PPcfg.ag 
+AG						:= src/MF/Language/PHP/AG.ag src/MF/Language/PHP/AG/Base.ag src/MF/Language/PHP/AG/Flow.ag src/MF/Language/PHP/AG/PP/PPast.ag src/MF/Language/PHP/AG/PP/PPcode.ag src/MF/Language/PHP/AG/Checking.ag src/MF/Language/PHP/AG/Typing.ag src/MF/Language/PHP/AG/Simplify.ag src/MF/Language/PHP/AG/PP/PPcfg.ag 
 
 all : haskell
 
