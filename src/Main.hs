@@ -11,7 +11,7 @@ import System.Exit               (exitWith, ExitCode (ExitSuccess), exitFailure)
 import CCO.Printing              (render_, Doc)
 import Control.Arrow             (Arrow (arr), (>>>))
 import Control.Monad             
-import MF.Language.PHP.AG       (Node, simplifier, cfgprinter, annotator, visualizecf, checker, reporter, typer, reporterty, visualize)
+import MF.Language.PHP.AG       (Node, simplifier, cfgprinter, annotator, debugflow, checker, reporter, typer, reporterty, visualize)
 import Debug.Trace
 import System.Console.CmdArgs
 import System.Process           
@@ -41,8 +41,7 @@ render :: Component Doc String
 render = component $ return . render_ 80
 
 debugger :: Component Node String
---debugger = component $ \doc -> return $ "Doc: " ++ (show doc) ++ "Init: " ++ (show . init $ doc) ++ ", Final: " ++ (show . final $ doc) ++ ", Flow: " ++ (show . flow $ doc)
-debugger = component $ return . visualizecf
+debugger = component $ return . debugflow
 
 visualizer :: Component Node String
 visualizer = component $ return . visualize
@@ -59,7 +58,7 @@ instance Default Options where
 -- Run Pipelines
 runOption :: Options -> String -> IO ()
 runOption Visualize inp = ioWrap' inp (parser >>> reader >>> cfgprinter >>> render)
-runOption Debug     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> debugger)
+runOption Debug     inp = ioWrap' inp (parser >>> reader >>> debugger)
 --runOption DebugSimplifier     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> printer)
 runOption Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
 runOption Print     inp = ioWrap' inp (parser >>> reader >>> printer)

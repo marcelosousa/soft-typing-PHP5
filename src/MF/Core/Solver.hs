@@ -11,6 +11,8 @@ import           MF.Core.Flowable
 import           MF.Core.Context
 import           MF.Core.Lattice
 
+import Debug.Trace (trace)
+
 data Direction = Forward | Backward
 type ValueMap property = IM.IntMap property
 
@@ -43,7 +45,7 @@ solve transfer extremalValue bottom direction p = solve' p initialValueMap workl
     where                
         -- Step 1. Initialization
         worklist       = case direction of 
-                            Forward  -> flow p
+                            Forward  -> trace (show (flow p)) $ flow p
                             Backward -> reverseFlow . flow $ p
                 
         extremalLabels = case direction of 

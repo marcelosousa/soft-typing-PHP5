@@ -4,15 +4,13 @@ import Data.IntMap as IM
 import Data.Map as M
 import Data.Maybe
 import Control.Applicative
-import Data.Graph.Inductive hiding (graphviz', Node, empty, nodes)
-import Data.Graph.Inductive.Tree
 
 import qualified MF.Core.Flowable as F
 import MF.Core.Flowable hiding (Return)
 }
 
 -------------------------------------------------------------------------------
--- Labels & Nodes
+-- Labelling & Nodes
 -------------------------------------------------------------------------------
 
 attr Node ParamList
@@ -111,8 +109,6 @@ sem Node
         lhs.final = @s.final
     | FunctionDecl
         lhs.final = Nothing
-
-
                              
 -------------------------------------------------------------------------------
 -- Flow
@@ -120,8 +116,6 @@ sem Node
 
 attr Node
   syn flow use {++} {[]} :: {Flow}
-  syn nodeListflow use {++} {[]}:: {[LNode String]}
-  syn edgeListflow use {++} {[]}:: {[UEdge]}
 
 sem Node
     | Sequence 
@@ -190,7 +184,6 @@ sem Node
                                  ,(@lx, Exit @self)]
 
 {
-
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
 
@@ -201,30 +194,11 @@ instance Flowable Node where
     flow     = flow_Syn_Node . execute M.empty
     blocks   = blocks_Syn_Node . execute M.empty
 
+debugflow n = "Doc: " ++ (show n) ++ 
+              "\nInit: " ++ (show . F.init $ n) ++ 
+              "\nFinal: " ++ (show . F.final $ n) ++ 
+              "\nBlocks: " ++ (show . F.blocks $ n) ++
+              "\nFlow: " ++ (show . F.flow $ n) ++ 
+              "\nLabels: " ++ (show . F.labels $ n) ++
+              "\nNodes: " ++ (show . nodes_Syn_Node . execute M.empty $ n)
 }
-
--------------------------------------------------------------------------------
--- Visualize the Control Flow
--------------------------------------------------------------------------------
-
-{
-
-visualizecf p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeList ++ ", p: " ++ show p) $ graphvizz (flow p) (mkGraph nodeList edgeList :: Gr String ())
-    where
-        nodeList = nodeList_Syn_Node . execute M.empty $ p
-        edgeList = edgeList_Syn_Node . execute M.empty $ p
-        graphvizz f g = let n = labNodes g
-                        --    e = labEdges g
-                            
-                            ns = concatMap sn n
-                            es = concatMap se f
-                            
-                            sn (l, a)  = show l ++ " [label=\"" ++ a ++ " (" ++ show l ++ ") \"];"
-                            se (l, l') = show l ++ " -> " ++ show l' ++ ";"
-                      
-                        in "digraph AST {" ++ ns ++ es ++ "}"
-  
-        
-}
-
-
