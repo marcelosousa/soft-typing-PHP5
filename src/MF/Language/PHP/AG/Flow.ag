@@ -119,7 +119,7 @@ attr Node
 
 sem Node
     | Sequence 
-        +flow = (++) @loc.flow
+        lhs.flow = @loc.flow ++ @s.flow ++ @f.flow
         loc.flow = if isNothing @s.init || isNothing @f.final then [] else [(l, fromJust @s.init) | l <- fromJust @f.final]
     | If 
         +flow = (++) $ [(@label, fromJust @l.init), (@label, fromJust @r.init)]
@@ -133,7 +133,7 @@ sem Node
         +flow = let (Declaration name ln lx) = lookupDeclaration @name @lhs.declarations'
                 in (++) [(@lb, @la), (@lb, @lc), (@lr, @la), (@lc, ln), (lx, @lr)]
     | Assign
-        +flow = (++) @loc.flow  
+        lhs.flow = @loc.flow
         loc.flow = [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
 
 {
