@@ -6,8 +6,9 @@ imports
 {
 import MF.Language.PHP.Types
 
-import MF.Core as C
-import MF.Context
+import MF.Core.Solver as C
+import MF.Core.Context
+import MF.Core.Lattice
 
 import Data.IntMap as IM
 import Data.Set    as S
@@ -23,9 +24,11 @@ import qualified Debug.Trace as T
 -------------------------------------------------------------------------------
 
 {
+levels :: Node -> Int
 levels (ArrayAccess rv index) = 1 + levels rv
 levels (Variable n)           = 0
       
+name :: Node -> String
 name   (ArrayAccess rv index) = name rv
 name   (Variable n)           = name n
 name   (Simple value)         = value
@@ -53,7 +56,7 @@ sem Node
     | If While
         loc.constraints = @c.constraints
     | Assign
-        lhs.constraints = S.fromList [(@rv.label :<=: @e.label), (@label :<=: @rv.label)] `S.union` @e.constraints
+        lhs.constraints = S.fromList [(@rv.label :<=: @e.label), (@label :<=: @rv.label)] `S.union` @e.constraints -- `S.union` @rv.constraints
     | Deci 
         lhs.constraints = S.singleton (@label :==: S.singleton TyInt)
     | LTrue LFalse

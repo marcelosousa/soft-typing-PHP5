@@ -5,12 +5,13 @@ import Data.Set as S
 import Data.Map as M
 import qualified Debug.Trace as T
 
-import MF.Flowable   
-import MF.Core    
-import MF.Context
+import MF.Core.Flowable   
+import MF.Core.Solver
+import MF.Core.Context
+import MF.Core.Lattice
 
---trace = T.trace
-trace _ = id
+trace = T.trace
+--trace _ = id
 
 -------------------------------------------------------------------------------
 -- TypeSet 
@@ -77,8 +78,6 @@ data Constraint = Label :<=: Label          -- Dependency
                 | Label :==: TypeSet
                 deriving (Eq, Ord, Show)
 
-
-
 isEquality :: Constraint -> Bool
 isEquality (l :==: t) = True
 isEquality _          = False
@@ -104,7 +103,8 @@ fixPoint f a | a == na   = a
                          where na = f a
                          
 resolveType :: Set Constraint -> Label -> TypeSet
-resolveType constraints label = trace ("resolving type for: " ++ show label ++ " with " ++ show constraints) $ S.fold join S.empty . S.map toType . S.filter (hasLabel label) . fixPoint resolve $ constraints
+resolveType constraints label = trace ("resolving type for: " ++ show label ++ " with " ++ show constraints) $ 
+  S.fold join S.empty . S.map toType . S.filter (hasLabel label) . fixPoint resolve $ constraints
     where        
         toType (l :==: t) = t
 
@@ -120,7 +120,8 @@ data Identifier = Identifier String
 type Mapping = Identifier :-> TypeSet
     
 updateMapping :: Identifier -> Label -> Int -> Set Constraint -> Mapping -> Mapping
-updateMapping identifier label depth constraints mapping = trace ("Processing " ++ (show identifier) ++ "(" ++ show label ++ ") with" ++ show constraints ++ " resulting in: " ++ show effect) $ M.insert identifier effect mapping
+updateMapping identifier label depth constraints mapping = trace ("Processing " ++ (show identifier) ++ "(" ++ show label ++ ") with" ++ show constraints ++ " resulting in: " ++ show effect) $ 
+  M.insert identifier effect mapping
     where        
         -- We add to what we already know
         context = case M.lookup identifier mapping of
