@@ -17,17 +17,17 @@ data Direction = Forward | Backward
 type ValueMap property = IM.IntMap property
 
 -- | Helper function to lookup a value in a ValueMap when given a label
-lookup :: Label -> IM.IntMap a -> a
+lookup :: Label -> ValueMap a -> a
 lookup l m = case IM.lookup l m of 
                  Just a  -> a
-                 Nothing -> error $ "Looking for non existing label: " ++ show l
+                 Nothing -> error $ "Looking for non existing label: " ++ show l ++ "in " ++ show (IM.keys m)
                  
 -- | Helper function to reverse the flow in case of a backwards analysis
 reverseFlow :: Flow -> Flow
 reverseFlow = map (\(l, l') -> (l', l))
 
 
-mergeWith :: (a -> b -> c) -> IM.IntMap a -> IM.IntMap b -> IM.IntMap c
+mergeWith :: (a -> b -> c) -> ValueMap a -> ValueMap b -> ValueMap c
 mergeWith f left = IM.mapWithKey (\k -> f $ func $ IM.lookup k left)
     where
         func a = case a of 
@@ -40,12 +40,12 @@ all transfer program = mergeWith transfer (blocks program)
 
 
 -- | 'solve' implements the worklist algorithm to compute the MFP solution as described by NNH, page 75
-solve :: (Flowable n, Lattice l) => (Block n -> l -> l) -> l -> l -> Direction -> n -> ValueMap l
-solve transfer extremalValue bottom direction p = solve' p initialValueMap worklist
+solve :: (Flowable n, Lattice l) => (Block n -> l -> l) -> l -> l -> Direction -> n -> ValueMap (ValueMap l)
+solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialValueMap worklist
     where                
         -- Step 1. Initialization
         worklist       = case direction of 
-                            Forward  -> trace (show (flow p)) $ flow p
+                            Forward  -> trace ("solve " ++ show (flow p)) $ flow p
                             Backward -> reverseFlow . flow $ p
                 
         extremalLabels = case direction of 
@@ -54,15 +54,20 @@ solve transfer extremalValue bottom direction p = solve' p initialValueMap workl
                 
         initialValueMap = IM.fromList $ map initialize $ labels p
             where
-                initialize l = if l `elem` extremalLabels then (l, extremalValue) else (l, bottom)
+                initialize l = if l `elem` extremalLabels 
+                                  then (l, extremalValue) 
+                                  else (l, bottom)
                 
         -- Step 2. Fix point iteration
-        solve' p valueMap []                            = all transfer p valueMap -- Step 3. From context to effect values
-        solve' p valueMap w@((start, end):worklistTail) = if not (effect <: previous) then solve' p newValueMap newWorklist else solve' p valueMap worklistTail
-            where
-                context  = lookup start valueMap
-                previous = lookup end valueMap                             
-                effect = transfer (lookup start $ blocks p) context
-                 
-                newWorklist = worklistTail ++ [(l', l'') | (l', l'') <- worklist, l' == end] 
-                newValueMap = IM.adjust (join effect) end valueMap
+        solve' n it p valueMap []                          = IM.insert n (all transfer p valueMap) it -- Step 3. From context to effect values
+        solve' n it p valueMap w@((start, end):worklistTail) = trace ("solving worklist" ++ show w) $ 
+          let context  = lookup start valueMap
+              previous = lookup end valueMap                             
+              effect = transfer (lookup start $ blocks p) context
+              
+              newWorklist = worklistTail ++ [(l', l'') | (l', l'') <- worklist, l' == end] 
+              newValueMap = IM.adjust (join effect) end valueMap
+          in if (effect <: previous)
+             then solve' (n+1) (IM.insert n valueMap it) p valueMap worklistTail
+             else solve' (n+1) (IM.insert n newValueMap it) p newValueMap newWorklist                                  
+                

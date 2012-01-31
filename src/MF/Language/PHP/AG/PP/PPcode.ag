@@ -122,6 +122,6 @@ render :: Doc -> String
 render = render_ 1000 
 
 instance Printable Node where
-    pp = pp_Syn_Node . execute M.empty
+    pp = pp_Syn_Node . execute M.empty undefined
 
 }      

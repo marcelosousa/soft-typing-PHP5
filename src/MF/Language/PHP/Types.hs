@@ -10,8 +10,8 @@ import MF.Core.Solver
 import MF.Core.Context
 import MF.Core.Lattice
 
-trace = T.trace
---trace _ = id
+--trace = T.trace
+trace _ = id
 
 -------------------------------------------------------------------------------
 -- TypeSet 

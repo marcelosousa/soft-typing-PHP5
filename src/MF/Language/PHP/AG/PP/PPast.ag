@@ -87,8 +87,8 @@ sem Node
 
 visualize p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeList ++ ", p: " ++ show p) $ graphviz' (mkGraph nodeList edgeList :: Gr String ())
     where
-        nodeList = nodeList_Syn_Node . execute M.empty $ p
-        edgeList = edgeList_Syn_Node . execute M.empty $ p
+        nodeList = nodeList_Syn_Node . execute M.empty undefined $ p
+        edgeList = edgeList_Syn_Node . execute M.empty undefined $ p
         
         
 graphviz' g = let n = labNodes g

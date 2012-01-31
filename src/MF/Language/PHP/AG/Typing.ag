@@ -96,13 +96,16 @@ sem Node
 -------------------------------------------------------------------------------
 {
 
-solve :: Node -> ValueMap (Stack :-> Mapping)
+solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping))
 solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
     where        
         transfer :: Block Node -> Mapping -> Mapping
         transfer (Normal Skip)          = id
         transfer (Normal (Expect _ _))  = id
-        transfer (Normal (Expr e))      = updateMapping e
+        transfer (Normal (Deci _))      = id
+        transfer (Normal (Variable _))  = id
+        transfer (Normal s@(Assign rv e)) = updateMapping s
+        transfer (Normal (Expr e))      = id
         transfer (Normal (If c _ _ _ )) = updateMapping c
         transfer (Normal (While c _))   = updateMapping c
         transfer (Normal (Return e))    = updateMapping $ Return e
@@ -124,7 +127,7 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
                 returnValueToIdentifier node ReturnValue = Identifier $ toName node
         
         updateMapping :: Node -> Mapping -> Mapping
-        updateMapping node mapping = mapping_Syn_Node . execute mapping $ node
+        updateMapping node mapping = mapping_Syn_Node . execute mapping undefined $ node
                 
         removeParam :: Node -> Node   
         removeParam (Param expr) = expr 
@@ -136,22 +139,24 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
 -- Typing
 -------------------------------------------------------------------------------
      
-typer :: Component Node (ValueMap (Identifier :-> TypeSet))
+typer :: Component Node (ValueMap (ValueMap (Identifier :-> TypeSet)))
 typer = component $ return . typing
              
-typing :: Node -> ValueMap (Identifier :-> TypeSet)
+typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet))
 typing p = trace ("mappings: " ++ show mappings) $ mappings
     where
         solve = MF.Language.PHP.AG.solve
-        mappings = IM.map (M.fold join M.empty) (solve p)        
+        mappings = IM.map (IM.map (M.fold join M.empty)) (solve p)        
 
 -------------------------------------------------------------------------------
 -- Report Typing
 -------------------------------------------------------------------------------
 
-reporterty :: Component (ValueMap (Identifier :-> TypeSet)) Doc
-reporterty = component $ return . reporty     
+reporterty :: Component (ValueMap (ValueMap (Identifier :-> TypeSet))) Doc
+reporterty = component $ return . reporty'     
              
+reporty' ::ValueMap (ValueMap (Identifier :-> TypeSet)) -> Doc
+reporty' m = IM.fold (\it r -> reporty it >-< r) P.empty m
 
 reporty ::ValueMap (Identifier :-> TypeSet) -> Doc
 reporty vm = IM.foldWithKey foldvm P.empty vm

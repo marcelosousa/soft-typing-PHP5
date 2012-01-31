@@ -29,7 +29,7 @@ buildExpect params = Expect expr (read $ "fromList" ++ value)
 annotator :: Component Node Node
 annotator = component $ return . annotate
 
-annotate = annotated_Syn_Node . execute M.empty
+annotate = annotated_Syn_Node . execute M.empty undefined
 
 }
 
@@ -155,10 +155,10 @@ exstractParameters node mapping = exstract build update node filtered
         
         
 
-simplify node = let a = simplified_Syn_Node . execute M.empty $ node
-                    b = removed_Syn_Node . execute M.empty $ a
-                    c = fixPoint (exstractFunctions_Syn_Node . execute M.empty) $ b
-                    d = exstractParameters_Syn_Node . execute M.empty $ c
+simplify node = let a = simplified_Syn_Node . execute M.empty undefined $ node
+                    b = removed_Syn_Node . execute M.empty undefined $ a
+                    c = fixPoint (exstractFunctions_Syn_Node . execute M.empty undefined) $ b
+                    d = exstractParameters_Syn_Node . execute M.empty undefined $ c
                 in d
 
 

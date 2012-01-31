@@ -11,7 +11,7 @@ include "AG/PP/PPcfg.ag"
 
 
 {
-execute mapping p = wrap_Node (sem_Node p) inh
+execute mapping res p = wrap_Node (sem_Node p) inh
     where
         inh = Inh_Node 
               { 
@@ -20,6 +20,7 @@ execute mapping p = wrap_Node (sem_Node p) inh
                   mapping_Inh_Node = mapping,
                   declarations'_Inh_Node = undefined,
                   declaration_Inh_Node = undefined,
-                  struct_Inh_Node = undefined
+                  struct_Inh_Node = undefined,
+                  res_Inh_Node = res
               }
 }

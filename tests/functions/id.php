@@ -8,8 +8,5 @@ function id ($x)
 $a = 1;
 $b = id ($a);
 
-check ($a, "[TyInt]");
-check ($b, "[TyInt]");
-
 
 ?>

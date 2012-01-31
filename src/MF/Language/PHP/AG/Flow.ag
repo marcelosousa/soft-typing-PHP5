@@ -172,7 +172,7 @@ attr Node
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Expr While If Return
+    | Skip Expect Assign Variable Deci While If Return
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
         +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)
@@ -189,10 +189,10 @@ nextUnique u = (u+1, u)
 
 -- Make Node an instance of Flowable, in this way it can be consumed by a monotone framework
 instance Flowable Node where
-    init     = fromJust . init_Syn_Node . execute M.empty
-    final    = fromJust . final_Syn_Node . execute M.empty
-    flow     = flow_Syn_Node . execute M.empty
-    blocks   = blocks_Syn_Node . execute M.empty
+    init     = fromJust . init_Syn_Node . execute M.empty undefined
+    final    = fromJust . final_Syn_Node . execute M.empty undefined
+    flow     = flow_Syn_Node . execute M.empty undefined
+    blocks   = blocks_Syn_Node . execute M.empty undefined
 
 debugflow n = "Doc: " ++ (show n) ++ 
               "\nInit: " ++ (show . F.init $ n) ++ 
@@ -200,5 +200,5 @@ debugflow n = "Doc: " ++ (show n) ++
               "\nBlocks: " ++ (show . F.blocks $ n) ++
               "\nFlow: " ++ (show . F.flow $ n) ++ 
               "\nLabels: " ++ (show . F.labels $ n) ++
-              "\nNodes: " ++ (show . nodes_Syn_Node . execute M.empty $ n)
+              "\nNodes: " ++ (show . nodes_Syn_Node . execute M.empty undefined $ n)
 }

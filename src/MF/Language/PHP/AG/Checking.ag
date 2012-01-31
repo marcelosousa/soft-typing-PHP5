@@ -103,10 +103,10 @@ check p = trace ("mappings: " ++ show mappings) $ concat . L.map S.toList . IM.e
         solve = MF.Language.PHP.AG.solve
 
         -- Maybe it makes more sense to check each context individually, instead of folding
-        mappings = IM.map (M.fold join M.empty) (solve p)
+        mappings = IM.map (M.fold join M.empty) undefined -- (solve p)
         nodes' = IM.map toNode (blocks p)
         
-        findWarnings node mapping = trace ("finding warnings for " ++ show node ++ " with " ++ show mapping) $ warnings_Syn_Node . execute mapping $ node
+        findWarnings node mapping = trace ("finding warnings for " ++ show node ++ " with " ++ show mapping) $ warnings_Syn_Node . execute mapping undefined $ node
 
 -------------------------------------------------------------------------------
 -- Reporting
