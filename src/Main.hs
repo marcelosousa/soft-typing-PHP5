@@ -32,7 +32,8 @@ generate n dir out = let dotfile = dir </> "dot" </> (addExtension (show n) ".do
                          pngfile = "img" </> (addExtension (show n) ".png")
                          pngfilefull = dir </> pngfile
                          cmdline = "cat " ++ dotfile ++ " | dot -Tpng > " ++ pngfilefull
-                     in do createDirectoryIfMissing True (dir </> "img")
+                     in do createDirectoryIfMissing True dir
+                           createDirectoryIfMissing True (dir </> "img")
                            createDirectoryIfMissing True (dir </> "dot")
                            writeFile dotfile out
                            system cmdline
@@ -92,10 +93,10 @@ instance Default Options where
 -- Run Pipelines
 runOption :: FilePath -> Options -> String -> IO ()
 runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> cfgprinter >>> renderIt)
-runOption _ Debug     inp = ioWrap' inp (parser >>> reader >>> debugger)
+runOption _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
 --runOption DebugSimplifier     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> printer)
 runOption _ Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
-runOption _ Print     inp = ioWrap' inp (parser >>> reader >>> printer)
+--runOption _ Print     inp = ioWrap' inp (parser >>> reader >>> printer)
 runOption _ Type      inp = ioWrap' inp (parser >>> reader >>> typer >>> reporterty >>> render)
 runOption _ ASTGraph  inp = ioWrap' inp (parser >>> reader >>> visualizer)
 --runOption ASTGraph  inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> visualizer)
@@ -127,7 +128,6 @@ runAnalysis options = do let filename = input options
                              outputdir = (dropExtension filename)++"output"                             
                          str <- readFile filename                         
                          str' <- readProcess "sglri" ["-p", "src/grammar/PHP5.tbl"] str
-                         createDirectoryIfMissing True outputdir
                          runOption outputdir (typeoutput options) str'                      
                          
 usage :: String

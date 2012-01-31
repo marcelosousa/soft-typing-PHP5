@@ -59,8 +59,10 @@ sem Node
         lhs.init = @loc.init
     | SimplifiedFunctionCall
         lhs.init = Just @lb
-    | If While Skip Expect Return
+    | While Skip Expect Return
         lhs.init = Just @label
+    | If 
+        lhs.init = @c.init
     | Expr
         lhs.init = @e.init
     | Assign
@@ -122,7 +124,7 @@ sem Node
         lhs.flow = @loc.flow ++ @s.flow ++ @f.flow
         loc.flow = if isNothing @s.init || isNothing @f.final then [] else [(l, fromJust @s.init) | l <- fromJust @f.final]
     | If 
-        +flow = (++) $ [(@label, fromJust @l.init), (@label, fromJust @r.init)]
+        +flow = (++) $ [(label, fromJust @l.init) | label <- fromJust @c.final] ++ [(label, fromJust @r.init) | label <- fromJust @c.final]
     | While 
         +flow = (++) $ [(@label, fromJust @s.init)] ++ [(l', @label) | l' <- fromJust @s.final]
     | Return

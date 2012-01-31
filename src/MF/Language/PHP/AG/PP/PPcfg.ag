@@ -8,6 +8,8 @@ import Data.Set as S
 
 -------------------------------------------------------------------------------
 -- Pretty Printer for control flow graph
+-- Since the Node is a flat structure it's not easy to generate a 
+-- dot file with the DOT package.
 -------------------------------------------------------------------------------
 
 attr Node
@@ -39,8 +41,12 @@ sem Node
 
     -- Variables
     | Variable 
-        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< text "$" >|< @n.ppcfg >|< text "(" >|< text (show @label) >|< text ")"
+        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< 
+                    text "$" >|< @n.ppcfg >|< 
+                    text " (" >|< text (show @label) >|< text ") " >|<
+                    ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
+        loc.lattice = fromJust $ IM.lookup @label @lhs.res
             
     | Expr
         lhs.ppcfg = text ("struct" ++ show @label) >|< text " [label=\"" >|<
@@ -54,20 +60,23 @@ sem Node
         lhs.ppcfg = @rv.ppcfg >|< 
                     text " | <" >|< text (show @label) >|< text "> = " >|< 
                     text " (" >|< text (show @label) >|< text ") " >|< 
-                    ppMapping @loc.mappingz >|< text " | " >|< 
+                    ppMapping @loc.lattice >|< text " | " >|< 
                     @e.ppcfg
         lhs.flowpp = above [text (buildLabelRef @loc.lstr l) >|< text "-> " >|< text (buildLabelRef @loc.lstr l') >|< text ";" | (l,l') <- @loc.flow]
         rv.struct = @lhs.struct
         e.struct = @lhs.struct        
         loc.lstr = @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
-        loc.mappingz = fromJust $ IM.lookup @label @lhs.res
+        loc.lattice = fromJust $ IM.lookup @label @lhs.res
         +labstruct = IM.union @loc.lstr
         
     -- Arithmetic
     | Deci
-        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< text (show @value) >|< text "(" >|< text (show @label) >|< text ")"
+        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< 
+                    text (show @value) >|< 
+                    text " (" >|< text (show @label) >|< text ") " >|<
+                    ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
-
+        loc.lattice = fromJust $ IM.lookup @label @lhs.res
 
 {
 ppMapping :: Mapping -> Doc

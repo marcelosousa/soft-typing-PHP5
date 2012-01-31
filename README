@@ -100,9 +100,13 @@ The following files and directories might be of special interest:
 (*) : Currently these analyses additional analyses don't compile due to recent changes in the Flowable class
 
 
+Done
+~~~~
+1. Comments in the sense that they are removed by sglri (nothing to do about this)
+2. Simple assignments (test/simple.php) 
+
 Supported PHP5 features
 -----------------------
-
 1. Supports HTML Embedding (tests/syntax/htmlembedding.php)
 2. While-construct (tests/controlstruct/while.php)
 3. Function calls
@@ -132,7 +136,6 @@ General
 Syntax
 ~~~~~~
 3. TemplateDocument (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
-4. Comments in the sense that they are removed by sglri
 16. InlineHTML not implemented (tests/syntax/advancedescaping.php)
 17. Error in ATerm: DQContent takes 1 arguments, but 3 were given. (tests/syntax/phptagsimple.php)
 18. ASPOpenTag not implemented (still runs because it's ignored) (tests/syntax/phptagasp.php)
