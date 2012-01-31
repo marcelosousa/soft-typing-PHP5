@@ -81,10 +81,11 @@ debugger = component $ return . debugflow
 visualizer :: Component Node String
 visualizer = component $ return . visualize
 
---main = ioWrap' (parser >>> reader >>> (debugger <+> printer))
+debugApp :: Component (IM.IntMap String) String
+debugApp = component $ return . IM.fold (++) ""
 
 -- Options 
-data Options = Visualize | Debug | Print | Check | Type | ASTGraph | Parser
+data Options = Visualize | Debug | Print | Check | Type | ASTGraph | Parser | DebugVis
   deriving (Show, Data, Typeable)
 
 instance Default Options where
@@ -93,6 +94,7 @@ instance Default Options where
 -- Run Pipelines
 runOption :: FilePath -> Options -> String -> IO ()
 runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> cfgprinter >>> renderIt)
+runOption _ DebugVis   inp = ioWrap' inp (parser >>> reader >>> cfgprinter >>> renderIt >>> debugApp)
 runOption _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
 --runOption DebugSimplifier     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> printer)
 runOption _ Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)

@@ -45,7 +45,7 @@ solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialVal
     where                
         -- Step 1. Initialization
         worklist       = case direction of 
-                            Forward  -> trace ("solve " ++ show (flow p)) $ flow p
+                            Forward  -> flow p -- trace ("solve " ++ show (flow p)) $ flow p
                             Backward -> reverseFlow . flow $ p
                 
         extremalLabels = case direction of 
@@ -60,7 +60,7 @@ solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialVal
                 
         -- Step 2. Fix point iteration
         solve' n it p valueMap []                          = IM.insert n (all transfer p valueMap) it -- Step 3. From context to effect values
-        solve' n it p valueMap w@((start, end):worklistTail) = trace ("solving worklist" ++ show w) $ 
+        solve' n it p valueMap w@((start, end):worklistTail) = --  ("solving worklist" ++ show w) $ 
           let context  = lookup start valueMap
               previous = lookup end valueMap                             
               effect = transfer (lookup start $ blocks p) context

@@ -20,7 +20,8 @@ execute mapping res p = wrap_Node (sem_Node p) inh
                   mapping_Inh_Node = mapping,
                   declarations'_Inh_Node = undefined,
                   declaration_Inh_Node = undefined,
-                  struct_Inh_Node = undefined,
-                  res_Inh_Node = res
+                  struct_Inh_Node = "",
+                  res_Inh_Node = res,
+                  constraints_Inh_Node = S.empty
               }
 }

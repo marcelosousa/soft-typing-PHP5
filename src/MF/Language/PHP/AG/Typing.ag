@@ -48,13 +48,18 @@ sem Node
 -------------------------------------------------------------------------------
 
 attr Node
-    syn constraints use {`S.union`} {S.empty} :: {Set Constraint} 
+    chn constraints :: {Set Constraint}  -- use {`S.union`} {S.empty} :: {Set Constraint} 
     
 sem Node 
     | Return Expr Assign
         loc.constraints = @e.constraints
     | If While
         loc.constraints = @c.constraints
+        -- loc.constraints = S.fromList [(@label :==: S.singleton TyBool) | label <- fromJust @c.final]
+--    | If
+--        lhs.constraints = @loc.constraints `S.union` @l.constraints -- rest
+--        l.constraints = @loc.constraints
+--        c.constraints = @loc.constraints
     | Assign
         lhs.constraints = S.fromList [(@rv.label :<=: @e.label), (@label :<=: @rv.label)] `S.union` @e.constraints -- `S.union` @rv.constraints
     | Deci 
@@ -89,8 +94,21 @@ sem Node
         lhs.mapping = updateMapping (Identifier $ name @rv.self) @e.label (levels @rv.self) @constraints @e.mapping
     | Return 
         lhs.mapping = updateMapping ReturnValue                  @e.label 0                 @constraints @e.mapping
+      
 
-                                               
+{
+--Blocks: fromList [(1,Normal (If (Variable (Simple "b")) (Expr (Assign (Variable (Simple "b")) (Variable (Simple "a")))) [] Skip)),
+--                  (2,Normal (Variable (Simple "b"))),
+--                  (5,Normal (Assign (Variable (Simple "b")) (Variable (Simple "a")))),
+--                  (6,Normal (Variable (Simple "b"))),
+--                  (8,Normal (Variable (Simple "a"))),
+--                  (10,Normal Skip)]
+--                                               
+}
+
+
+  
+
 -------------------------------------------------------------------------------
 -- Solver
 -------------------------------------------------------------------------------
@@ -103,10 +121,10 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
         transfer (Normal Skip)          = id
         transfer (Normal (Expect _ _))  = id
         transfer (Normal (Deci _))      = id
-        transfer (Normal (Variable _))  = id
-        transfer (Normal s@(Assign rv e)) = updateMapping s
-        transfer (Normal (Expr e))      = id
-        transfer (Normal (If c _ _ _ )) = updateMapping c
+        transfer (Normal s@(Variable _))  = id
+        transfer (Normal s@(Assign rv e)) = updateMapping s 
+--        transfer (Normal (Expr e))      = id  this should be irrelevant
+--        transfer (Normal (If c _ _ _ )) = updateMapping c
         transfer (Normal (While c _))   = updateMapping c
         transfer (Normal (Return e))    = updateMapping $ Return e
         transfer (Call lc lr (SimplifiedFunctionCall name params result)) = M.mapKeys identifierToParameter . M.filterWithKey (flip $ const isParameter)
@@ -127,7 +145,7 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
                 returnValueToIdentifier node ReturnValue = Identifier $ toName node
         
         updateMapping :: Node -> Mapping -> Mapping
-        updateMapping node mapping = mapping_Syn_Node . execute mapping undefined $ node
+        updateMapping node mapping = mapping_Syn_Node . execute mapping IM.empty $ node
                 
         removeParam :: Node -> Node   
         removeParam (Param expr) = expr 

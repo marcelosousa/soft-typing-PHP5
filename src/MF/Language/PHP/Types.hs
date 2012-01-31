@@ -119,8 +119,9 @@ data Identifier = Identifier String
 
 type Mapping = Identifier :-> TypeSet
     
+-- hard to understand what this is actually doing
 updateMapping :: Identifier -> Label -> Int -> Set Constraint -> Mapping -> Mapping
-updateMapping identifier label depth constraints mapping = trace ("Processing " ++ (show identifier) ++ "(" ++ show label ++ ") with" ++ show constraints ++ " resulting in: " ++ show effect) $ 
+updateMapping identifier label depth constraints mapping = trace ("Processing " ++ (show identifier) ++ "(" ++ show label ++ ") with " ++ show constraints ++ " resulting in: " ++ show effect) $ 
   M.insert identifier effect mapping
     where        
         -- We add to what we already know

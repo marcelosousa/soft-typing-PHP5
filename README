@@ -105,6 +105,8 @@ Done
 1. Comments in the sense that they are removed by sglri (nothing to do about this)
 2. Simple assignments (test/simple.php) 
 
+3*. If-constructs don't work if they don't have else clauses (tests/controlstruct/if.php)
+
 Supported PHP5 features
 -----------------------
 1. Supports HTML Embedding (tests/syntax/htmlembedding.php)
@@ -177,7 +179,6 @@ Variables
 Control Structures
 ~~~~~~~~~~~~~~~~~~
 28. Foreach not implemented (tests/foreach.php)
-1. If-constructs don't work if they don't have else clauses (tests/controlstruct/if.php)
 35. Ternary conditional operator not implemented (tests/ternaryconditionalop.php)
 36. Short-circuiting 
 38. Else-if (tests/controlstruct/elseif.php)

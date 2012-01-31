@@ -15,7 +15,7 @@ import Data.Set as S
 attr Node
     syn ppcfg use {>|<} {P.empty} :: {Doc}
     syn labstruct use {`IM.union`} {IM.empty} :: {IntMap String}
-    syn flowpp use {>|<} {P.empty} :: {Doc}
+
     inh struct :: String
     inh res :: {ValueMap (Identifier :-> TypeSet)}
         
@@ -30,55 +30,75 @@ sem Node
                     text "}"
         loc.flowp = text "init -> " >|< text (buildLabelRef @stmt.labstruct (fromJust @init)) >|< text ";" >-<
                     above [text (buildLabelRef @stmt.labstruct f) >|< text "-> final;" | f <- fromJust @final] >-<
-                    @stmt.flowpp
+                    ppConns @stmt.flow @stmt.labstruct
 
     -- Sequence (lists in the grammar are converted to a sequence by Base.ag) 
     | Sequence 
         lhs.ppcfg = @f.ppcfg >-< @s.ppcfg
-        +flowpp = (>-<) $ above [text (buildLabelRef @loc.lstr l) >|< text "-> " >|< text (buildLabelRef @loc.lstr l') >|< text ";" | (l,l') <- @loc.flow]  
-        loc.lstr = @f.labstruct `IM.union` @s.labstruct 
-        lhs.labstruct = @loc.lstr
 
     -- Variables
     | Variable 
-        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< 
+        lhs.ppcfg = dotPort @label >|< 
                     text "$" >|< @n.ppcfg >|< 
-                    text " (" >|< text (show @label) >|< text ") " >|<
+                    dotAnnotate @label >|<
                     ppMapping @loc.lattice
-        +labstruct = IM.union $ IM.singleton @label @lhs.struct
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
         loc.lattice = fromJust $ IM.lookup @label @lhs.res
             
     | Expr
-        lhs.ppcfg = text ("struct" ++ show @label) >|< text " [label=\"" >|<
-                    @e.ppcfg >|< text "\"];"
+        lhs.ppcfg = text ("struct" ++ show @label) >|< dotLabel @e.ppcfg
         e.struct = "struct" ++ show @label
-                    
+
+    | If
+        lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
+                    text "style=filled;" >-<
+                    text "color=lightgrey;" >-<
+                    text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @l.ppcfg >|< @r.ppcfg >-< 
+                    text "label = \"if #" >|< text (show @label) >|< text "\"; }"
+        c.struct = "cond" ++ show @label
+
     | Simple
         lhs.ppcfg = text @value
         
     | Assign
         lhs.ppcfg = @rv.ppcfg >|< 
-                    text " | <" >|< text (show @label) >|< text "> = " >|< 
-                    text " (" >|< text (show @label) >|< text ") " >|< 
+                    text " | " >|< dotPort @label >|< text "= " >|< 
+                    dotAnnotate @label >|<
                     ppMapping @loc.lattice >|< text " | " >|< 
                     @e.ppcfg
-        lhs.flowpp = above [text (buildLabelRef @loc.lstr l) >|< text "-> " >|< text (buildLabelRef @loc.lstr l') >|< text ";" | (l,l') <- @loc.flow]
-        rv.struct = @lhs.struct
-        e.struct = @lhs.struct        
-        loc.lstr = @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
         loc.lattice = fromJust $ IM.lookup @label @lhs.res
-        +labstruct = IM.union @loc.lstr
-        
+        +labstruct = IM.union $ @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
+            
     -- Arithmetic
     | Deci
-        lhs.ppcfg = text "<" >|< text (show @label) >|< text "> " >|< 
+        lhs.ppcfg = dotPort @label >|< 
                     text (show @value) >|< 
-                    text " (" >|< text (show @label) >|< text ") " >|<
+                    dotAnnotate @label >|<
                     ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
         loc.lattice = fromJust $ IM.lookup @label @lhs.res
+    
+    | Skip
+        lhs.ppcfg = text @loc.labtag >|< dotLabel (dotPort @label >|< text "Skip" >|< dotAnnotate @label)
+        +labstruct = IM.union $ IM.singleton @label @loc.labtag
+        loc.labtag = "skip" ++ show @label
 
 {
+dotAnnotate :: Show a => a -> Doc
+dotAnnotate a = text " (" >|< text (show a) >|< text ") "
+
+dotLabel :: Doc -> Doc
+dotLabel d = text " [label=\"" >|< d >|< text "\"];"
+
+dotPort :: Show a => a -> Doc
+dotPort a = text "<" >|< text (show a) >|< text "> " 
+
+ppConns :: Flow -> IntMap String -> Doc
+ppConns flow structags = above $ L.map (\f -> ppConn f structags) flow
+
+ppConn :: (Label, Label) -> IntMap String -> Doc
+ppConn (l,l') labeltags = text (buildLabelRef labeltags l) >|< text "-> " >|< text (buildLabelRef labeltags l') >|< text ";"
+
 ppMapping :: Mapping -> Doc
 ppMapping m = foldr (\d r -> if P.isEmpty r then d else d >|< comma >|< r) P.empty (L.map ppMappingElem (M.toList m))
     where ppMappingElem (id, tys) = text "\\n ( " >|< ppIdentifier id >|< text "\\=\\>" >|< ppTypeSet tys >|< text ")" 
@@ -95,12 +115,14 @@ ppTypeSet tys = text "\\{ " >|< foldr (\d r -> if P.isEmpty r then d else d >|< 
 buildLabelRef :: IntMap String -> Label -> String
 buildLabelRef imap l = case IM.lookup l imap of
                             Just s -> s ++ ":" ++ (show l)
-                            Nothing -> error $ show imap ++ show l
+                            Nothing -> "" -- error $ show imap ++ show l
 
 cfgprinter :: Component Node (IM.IntMap Doc)
 cfgprinter = component $ return . cfgprint
              
 cfgprint n = IM.map (\it -> ppcfg_Syn_Node $ execute M.empty it n) (typing n)
+
+
 --ppcfg_Syn_Node $ execute M.empty (last $ IM.elems $ typing n) n
 
 }      

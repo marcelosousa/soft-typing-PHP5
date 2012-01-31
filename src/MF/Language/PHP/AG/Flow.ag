@@ -45,7 +45,6 @@ sem ParamList
         loc.label :: uniqueref labels
         lhs.label = @loc.label
 
-
 -------------------------------------------------------------------------------
 -- Init
 -------------------------------------------------------------------------------
@@ -121,8 +120,7 @@ attr Node
 
 sem Node
     | Sequence 
-        lhs.flow = @loc.flow ++ @s.flow ++ @f.flow
-        loc.flow = if isNothing @s.init || isNothing @f.final then [] else [(l, fromJust @s.init) | l <- fromJust @f.final]
+        +flow = (++) $ if isNothing @s.init || isNothing @f.final then [] else [(l, fromJust @s.init) | l <- fromJust @f.final]
     | If 
         +flow = (++) $ [(label, fromJust @l.init) | label <- fromJust @c.final] ++ [(label, fromJust @r.init) | label <- fromJust @c.final]
     | While 
@@ -135,8 +133,7 @@ sem Node
         +flow = let (Declaration name ln lx) = lookupDeclaration @name @lhs.declarations'
                 in (++) [(@lb, @la), (@lb, @lc), (@lr, @la), (@lc, ln), (lx, @lr)]
     | Assign
-        lhs.flow = @loc.flow
-        loc.flow = [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
+        lhs.flow = [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
 
 {
 lookupDeclaration name declarations = case M.lookup name declarations of 
@@ -174,7 +171,7 @@ attr Node
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Assign Variable Deci While If Return
+    | Skip Expect Assign Variable Deci While Return
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
         +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)
