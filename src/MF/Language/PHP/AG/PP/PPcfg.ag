@@ -100,10 +100,16 @@ sem Node
 
     | If
         lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
-                    text "style=filled;" >-<
                     text "color=lightgrey;" >-<
                     text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @l.ppcfg >|< @r.ppcfg >-< 
                     text "label = \"if #" >|< text (show @label) >|< text "\"; }"
+        c.struct = "cond" ++ show @label
+
+    | While
+        lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
+                    text "color=lightgrey;" >-<
+                    text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @s.ppcfg >-< 
+                    text "label = \"while #" >|< text (show @label) >|< text "\"; }"
         c.struct = "cond" ++ show @label
 
     | Simple

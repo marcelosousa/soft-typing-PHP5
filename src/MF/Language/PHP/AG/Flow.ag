@@ -58,9 +58,9 @@ sem Node
         lhs.init = @loc.init
     | SimplifiedFunctionCall
         lhs.init = Just @lb
-    | While Skip Expect Return
+    | Skip Expect Return
         lhs.init = Just @label
-    | If 
+    | If While
         lhs.init = @c.init
     | Expr
         lhs.init = @e.init
@@ -91,15 +91,17 @@ sem Node
         lhs.final = @loc.final
     | SimplifiedFunctionCall
         lhs.final = Just [@la]
-    | While Skip Expect Return Assign Variable 
+    | Skip Expect Return Assign Variable 
         lhs.final = Just [@label]
+    | While
+        lhs.final = @c.final
     | Expr 
         lhs.final = @e.final
     | Deci LTrue LFalse String
         lhs.final = Just [@label]
     | Sequence 
         lhs.final = @s.final <|> @f.final
-    | If 
+    | If
         lhs.final = pure (++) <*> @l.final <*> @r.final
     | Block 
         lhs.final = @s.final
@@ -125,7 +127,7 @@ sem Node
     | If 
         +flow = (++) $ [(label, myfromJust @l.init) | label <- myfromJust @c.final] ++ [(label, myfromJust @r.init) | label <- myfromJust @c.final]
     | While 
-        +flow = (++) $ [(@label, fromJust @s.init)] ++ [(l', @label) | l' <- fromJust @s.final]
+        +flow = (++) $ [(l, fromJust @s.init) | l <- fromJust @c.final ] ++ [(l', fromJust @c.init) | l' <- fromJust @s.final]
     | Return
         +flow = (++) $ [(@label, lx @lhs.declaration)]
     | FunctionDecl
@@ -172,7 +174,7 @@ attr Node
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Assign Variable Deci While Return LTrue LFalse String
+    | Skip Expect Assign Variable Deci Return LTrue LFalse String
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
         +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)
