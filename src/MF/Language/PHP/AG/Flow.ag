@@ -74,8 +74,7 @@ sem Node
         lhs.init = Nothing
     | Variable
         lhs.init = Just @label
-    
-    | Deci
+    | Deci LTrue LFalse String
         lhs.init = Just @label
         
         
@@ -92,15 +91,11 @@ sem Node
         lhs.final = @loc.final
     | SimplifiedFunctionCall
         lhs.final = Just [@la]
-    | While Skip Expect Return 
+    | While Skip Expect Return Assign Variable 
         lhs.final = Just [@label]
     | Expr 
         lhs.final = @e.final
-    | Assign
-        lhs.final = Just [@label]
-    | Variable
-        lhs.final = Just [@label]
-    | Deci
+    | Deci LTrue LFalse String
         lhs.final = Just [@label]
     | Sequence 
         lhs.final = @s.final <|> @f.final
@@ -115,6 +110,12 @@ sem Node
 -- Flow
 -------------------------------------------------------------------------------
 
+{
+myfromJust :: Maybe a -> a
+myfromJust Nothing = error "myfromJust : Nothing"
+myfromJust (Just a) = a
+}
+
 attr Node
   syn flow use {++} {[]} :: {Flow}
 
@@ -122,7 +123,7 @@ sem Node
     | Sequence 
         +flow = (++) $ if isNothing @s.init || isNothing @f.final then [] else [(l, fromJust @s.init) | l <- fromJust @f.final]
     | If 
-        +flow = (++) $ [(label, fromJust @l.init) | label <- fromJust @c.final] ++ [(label, fromJust @r.init) | label <- fromJust @c.final]
+        +flow = (++) $ [(label, myfromJust @l.init) | label <- myfromJust @c.final] ++ [(label, myfromJust @r.init) | label <- myfromJust @c.final]
     | While 
         +flow = (++) $ [(@label, fromJust @s.init)] ++ [(l', @label) | l' <- fromJust @s.final]
     | Return
@@ -171,7 +172,7 @@ attr Node
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Assign Variable Deci While Return
+    | Skip Expect Assign Variable Deci While Return LTrue LFalse String
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
         +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)

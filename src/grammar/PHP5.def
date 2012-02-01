@@ -499,7 +499,7 @@ exports
     EscapeVariable         -> DoubleQuotedPartSpecial
     BracedVariable         -> DoubleQuotedPartSpecial
 
-%% Literals. Notice that a slash or the dollar should only be parsed seperatly if
+%% Literals. Notice that a slash or the dollar should only be parsed separately if
 %% they actually escape something. If they do not escape anything, the characters must
 %% appear in the literal.
   sorts SlashCharLit DollarCharLit CurlyBracketLit DoubleQuotedLit
@@ -518,10 +518,10 @@ exports
 
 
 %% A Literal Slash may not be followed by something that it can escape. This
-%% makes sure that the escapes are parsed to seperate strings. Otherwise the
+%% makes sure that the escapes are parsed to separate strings. Otherwise the
 %% escapes would just appear as part of the literal
   lexical restrictions
-    SlashCharLit -/- [\\\$\"rnt\']
+    SlashCharLit -/- [\\\$\"rt\']
     SlashCharLit -/- [x] . [0-9A-Fa-f]
     SlashCharLit -/- [x] . [0-9A-Fa-f] . [0-9A-Fa-f]
     SlashCharLit -/- [0-7]
@@ -542,7 +542,7 @@ exports
 %% Basic escapes
   sorts Escape
   syntax
-    "\\" [\\\$\"rnt\'] -> Escape {cons("Escape")}
+    "\\" [\\\$\"rt\'] -> Escape {cons("Escape")}
 
 %% Hexa escapes. A character encoded by it's hexadecimal value.
   sorts HexaCharacterOne HexaCharacterTwo HexaCharacter
@@ -572,7 +572,7 @@ exports
     OctaCharacterTwo   -/- [0-7]
 
 %% Variable escapes. Partly rebuild of VariableLiterals, but other cases are too general.
-%% Only one-dimensional array's and single object-acces are allowed in simple syntax
+%% Only one-dimensional array's and single object-access are allowed in simple syntax
 %% This is only for simple syntax
   sorts EscapeVariable TVariable String CompoundVariable EscapeSimpleVariable EmbeddedString
   syntax

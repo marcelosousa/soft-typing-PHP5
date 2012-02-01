@@ -102,10 +102,10 @@ The following files and directories might be of special interest:
 
 Done
 ~~~~
-1. Comments in the sense that they are removed by sglri (nothing to do about this)
+1. Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
 2. Simple assignments (test/simple.php) 
-
-3*. If-constructs don't work if they don't have else clauses (tests/controlstruct/if.php)
+3. If-constructs with no else clauses (tests/controlstruct/if.php)
+4. Ifelse constructs (tests/controlstruct/ifelse.php)
 
 Supported PHP5 features
 -----------------------
@@ -115,7 +115,6 @@ Supported PHP5 features
 4. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
 5. Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
 6. Creating/modifying with square bracket syntax
-7. Ifelse constructs (tests/controlstruct/ifelse.php)
 8. User-defined functions without parameters (tests/functions/simple.php)
 9. Recursive functions (I believe not all recursive functions are supported) (tests/functions/fac.php)
 10. Return statement (tests/functions/fac.php)

@@ -85,7 +85,7 @@ debugApp :: Component (IM.IntMap String) String
 debugApp = component $ return . IM.fold (++) ""
 
 -- Options 
-data Options = Visualize | Debug | Print | Check | Type | ASTGraph | Parser | DebugVis
+data Options = Visualize | Debug | Print | Check | Type | ASTGraph | Parser | DebugVis | DebugSimplifier
   deriving (Show, Data, Typeable)
 
 instance Default Options where
@@ -93,13 +93,14 @@ instance Default Options where
 
 -- Run Pipelines
 runOption :: FilePath -> Options -> String -> IO ()
-runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> cfgprinter >>> renderIt)
+runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt)
 runOption _ DebugVis   inp = ioWrap' inp (parser >>> reader >>> cfgprinter >>> renderIt >>> debugApp)
 runOption _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
+runOption _ DebugSimplifier inp = ioWrap' inp (parser >>> reader >>> simplifier >>> debugger)
 --runOption DebugSimplifier     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> printer)
 runOption _ Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
 --runOption _ Print     inp = ioWrap' inp (parser >>> reader >>> printer)
-runOption _ Type      inp = ioWrap' inp (parser >>> reader >>> typer >>> reporterty >>> render)
+runOption _ Type      inp = ioWrap' inp (parser >>> reader >>> simplifier >>> typer >>> reporterty >>> render)
 runOption _ ASTGraph  inp = ioWrap' inp (parser >>> reader >>> visualizer)
 --runOption ASTGraph  inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> visualizer)
 runOption _ Parser    inp = print inp

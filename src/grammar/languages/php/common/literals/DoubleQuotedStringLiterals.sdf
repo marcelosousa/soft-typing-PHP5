@@ -57,7 +57,7 @@ exports
 %% makes sure that the escapes are parsed to separate strings. Otherwise the
 %% escapes would just appear as part of the literal
   lexical restrictions
-    SlashCharLit -/- [\\\$\"rnt\']
+    SlashCharLit -/- [\\\$\"rt\']
     SlashCharLit -/- [x] . [0-9A-Fa-f]
     SlashCharLit -/- [x] . [0-9A-Fa-f] . [0-9A-Fa-f]
     SlashCharLit -/- [0-7]
@@ -78,7 +78,7 @@ exports
 %% Basic escapes
   sorts Escape
   syntax
-    "\\" [\\\$\"rnt\'] -> Escape {cons("Escape")}
+    "\\" [\\\$\"rt\'] -> Escape {cons("Escape")}
 
 %% Hexa escapes. A character encoded by it's hexadecimal value.
   sorts HexaCharacterOne HexaCharacterTwo HexaCharacter

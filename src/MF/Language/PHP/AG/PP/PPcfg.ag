@@ -68,8 +68,22 @@ sem Node
                     @e.ppcfg
         loc.lattice = fromJust $ IM.lookup @label @lhs.res
         +labstruct = IM.union $ @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
-            
+  
     -- Arithmetic
+    | LTrue
+      lhs.ppcfg = dotPort @label >|< 
+                  text "true" >|< 
+                  dotAnnotate @label    
+      +labstruct = IM.union $ IM.singleton @label @lhs.struct      
+    
+    | String
+        lhs.ppcfg = dotPort @label >|< 
+                    ppString @value >|< 
+                    dotAnnotate @label >|<
+                    ppMapping @loc.lattice
+        +labstruct = IM.union $ IM.singleton @label @lhs.struct
+        loc.lattice = fromJust $ IM.lookup @label @lhs.res
+        
     | Deci
         lhs.ppcfg = dotPort @label >|< 
                     text (show @value) >|< 
@@ -91,7 +105,13 @@ dotLabel :: Doc -> Doc
 dotLabel d = text " [label=\"" >|< d >|< text "\"];"
 
 dotPort :: Show a => a -> Doc
-dotPort a = text "<" >|< text (show a) >|< text "> " 
+dotPort a = angles $ text (show a) 
+
+sChar :: Doc
+sChar = text "\\\""
+
+ppString :: String -> Doc
+ppString s = enclose sChar sChar (text s)
 
 ppConns :: Flow -> IntMap String -> Doc
 ppConns flow structags = above $ L.map (\f -> ppConn f structags) flow

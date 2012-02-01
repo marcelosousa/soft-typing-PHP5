@@ -1,7 +1,7 @@
 <?php
 
-$name = "hello\n";
+$name = "hello\nworld\n";
 
-check ($name, "[TyString]");
+// check ($name, "[TyString]");
 
 ?>

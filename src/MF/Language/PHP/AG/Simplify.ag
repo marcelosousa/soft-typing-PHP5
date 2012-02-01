@@ -84,19 +84,19 @@ sem Node
 
 -- Function extraction
 attr Node OptionalString ParamList
-    syn exstractFunctions :: SELF
+    syn extractFunctions :: SELF
 
 sem Node
     | Expr
-        lhs.exstractFunctions = exstractFunctions (Expr @e.exstractFunctions) @e.callMapping
-    | Return
-        lhs.exstractFunctions = exstractFunctions (Return @e.exstractFunctions) @e.callMapping        
-    | While
-        lhs.exstractFunctions = exstractFunctions (While @c.exstractFunctions @s.exstractFunctions) @c.callMapping
-    | SimplifiedFunctionCall
-        lhs.exstractFunctions = exstractFunctions (SimplifiedFunctionCall @name @params.exstractFunctions @result) @params.callMapping
+        lhs.extractFunctions = extractFunctions (Expr @e.extractFunctions) @e.callMapping
+    | Return                     
+        lhs.extractFunctions = extractFunctions (Return @e.extractFunctions) @e.callMapping        
+    | While                      
+        lhs.extractFunctions = extractFunctions (While @c.extractFunctions @s.extractFunctions) @c.callMapping
+    | SimplifiedFunctionCall     
+        lhs.extractFunctions = extractFunctions (SimplifiedFunctionCall @name @params.extractFunctions @result) @params.callMapping
     | FunctionCall 
-        lhs.exstractFunctions = buildVariable @label
+        lhs.extractFunctions = buildVariable @label
     
                        
 -------------------------------------------------------------------------------
@@ -112,11 +112,11 @@ sem Node
         lhs.paramMapping = IM.singleton @label @e.self
 
 attr Node OptionalString ParamList
-    syn exstractParameters :: SELF
+    syn extractParameters :: SELF
 
 sem Node
     | SimplifiedFunctionCall
-        lhs.exstractParameters = exstractParameters @self @params.paramMapping
+        lhs.extractParameters = extractParameters @self @params.paramMapping
 
     
 
@@ -126,20 +126,20 @@ buildVariable label = Variable $ Simple $ "#" ++ show label
 
 -- | Generic function to outline a node based on a mapping
 -- outline :: (Label -> Node -> Node) -> Node -> IntMap Node -> Node
-exstract build update node mapping = sequence $ buildSequence ++ [update node mapping]
+extract build update node mapping = sequence $ buildSequence ++ [update node mapping]
     where
         buildSequence = IM.elems . IM.mapWithKey build $ mapping
         
 -- | Outlines function calls, every function call is moved in front of the expression and replaced by a variable. The function calls itself are placed just before the 
 -- | expression
-exstractFunctions = exstract build update
+extractFunctions = extract build update
     where
         build label (FunctionCall (FunctionName name) params) = SimplifiedFunctionCall name params $ Just (buildVariable label)
         update = const
         
             
 -- | Simplifies a function call        
-exstractParameters node mapping = exstract build update node filtered
+extractParameters node mapping = extract build update node filtered
     where
         build label expr = Expr $ Assign (buildVariable label) expr
         filtered = IM.filter (not . isVariable) mapping 
@@ -152,14 +152,12 @@ exstractParameters node mapping = exstract build update node filtered
         
         buildParam label expr | isVariable expr = Param expr
                               | otherwise       = Param $ buildVariable label
-        
-        
-
+              
 simplify node = let a = simplified_Syn_Node . execute M.empty undefined $ node
                     b = removed_Syn_Node . execute M.empty undefined $ a
-                    c = fixPoint (exstractFunctions_Syn_Node . execute M.empty undefined) $ b
-                    d = exstractParameters_Syn_Node . execute M.empty undefined $ c
-                in d
+                    c = fixPoint (extractFunctions_Syn_Node . execute M.empty undefined) $ b
+                    d = extractParameters_Syn_Node . execute M.empty undefined $ c
+                in a
 
 
 simplifier :: Component Node Node
