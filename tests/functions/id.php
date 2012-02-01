@@ -8,5 +8,4 @@ function id ($x)
 $a = 1;
 $b = id ($a);
 
-
 ?>

@@ -40,7 +40,7 @@ sem Node
     | Return
         lhs.pp = text "return " >|< @e.pp
     | SimplifiedFunctionCall
-        lhs.pp = case @result of 
+        lhs.pp = case @result.self of 
                     Just v  -> pp v >|< text " := " >|< text @name >|< text "(" >|< @params.pp >|< text ")"
                     Nothing -> text ":: " >|< text @name >|< text "(" >|< @params.pp >|< text ")"
         

@@ -4,6 +4,7 @@ import CCO.Printing as P hiding (render, join)
 import Data.IntMap as IM
 import Data.Map as M
 import Data.Set as S
+import qualified Debug.Trace as TR
 }
 
 -------------------------------------------------------------------------------
@@ -12,13 +13,17 @@ import Data.Set as S
 -- dot file with the DOT package.
 -------------------------------------------------------------------------------
 
-attr Node
+attr Node MaybeNode 
     syn ppcfg use {>|<} {P.empty} :: {Doc}
     syn labstruct use {`IM.union`} {IM.empty} :: {IntMap String}
 
     inh struct :: String
     inh res :: {ValueMap (Identifier :-> TypeSet)}
-        
+
+sem MaybeNode
+    | Just lhs.ppcfg = @just.ppcfg
+    | Nothing lhs.ppcfg = P.empty
+    
 sem Node
     | Document 
         lhs.ppcfg = text "digraph structs {" >-< 
@@ -36,6 +41,41 @@ sem Node
     | Sequence 
         lhs.ppcfg = @f.ppcfg >-< @s.ppcfg
 
+        --                    text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @l.ppcfg >|< @r.ppcfg >-<         
+        --FunctionDecl name :: String params :: ParamList stmt :: Node
+    | FunctionDecl -- missing the params
+        lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
+                    text "style=filled;" >-<
+                    text "color=lightblue;" >-<
+                    text (show @loc.ln) >|< text " [label=\"entry\", shape=circle]" >-<
+                    text (show @loc.lx) >|< text " [label=\"exit\", shape=circle, style=filled, fillcolor=gray]" >-<
+                    @stmt.ppcfg >-<
+                    text "label = \"function " >|< text @name >|< text "\"; }"
+        loc.sname = "fun"++show @label
+        lhs.labstruct = @stmt.labstruct
+        stmt.res  = @lhs.res
+
+    -- Introduced by the simplifier: result = name (params)
+    --    | SimplifiedFunctionCall name :: String params :: ParamList result :: {Maybe Node}
+    | SimplifiedFunctionCall
+        lhs.ppcfg = text ("subgraph cluster_"++(show @loc.lc)++" {") >-<
+                    text "color=green;" >-<
+                    text (show @loc.lc) >|< text " [label=\"call " >|< text @name >|< 
+                    ppMapping (@loc.lattice @loc.lc) >|<
+                    text " \", shape=circle]" >-<
+                    text (show @loc.la) >|< text " [label=\"$" >|< text (name (fromJust @result.self)) >|< text " after " >|<
+                    ppMapping (@loc.lattice @loc.la) >|< text "\"]" >-<
+                    text (show @loc.lr) >|< text " [label=\"return " >|< text @name >|< 
+                    ppMapping (@loc.lattice @loc.lc) >|< 
+                    text "\", shape=circle, style=filled, fillcolor=gray]" >-<
+                    text (show @loc.lb) >|< text " [label=\"$" >|< text (name (fromJust @result.self)) >|< text " before " >|< 
+                    ppMapping (@loc.lattice @loc.lb) >|< text "\"]" >-<
+                    text "label = \"call " >|< text @name >|< text "\"; }"
+--                    @params.ppcfg >-<
+        result.struct = @loc.sname
+        loc.sname = "res" ++ show @loc.lr
+        loc.lattice = \l -> fromMaybe M.empty $ IM.lookup l @lhs.res        
+
     -- Variables
     | Variable 
         lhs.ppcfg = dotPort @label >|< 
@@ -43,11 +83,20 @@ sem Node
                     dotAnnotate @label >|<
                     ppMapping @loc.lattice
         +labstruct  = IM.union $ IM.singleton @label @lhs.struct
-        loc.lattice = fromJust $ IM.lookup @label @lhs.res
+        loc.lattice = fromMaybe M.empty $ IM.lookup @label @lhs.res
             
     | Expr
-        lhs.ppcfg = text ("struct" ++ show @label) >|< dotLabel @e.ppcfg
-        e.struct = "struct" ++ show @label
+        lhs.ppcfg = text @loc.sname >|< dotLabel @e.ppcfg
+        e.struct = @loc.sname
+        loc.sname = "expr" ++ show @label
+
+    | Return
+        lhs.ppcfg = text @loc.sname >|< 
+                    dotLabel (dotPort @label >|< text "return" >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @e.ppcfg)
+        e.struct = @loc.sname
+        loc.sname = "expr" ++ show @label
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct = IM.union $ @e.labstruct `IM.union` (IM.singleton @label @loc.sname)
 
     | If
         lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
@@ -66,7 +115,7 @@ sem Node
                     dotAnnotate @label >|<
                     ppMapping @loc.lattice >|< text " | " >|< 
                     @e.ppcfg
-        loc.lattice = fromJust $ IM.lookup @label @lhs.res
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
         +labstruct = IM.union $ @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
   
     -- Arithmetic
@@ -82,7 +131,7 @@ sem Node
                     dotAnnotate @label >|<
                     ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
-        loc.lattice = fromJust $ IM.lookup @label @lhs.res
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
         
     | Deci
         lhs.ppcfg = dotPort @label >|< 
@@ -90,7 +139,7 @@ sem Node
                     dotAnnotate @label >|<
                     ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
-        loc.lattice = fromJust $ IM.lookup @label @lhs.res
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
     
     | Skip
         lhs.ppcfg = text @loc.labtag >|< dotLabel (dotPort @label >|< text "Skip" >|< dotAnnotate @label)
@@ -135,7 +184,7 @@ ppTypeSet tys = text "\\{ " >|< foldr (\d r -> if P.isEmpty r then d else d >|< 
 buildLabelRef :: IntMap String -> Label -> String
 buildLabelRef imap l = case IM.lookup l imap of
                             Just s -> s ++ ":" ++ (show l)
-                            Nothing -> "" -- error $ show imap ++ show l
+                            Nothing -> show l -- error $ show imap ++ show l
 
 cfgprinter :: Component Node (IM.IntMap Doc)
 cfgprinter = component $ return . cfgprint

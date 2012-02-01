@@ -20,7 +20,8 @@ deriving OptionalString: Eq
 deriving OptionalString: Ord
 
 type ParamList = [Node]
-
+type MaybeNode = maybe Node
+    
 data Node
     -- Document
     | Document 
@@ -77,7 +78,7 @@ data Node
     | String value :: String                    -- The Simplify AG turns every quoted character sequences into a String node 
     
     -- Introduced by the simplifier: result = name (params)
-    | SimplifiedFunctionCall name :: String params :: ParamList result :: {Maybe Node}
+    | SimplifiedFunctionCall name :: String params :: ParamList result :: MaybeNode
     
     -- ReferenceVariable
     | Variable n :: Node

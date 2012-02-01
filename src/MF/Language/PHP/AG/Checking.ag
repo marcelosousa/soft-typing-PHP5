@@ -5,6 +5,35 @@ import MF.Core.Solver (mergeWith)
 }
 
 -------------------------------------------------------------------------------
+-- Convert the "special" check functions to Expect nodes
+-------------------------------------------------------------------------------
+    
+attr Node ParamList OptionalString MaybeNode
+    syn annotated :: SELF
+    
+sem Node
+    | FunctionCall
+        lhs.annotated = case @name.self of
+                            (FunctionName "check")   -> buildExpect @params.self
+                            otherwise                -> @self
+                           
+{
+
+buildExpect params = Expect expr (read $ "fromList" ++ value)
+    where
+        (Param expr)                     = params !! 0
+        (Param (DQContent (Some value))) = params !! 1
+        
+
+annotator :: Component Node Node
+annotator = component $ return . annotate
+
+annotate = annotated_Syn_Node . execute M.empty undefined
+
+}
+
+
+-------------------------------------------------------------------------------
 -- Expected constraints
 -------------------------------------------------------------------------------
 

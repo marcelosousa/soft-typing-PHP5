@@ -106,14 +106,15 @@ Done
 2. Simple assignments (test/simple.php) 
 3. If-constructs with no else clauses (tests/controlstruct/if.php)
 4. Ifelse constructs (tests/controlstruct/ifelse.php)
+5. Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
+6. Strings with escapes characters (tests/basicdatatypes/scalar/string/doublequoted.php)
+7. Simple interprocedural analysis (tests/functions/id.php)
 
 Supported PHP5 features
 -----------------------
 1. Supports HTML Embedding (tests/syntax/htmlembedding.php)
 2. While-construct (tests/controlstruct/while.php)
-3. Function calls
 4. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
-5. Double quoted strings (basicdatatypes/scalar/string/doublequoted.php)
 6. Creating/modifying with square bracket syntax
 8. User-defined functions without parameters (tests/functions/simple.php)
 9. Recursive functions (I believe not all recursive functions are supported) (tests/functions/fac.php)
@@ -204,11 +205,6 @@ Functions
 
 TODO
 ----
-1. Extend test suite (missing test cases for classes and objects)
-1.1 It would be nice to have a golden suite to check consistency of the project in case of major changes
-2. Improve output visualization
-2.1 Allow both usage of check and visualization of var -> set of types at the end of the program
-2.2 Allow visualization of the flow with a graph (difficult to debug functions at the moment)
 3. Implement items not supported
 
 MFP - Minimal Fixed Point

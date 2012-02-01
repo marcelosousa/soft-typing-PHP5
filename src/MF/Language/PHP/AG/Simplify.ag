@@ -6,38 +6,10 @@ import CCO.Component
 }
 
 -------------------------------------------------------------------------------
--- Convert the "special" check functions to Expect nodes
--------------------------------------------------------------------------------
-    
-attr Node ParamList OptionalString
-    syn annotated :: SELF
-    
-sem Node
-    | FunctionCall
-        lhs.annotated = case @name.self of
-                            (FunctionName "check")   -> buildExpect @params.self
-                            otherwise                -> @self
-                           
-{
-
-buildExpect params = Expect expr (read $ "fromList" ++ value)
-    where
-        (Param expr)                     = params !! 0
-        (Param (DQContent (Some value))) = params !! 1
-        
-
-annotator :: Component Node Node
-annotator = component $ return . annotate
-
-annotate = annotated_Syn_Node . execute M.empty undefined
-
-}
-
--------------------------------------------------------------------------------
 -- Simplify the AST
 -------------------------------------------------------------------------------
 
-attr Node OptionalString ParamList
+attr Node OptionalString ParamList MaybeNode
     syn simplified :: SELF
 
 sem Node
@@ -57,7 +29,7 @@ sem OptionalString
 -- Remove FunctionCalls 
 -------------------------------------------------------------------------------
 
-attr Node OptionalString ParamList
+attr Node OptionalString ParamList MaybeNode
     syn removed :: SELF
 
 sem Node 
@@ -83,7 +55,7 @@ sem Node
 
 
 -- Function extraction
-attr Node OptionalString ParamList
+attr Node OptionalString ParamList MaybeNode
     syn extractFunctions :: SELF
 
 sem Node
@@ -94,7 +66,7 @@ sem Node
     | While                      
         lhs.extractFunctions = extractFunctions (While @c.extractFunctions @s.extractFunctions) @c.callMapping
     | SimplifiedFunctionCall     
-        lhs.extractFunctions = extractFunctions (SimplifiedFunctionCall @name @params.extractFunctions @result) @params.callMapping
+        lhs.extractFunctions = extractFunctions (SimplifiedFunctionCall @name @params.extractFunctions @result.self) @params.callMapping
     | FunctionCall 
         lhs.extractFunctions = buildVariable @label
     
@@ -111,7 +83,7 @@ sem Node
     | Param
         lhs.paramMapping = IM.singleton @label @e.self
 
-attr Node OptionalString ParamList
+attr Node OptionalString ParamList MaybeNode
     syn extractParameters :: SELF
 
 sem Node
@@ -157,7 +129,7 @@ simplify node = let a = simplified_Syn_Node . execute M.empty undefined $ node
                     b = removed_Syn_Node . execute M.empty undefined $ a
                     c = fixPoint (extractFunctions_Syn_Node . execute M.empty undefined) $ b
                     d = extractParameters_Syn_Node . execute M.empty undefined $ c
-                in a
+                in d
 
 
 simplifier :: Component Node Node

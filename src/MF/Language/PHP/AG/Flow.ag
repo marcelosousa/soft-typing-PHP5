@@ -13,7 +13,7 @@ import MF.Core.Flowable hiding (Return)
 -- Labelling & Nodes
 -------------------------------------------------------------------------------
 
-attr Node ParamList
+attr Node ParamList MaybeNode
     inh labels :: {Label}
     syn labels :: {Label}
 
@@ -129,7 +129,7 @@ sem Node
     | Return
         +flow = (++) $ [(@label, lx @lhs.declaration)]
     | FunctionDecl
-        +flow = (++) $ [(@ln, fromJust @stmt.init)]
+        +flow = (++) $ [(@ln, myfromJust @stmt.init)]
     | SimplifiedFunctionCall
         +flow = let (Declaration name ln lx) = lookupDeclaration @name @lhs.declarations'
                 in (++) [(@lb, @la), (@lb, @lc), (@lr, @la), (@lc, ln), (lx, @lr)]
