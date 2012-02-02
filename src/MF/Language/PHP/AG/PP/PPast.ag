@@ -100,7 +100,7 @@ graphviz' g = let n = labNodes g
                   sn (l, a)     = show l ++ " [label=\"" ++ a ++ " (" ++ show l ++ ") \"];"
                   se (l, l', a) = show l ++ " -> " ++ show l' ++ ";"
                   
-              in "digraph AST {" ++ ns ++ es ++ "}"
+              in "digraph AST { bgcolor=transparent; " ++ ns ++ es ++ "}"
   
         
 }

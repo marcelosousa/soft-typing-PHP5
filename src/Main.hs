@@ -10,14 +10,14 @@ import CCO.Feedback              (Feedback (..), runFeedback)
 import CCO.Tree                  (ATerm, Tree (toTree, fromTree), parser)
 import System.Exit               (exitWith, ExitCode (ExitSuccess), exitFailure)
 import CCO.Printing              (render_, Doc)
-import Control.Arrow             (Arrow (arr), (>>>))
+import Control.Arrow             (Arrow (arr), (>>>), (&&&))
 import Control.Monad             
 import MF.Language.PHP.AG       (Node, simplifier, cfgprinter, annotator, debugflow, checker, reporter, typer, reporterty, visualize)
 import Debug.Trace
 import System.Console.CmdArgs
 import System.Process           
 import System.IO               
-import WebApp 
+import WebApp.WebApp 
 import System.FilePath
 import System.Directory
 import qualified Data.IntMap  as IM
@@ -27,9 +27,9 @@ TODO:
 3) For each iteration print each worklist element we are working on.
 -}
 
-generate :: Int -> FilePath -> String -> IO FilePath
-generate n dir out = let dotfile = dir </> "dot" </> (addExtension (show n) ".dot")
-                         pngfile = "img" </> (addExtension (show n) ".png")
+generate :: String -> FilePath -> String -> IO FilePath
+generate n dir out = let dotfile = dir </> "dot" </> (addExtension n ".dot")
+                         pngfile = "img" </> (addExtension n ".png")
                          pngfilefull = dir </> pngfile
                          cmdline = "cat " ++ dotfile ++ " | dot -Tpng > " ++ pngfilefull
                      in do createDirectoryIfMissing True dir
@@ -47,14 +47,15 @@ ioWrap' input (C f) = do
     Just output -> putStrLn output >> exitWith ExitSuccess
 
     
-generateWebApp :: FilePath -> String -> Component String (IM.IntMap String) -> IO ()
+generateWebApp :: FilePath -> String -> Component String ((IM.IntMap String), (String, (String, String))) -> IO ()
 generateWebApp fp input (C f) = do
   result <- runFeedback (f input) 1 1 stderr
   case result of
     Nothing   -> exitFailure
-    Just lout -> do fps <- mapM (\(it, out) -> generate it fp out) (IM.assocs lout)
-                    webapp fp fps
-                    exitWith ExitSuccess
+    Just (lout, (asts, (c, dinfo))) -> do fps <- mapM (\(it, out) -> generate (show it) fp out) (IM.assocs lout)
+                                          ast <- generate "ast" fp asts
+                                          webapp fp c input dinfo ast fps
+                                          exitWith ExitSuccess
 
 (<+>) :: Component Node [a] -> Component Node [a] -> Component Node [a]
 (C f) <+> (C g) = C $ \doc -> do 
@@ -93,7 +94,7 @@ instance Default Options where
 
 -- Run Pipelines
 runOption :: FilePath -> Options -> String -> IO ()
-runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt)
+runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> simplifier >>> ((cfgprinter >>> renderIt) &&& visualizer &&& printer &&& debugger))
 runOption _ DebugVis   inp = ioWrap' inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt >>> debugApp)
 runOption _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
 runOption _ DebugSimplifier inp = ioWrap' inp (parser >>> reader >>> simplifier >>> debugger)

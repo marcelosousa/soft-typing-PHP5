@@ -11,6 +11,6 @@ function foo ()
 
 $a = foo ();
 
-check ($a, "[TyInt,TyBool]");
+//check ($a, "[TyInt,TyBool]");
 
 ?>

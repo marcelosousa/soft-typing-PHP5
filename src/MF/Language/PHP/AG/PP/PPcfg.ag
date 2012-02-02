@@ -27,6 +27,7 @@ sem MaybeNode
 sem Node
     | Document 
         lhs.ppcfg = text "digraph structs {" >-< 
+                    text "bgcolor=transparent;" >-<
                     text "node [shape=Mrecord];" >-<
                     text "init [label=\"init\", shape=circle]" >-<
                     text "final [label=\"final\", shape=circle, style=filled, fillcolor=gray]" >-<
@@ -142,10 +143,10 @@ sem Node
     | Deci
         lhs.ppcfg = dotPort @label >|< 
                     text (show @value) >|< 
-                    dotAnnotate @label >|<
-                    ppMapping @loc.lattice
+                    dotAnnotate @label -->|<
+--                    ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
-        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+--        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
     
     | Skip
         lhs.ppcfg = text @loc.labtag >|< dotLabel (dotPort @label >|< text "Skip" >|< dotAnnotate @label)

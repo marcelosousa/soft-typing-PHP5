@@ -109,11 +109,11 @@ Done
 5. Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
 6. Strings with escapes characters (tests/basicdatatypes/scalar/string/doublequoted.php)
 7. Simple interprocedural analysis (tests/functions/id.php)
+8. While-construct (tests/controlstruct/while.php)
 
 Supported PHP5 features
 -----------------------
 1. Supports HTML Embedding (tests/syntax/htmlembedding.php)
-2. While-construct (tests/controlstruct/while.php)
 4. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
 6. Creating/modifying with square bracket syntax
 8. User-defined functions without parameters (tests/functions/simple.php)
