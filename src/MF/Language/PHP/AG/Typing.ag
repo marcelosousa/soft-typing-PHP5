@@ -97,7 +97,7 @@ sem Node
 -------------------------------------------------------------------------------
 {
 
-solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping))
+solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping), FlowOut)
 solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
     where        
         transfer :: Block Node -> Mapping -> Mapping
@@ -142,14 +142,17 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
 -- Typing
 -------------------------------------------------------------------------------
      
-typer :: Component Node (ValueMap (ValueMap (Identifier :-> TypeSet)))
+typer :: Component Node (ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut))
 typer = component $ return . typing
              
-typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet))
+typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)
 typing p = trace ("mappings: " ++ show mappings) $ mappings
     where
         solve = MF.Language.PHP.AG.solve
-        mappings = IM.map (IM.map (M.fold join M.empty)) (solve p)        
+        mappings = IM.map typing' (solve p) --IM.map ((m,w) -> ((IM.map (M.fold join M.empty) m), w)) (solve p)        
+
+typing' :: (ValueMap (Stack :-> Mapping), FlowOut) -> (ValueMap (Identifier :-> TypeSet), FlowOut)
+typing' (m,w) = (IM.map (M.fold join M.empty) m ,w)
 
 -------------------------------------------------------------------------------
 -- Report Typing

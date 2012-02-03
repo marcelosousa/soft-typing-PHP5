@@ -13,6 +13,7 @@ import CCO.Printing              (render_, Doc)
 import Control.Arrow             (Arrow (arr), (>>>), (&&&))
 import Control.Monad             
 import MF.Language.PHP.AG       (Node, simplifier, cfgprinter, annotator, debugflow, checker, reporter, typer, reporterty, visualize)
+import MF.Core.Flowable         (FlowOut)
 import Debug.Trace
 import System.Console.CmdArgs
 import System.Process           
@@ -47,14 +48,15 @@ ioWrap' input (C f) = do
     Just output -> putStrLn output >> exitWith ExitSuccess
 
     
-generateWebApp :: FilePath -> String -> Component String ((IM.IntMap String), (String, (String, String))) -> IO ()
-generateWebApp fp input (C f) = do
+generateWebApp :: FilePath -> FilePath -> String -> Component String ((IM.IntMap (String, FlowOut)), (String, (String, String))) -> IO ()
+generateWebApp fpi fp input (C f) = do
   result <- runFeedback (f input) 1 1 stderr
   case result of
     Nothing   -> exitFailure
-    Just (lout, (asts, (c, dinfo))) -> do fps <- mapM (\(it, out) -> generate (show it) fp out) (IM.assocs lout)
+    Just (lout, (asts, (c, dinfo))) -> do let (ldots,lw) = unzip $ IM.elems lout
+                                          fps <- mapM (\(it, out) -> generate (show it) fp out) (zip (IM.keys lout) ldots)
                                           ast <- generate "ast" fp asts
-                                          webapp fp c input dinfo ast fps
+                                          webapp fpi fp c input dinfo ast (zip fps lw)
                                           exitWith ExitSuccess
 
 (<+>) :: Component Node [a] -> Component Node [a] -> Component Node [a]
@@ -73,9 +75,10 @@ reader = component toTree
 render :: Component Doc String
 render = component $ return . render_ 80
 
-renderIt :: Component (IM.IntMap Doc) (IM.IntMap String)
-renderIt = component $ return . IM.map (render_ 80)
-
+renderIt :: Component (IM.IntMap (Doc, FlowOut)) (IM.IntMap (String, FlowOut))
+renderIt = component $ return . IM.map renderIt'
+  where renderIt' (d,f) = (render_ 80 d, f)
+  
 debugger :: Component Node String
 debugger = component $ return . debugflow
 
@@ -93,18 +96,18 @@ instance Default Options where
   def = Visualize
 
 -- Run Pipelines
-runOption :: FilePath -> Options -> String -> IO ()
-runOption fp Visualize inp = generateWebApp fp inp (parser >>> reader >>> simplifier >>> ((cfgprinter >>> renderIt) &&& visualizer &&& printer &&& debugger))
-runOption _ DebugVis   inp = ioWrap' inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt >>> debugApp)
-runOption _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
-runOption _ DebugSimplifier inp = ioWrap' inp (parser >>> reader >>> simplifier >>> debugger)
+runOption :: FilePath -> FilePath -> Options -> String -> IO ()
+runOption fpi fp Visualize inp = generateWebApp fpi fp inp (parser >>> reader >>> simplifier >>> ((cfgprinter >>> renderIt) &&& visualizer &&& printer &&& debugger))
+--runOption _ DebugVis   inp = ioWrap' inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt >>> debugApp)
+runOption _ _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
+runOption _ _ DebugSimplifier inp = ioWrap' inp (parser >>> reader >>> simplifier >>> debugger)
 --runOption DebugSimplifier     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> printer)
-runOption _ Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
+runOption _ _ Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
 --runOption _ Print     inp = ioWrap' inp (parser >>> reader >>> printer)
-runOption _ Type      inp = ioWrap' inp (parser >>> reader >>> simplifier >>> typer >>> reporterty >>> render)
-runOption _ ASTGraph  inp = ioWrap' inp (parser >>> reader >>> visualizer)
+--runOption _ Type      inp = ioWrap' inp (parser >>> reader >>> simplifier >>> typer >>> reporterty >>> render)
+runOption _ _ ASTGraph  inp = ioWrap' inp (parser >>> reader >>> visualizer)
 --runOption ASTGraph  inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> visualizer)
-runOption _ Parser    inp = print inp
+runOption _ _ Parser    inp = print inp
 
 data ProgramOptions = PHPAnalysis {
     output :: String
@@ -132,7 +135,7 @@ runAnalysis options = do let filename = input options
                              outputdir = (dropExtension filename)++"output"                             
                          str <- readFile filename                         
                          str' <- readProcess "sglri" ["-p", "src/grammar/PHP5.tbl"] str
-                         runOption outputdir (typeoutput options) str'                      
+                         runOption filename outputdir (typeoutput options) str'                       
                          
 usage :: String
 usage = unlines ["PHP-5 Analysis"]

@@ -55,26 +55,42 @@ width:121px;
 height: 35px;
 line-height: 35px;
 background-image:url(tab.png);
-
 }
 
-#mainPicture
+.topNaviagationLink a:visited
 {
-width:670px;
-height:345px;
-background-color:#FFFFFF;
+text-align:center;
+border-bottom:none;
+color:#000;
+width:121px;
+height: 35px;
+line-height: 35px;
+background-image:url(tab.png);
 }
 
-#mainPicture .picture
+
+#headerSubtext a:hover
 {
-position:relative;
-width:650px;
-height:325px;
-top:10px;
-background-image:url(anoceanofsky.jpg);
-background-repeat:no-repeat;
-margin-left:10px;
+text-align:center;
+border-bottom:none;
+color:#000;
+width:121px;
+height: 35px;
+line-height: 35px;
+background-image:url(tab.png);
 }
+
+#headerSubtext a:visited
+{
+text-align:center;
+border-bottom:none;
+color:#000;
+width:121px;
+height: 35px;
+line-height: 35px;
+background-image:url(tab.png);
+}
+
 
 #headerTitle
 {
@@ -102,24 +118,27 @@ font-family:"Adobe Garamond Pro Bold", Georgia, "Times New Roman", Times, serif;
 
 .contentBox
 {
-width:650px;
+width:750px;
 text-align: left;
 /*height:auto;*/
 /*background-color:#000;*/
 margin-top:10px;
 }
 
-.contentTitle
+#contentTitle
 {
-font-size:19px;
-margin-bottom:0px;
+position:relative;
+font-size:20px;
+text-align: center;
+font-family:"Adobe Garamond Pro Bold", Georgia, "Times New Roman", Times, serif;
+margin-bottom:10px;
 padding-top:18px;
-margin-left:15px;
-margin-top:15px;
+padding-bottom:-10px;
+
 }
 
 .contentText
-{
+{  
 font-size:15px;
 line-height:30px;
 /*margin-left:13px;
@@ -133,7 +152,7 @@ height:16px;
 /*background: url(footer.png) no-repeat;*/
 text-align:center;
 font-size:9px;
-font-family:Arial, Helvetica, sans-serif;
+font-family:"Adobe Garamond Pro Bold", Georgia, "Times New Roman", Times, serif;
 color:#7D7D7D;
 padding-top:25px;
 }
@@ -147,8 +166,7 @@ color:#7D7D7D;
 
 /* slideshow stuff */
 #container{
-	width:604px;
-	height:453px;
+  width:750px;
 	position:relative;
 }
 
@@ -183,8 +201,8 @@ color:#7D7D7D;
 #container .nextButton:hover{background-position:right bottom;right:0;}
 
 #container ul{
-	width:604px;
-	height:453px;
+	width:900px;
+	height:1200px; 
 	list-style:none outside none;
 	position:relative;
 	overflow:hidden;
@@ -203,5 +221,5 @@ color:#7D7D7D;
 html, body {
 text-align: center;
 }
-p {text-align:justify;	
+p {text-align:justify;  	
 text-justify:inter-word;}

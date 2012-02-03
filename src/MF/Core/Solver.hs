@@ -39,8 +39,11 @@ all :: (Flowable node, Lattice l) => (Block node -> l -> l) -> node -> ValueMap 
 all transfer program = mergeWith transfer (blocks program)
 
 
+finalFlowOut :: FlowOut
+finalFlowOut = ((-1,-1),[],[])
+
 -- | 'solve' implements the worklist algorithm to compute the MFP solution as described by NNH, page 75
-solve :: (Flowable n, Lattice l) => (Block n -> l -> l) -> l -> l -> Direction -> n -> ValueMap (ValueMap l)
+solve :: (Flowable n, Lattice l) => (Block n -> l -> l) -> l -> l -> Direction -> n -> ValueMap (ValueMap l, FlowOut)
 solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialValueMap worklist
     where                
         -- Step 1. Initialization
@@ -59,7 +62,7 @@ solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialVal
                                   else (l, bottom)
                 
         -- Step 2. Fix point iteration
-        solve' n it p valueMap []                          = IM.insert n (all transfer p valueMap) it -- Step 3. From context to effect values
+        solve' n it p valueMap []                          = IM.insert n ((all transfer p valueMap), finalFlowOut) it -- Step 3. From context to effect values
         solve' n it p valueMap w@((start, end):worklistTail) = --  ("solving worklist" ++ show w) $ 
           let context  = lookup start valueMap
               previous = lookup end valueMap                             
@@ -67,7 +70,9 @@ solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialVal
               
               newWorklist = worklistTail ++ [(l', l'') | (l', l'') <- worklist, l' == end] 
               newValueMap = IM.adjust (join effect) end valueMap
+              foutt = ((start,end), w, worklistTail)
+              foute = ((start,end), w, newWorklist)
           in if (effect <: previous)
-             then solve' (n+1) (IM.insert n valueMap it) p valueMap worklistTail
-             else solve' (n+1) (IM.insert n newValueMap it) p newValueMap newWorklist                                  
+             then solve' (n+1) (IM.insert n (valueMap, foutt) it) p valueMap worklistTail
+             else solve' (n+1) (IM.insert n (newValueMap, foute) it) p newValueMap newWorklist                                  
                 

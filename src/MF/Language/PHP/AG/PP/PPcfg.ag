@@ -48,8 +48,8 @@ sem Node
         lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
                     text "style=filled;" >-<
                     text "color=lightblue;" >-<
-                    text (show @loc.ln) >|< text " [label=\"entry\", shape=circle]" >-<
-                    text (show @loc.lx) >|< text " [label=\"exit\", shape=circle, style=filled, fillcolor=gray]" >-<
+                    text (show @loc.ln) >|< text " [label=\"entry" >|< dotAnnotate @loc.ln >|< text "\", shape=circle]" >-<
+                    text (show @loc.lx) >|< text " [label=\"exit" >|< dotAnnotate @loc.lx >|< text "\", shape=circle, style=filled, fillcolor=gray]" >-<
                     @stmt.ppcfg >-<
                     text "label = \"function " >|< text @name >|< text "\"; }"
         loc.sname = "fun"++show @label
@@ -61,15 +61,15 @@ sem Node
     | SimplifiedFunctionCall
         lhs.ppcfg = text ("subgraph cluster_"++(show @loc.lc)++" {") >-<
                     text "color=green;" >-<
-                    text (show @loc.lc) >|< text " [label=\"call " >|< text @name >|< 
+                    text (show @loc.lc) >|< text " [label=\"call " >|< text @name >|< dotAnnotate @loc.lc >|< 
                     ppMapping (@loc.lattice @loc.lc) >|<
-                    text " \", shape=circle]" >-<
-                    text (show @loc.la) >|< text " [label=\"$" >|< text (name (fromJust @result.self)) >|< text " after " >|<
+                    text " \"]" >-<
+                    text (show @loc.la) >|< text " [label=\"$" >|< text (name (fromJust @result.self)) >|< text " after " >|< dotAnnotate @loc.la >|<
                     ppMapping (@loc.lattice @loc.la) >|< text "\"]" >-<
-                    text (show @loc.lr) >|< text " [label=\"return " >|< text @name >|< 
+                    text (show @loc.lr) >|< text " [label=\"return " >|< text @name >|< dotAnnotate @loc.lr >|<
                     ppMapping (@loc.lattice @loc.lc) >|< 
-                    text "\", shape=circle, style=filled, fillcolor=gray]" >-<
-                    text (show @loc.lb) >|< text " [label=\"$" >|< text (name (fromJust @result.self)) >|< text " before " >|< 
+                    text "\", style=filled, fillcolor=gray]" >-<
+                    text (show @loc.lb) >|< text " [label=\"$" >|< text (name (fromJust @result.self)) >|< text " before " >|< dotAnnotate @loc.lb >|< 
                     ppMapping (@loc.lattice @loc.lb) >|< text "\"]" >-<
                     text "label = \"call " >|< text @name >|< text "\"; }"
 --                    @params.ppcfg >-<
@@ -193,10 +193,10 @@ buildLabelRef imap l = case IM.lookup l imap of
                             Just s -> s ++ ":" ++ (show l)
                             Nothing -> show l -- error $ show imap ++ show l
 
-cfgprinter :: Component Node (IM.IntMap Doc)
+cfgprinter :: Component Node (IM.IntMap (Doc, FlowOut))
 cfgprinter = component $ return . cfgprint
              
-cfgprint n = IM.map (\it -> ppcfg_Syn_Node $ execute M.empty it n) (typing n)
+cfgprint n = IM.map (\(it, w) -> (ppcfg_Syn_Node $ execute M.empty it n, w)) (typing n)
 
 
 --ppcfg_Syn_Node $ execute M.empty (last $ IM.elems $ typing n) n

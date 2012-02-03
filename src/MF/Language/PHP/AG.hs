@@ -292,7 +292,7 @@ name   (Simple value)         = value
 {-# LINE 98 "src/MF/Language/PHP/AG/Typing.ag" #-}
 
 
-solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping))
+solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping), FlowOut)
 solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
     where        
         transfer :: Block Node -> Mapping -> Mapping
@@ -337,14 +337,17 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
 -- Typing
 -------------------------------------------------------------------------------
      
-typer :: Component Node (ValueMap (ValueMap (Identifier :-> TypeSet)))
+typer :: Component Node (ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut))
 typer = component $ return . typing
              
-typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet))
+typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)
 typing p = trace ("mappings: " ++ show mappings) $ mappings
     where
         solve = MF.Language.PHP.AG.solve
-        mappings = IM.map (IM.map (M.fold join M.empty)) (solve p)        
+        mappings = IM.map typing' (solve p) --IM.map ((m,w) -> ((IM.map (M.fold join M.empty) m), w)) (solve p)        
+
+typing' :: (ValueMap (Stack :-> Mapping), FlowOut) -> (ValueMap (Identifier :-> TypeSet), FlowOut)
+typing' (m,w) = (IM.map (M.fold join M.empty) m ,w)
 
 -------------------------------------------------------------------------------
 -- Report Typing
@@ -362,7 +365,7 @@ reporty vm = IM.foldWithKey foldvm P.empty vm
 
 displayTypes id ty r = text (show id) >|< text (show ty) >-< r
 
-{-# LINE 366 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 369 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 20 "src/MF/Language/PHP/AG/Checking.ag" #-}
 
@@ -378,12 +381,12 @@ annotator = component $ return . annotate
 
 annotate = annotated_Syn_Node . execute M.empty undefined
 
-{-# LINE 382 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 385 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 40 "src/MF/Language/PHP/AG/Checking.ag" #-}
  
 tyNum = S.fromList [TyInt, TyFloat] 
-{-# LINE 387 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 390 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 88 "src/MF/Language/PHP/AG/Checking.ag" #-}
             
@@ -474,7 +477,7 @@ displayWarning (UnequalType stmt left right resolvedLeft resolvedRight) =
     text "In the statement: " >-<
         indent 4 (pp stmt)
         
-{-# LINE 478 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 481 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 86 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
 
@@ -497,7 +500,7 @@ graphviz' g = let n = labNodes g
               in "digraph AST { bgcolor=transparent; " ++ ns ++ es ++ "}"
   
         
-{-# LINE 501 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 504 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 119 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
 
@@ -508,7 +511,7 @@ render = render_ 1000
 instance Printable Node where
     pp = pp_Syn_Node . execute M.empty undefined
 
-{-# LINE 512 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 515 "src/MF/Language/PHP/AG.hs" #-}
 
 {-# LINE 156 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
 
@@ -551,15 +554,15 @@ buildLabelRef imap l = case IM.lookup l imap of
                             Just s -> s ++ ":" ++ (show l)
                             Nothing -> show l -- error $ show imap ++ show l
 
-cfgprinter :: Component Node (IM.IntMap Doc)
+cfgprinter :: Component Node (IM.IntMap (Doc, FlowOut))
 cfgprinter = component $ return . cfgprint
              
-cfgprint n = IM.map (\it -> ppcfg_Syn_Node $ execute M.empty it n) (typing n)
+cfgprint n = IM.map (\(it, w) -> (ppcfg_Syn_Node $ execute M.empty it n, w)) (typing n)
 
 
 --ppcfg_Syn_Node $ execute M.empty (last $ IM.elems $ typing n) n
 
-{-# LINE 563 "src/MF/Language/PHP/AG.hs" #-}
+{-# LINE 566 "src/MF/Language/PHP/AG.hs" #-}
 -- MaybeNode ---------------------------------------------------
 type MaybeNode  = Maybe Node 
 -- cata
@@ -634,116 +637,116 @@ sem_MaybeNode_Just just_  =
               _lhsOppcfg =
                   ({-# LINE 24 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _justIppcfg
-                   {-# LINE 638 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 641 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _justIlabstruct
-                   {-# LINE 643 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 646 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Just _justIannotated
-                   {-# LINE 648 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 651 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Just _justIextractFunctions
-                   {-# LINE 653 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 656 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Just _justIextractParameters
-                   {-# LINE 658 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 661 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Just _justIremoved
-                   {-# LINE 663 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 666 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Just _justIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Just _justIsimplified
-                   {-# LINE 670 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 673 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 675 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 678 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 680 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 683 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 685 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 688 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 690 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 693 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 697 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 700 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _justIlabel
-                   {-# LINE 702 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 705 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _justIlabels
-                   {-# LINE 707 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 710 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    error "missing rule: MaybeNode.Just.just.constraints"
-                   {-# LINE 712 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 715 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    error "missing rule: MaybeNode.Just.just.declaration"
-                   {-# LINE 717 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 720 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    error "missing rule: MaybeNode.Just.just.declarations'"
-                   {-# LINE 722 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 725 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIlabels
-                   {-# LINE 727 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 730 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    error "missing rule: MaybeNode.Just.just.mapping"
-                   {-# LINE 732 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 735 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 737 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 740 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    error "missing rule: MaybeNode.Just.just.simplifiedName"
-                   {-# LINE 742 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 745 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _justOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 747 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 750 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _justIannotated,_justIblocks,_justIcallMapping,_justIconstraints,_justIdeclarations,_justIedgeList,_justIexpected,_justIextractFunctions,_justIextractParameters,_justIfinal,_justIflow,_justIinit,_justIlabel,_justIlabels,_justIlabstruct,_justImapping,_justInodeList,_justInodes,_justIparamMapping,_justIpp,_justIppcfg,_justIremoved,_justIself,_justIsimplified,_justIwarnings) =
                   just_ _justOconstraints _justOdeclaration _justOdeclarations' _justOlabels _justOmapping _justOres _justOsimplifiedName _justOstruct 
@@ -766,76 +769,76 @@ sem_MaybeNode_Nothing  =
               _lhsOppcfg =
                   ({-# LINE 25 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 770 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 773 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 775 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 778 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Nothing
-                   {-# LINE 780 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 783 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Nothing
-                   {-# LINE 785 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 788 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Nothing
-                   {-# LINE 790 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 793 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Nothing
-                   {-# LINE 795 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 798 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Nothing
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Nothing
-                   {-# LINE 802 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 805 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 807 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 810 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 817 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 820 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 822 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 825 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    error "missing rule: MaybeNode.Nothing.lhs.label"
-                   {-# LINE 834 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 837 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIlabels
-                   {-# LINE 839 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 842 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOextractFunctions,_lhsOextractParameters,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified)))
 -- Node --------------------------------------------------------
@@ -1080,258 +1083,258 @@ sem_Node_ArrayAccess rv_ index_  =
               _lhsOconstraints =
                   ({-# LINE 73 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 1084 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1087 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 73 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :<=: _rvIlabel)
-                   {-# LINE 1089 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1092 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 1094 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1097 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 1099 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1102 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 1104 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1107 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOsimplifiedName =
                   ({-# LINE 42 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName <|> pure _self
-                   {-# LINE 1109 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1112 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _rvIpp >|< text "[" >|< _indexIpp >|< text "]"
-                   {-# LINE 1114 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1117 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup1 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_rvOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup1
-                   {-# LINE 1121 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1124 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup1
-                   {-# LINE 1126 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1129 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIblocks `IM.union` _indexIblocks
-                   {-# LINE 1131 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1134 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIcallMapping `IM.union` _indexIcallMapping
-                   {-# LINE 1136 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1139 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIdeclarations `M.union` _indexIdeclarations
-                   {-# LINE 1141 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1144 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _rvIedgeList ++ _indexIedgeList
-                   {-# LINE 1146 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1149 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _rvIexpected `S.union` _indexIexpected
-                   {-# LINE 1151 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1154 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIfinal <|> _indexIfinal
-                   {-# LINE 1156 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1159 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIflow ++ _indexIflow
-                   {-# LINE 1161 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1164 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIinit <|> _indexIinit
-                   {-# LINE 1166 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1169 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _rvIlabstruct `IM.union` _indexIlabstruct
-                   {-# LINE 1171 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1174 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _rvInodeList ++ _indexInodeList
-                   {-# LINE 1176 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1179 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvInodes `IM.union` _indexInodes
-                   {-# LINE 1181 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1184 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIparamMapping `IM.union` _indexIparamMapping
-                   {-# LINE 1186 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1189 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _rvIppcfg >|< _indexIppcfg
-                   {-# LINE 1191 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1194 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _rvIwarnings `S.union` _indexIwarnings
-                   {-# LINE 1196 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1199 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    ArrayAccess _rvIannotated _indexIannotated
-                   {-# LINE 1201 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1204 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIextractFunctions _indexIextractFunctions
-                   {-# LINE 1206 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1209 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIextractParameters _indexIextractParameters
-                   {-# LINE 1211 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1214 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIremoved _indexIremoved
-                   {-# LINE 1216 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1219 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   ArrayAccess _rvIself _indexIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ArrayAccess _rvIsimplified _indexIsimplified
-                   {-# LINE 1223 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1226 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 1228 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1231 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 1233 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1236 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 1238 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1241 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 1243 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1246 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 1250 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1253 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 73 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _indexIconstraints
-                   {-# LINE 1255 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1258 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _indexIlabels
-                   {-# LINE 1260 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1263 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _indexImapping
-                   {-# LINE 1265 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 1270 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 1275 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 1280 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1283 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 1285 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1288 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 1290 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1293 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 1295 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1298 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rvIconstraints
-                   {-# LINE 1300 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1303 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 1305 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1308 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 1310 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1313 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIlabels
-                   {-# LINE 1315 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1318 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rvImapping
-                   {-# LINE 1320 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1323 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 1325 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1328 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 1330 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1333 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _indexOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 1335 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1338 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _rvIannotated,_rvIblocks,_rvIcallMapping,_rvIconstraints,_rvIdeclarations,_rvIedgeList,_rvIexpected,_rvIextractFunctions,_rvIextractParameters,_rvIfinal,_rvIflow,_rvIinit,_rvIlabel,_rvIlabels,_rvIlabstruct,_rvImapping,_rvInodeList,_rvInodes,_rvIparamMapping,_rvIpp,_rvIppcfg,_rvIremoved,_rvIself,_rvIsimplified,_rvIwarnings) =
                   rv_ _rvOconstraints _rvOdeclaration _rvOdeclarations' _rvOlabels _rvOmapping _rvOres _rvOsimplifiedName _rvOstruct 
@@ -1446,87 +1449,87 @@ sem_Node_Assign rv_ e_  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 1450 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1453 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 1455 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1458 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 126 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 1460 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1463 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 126 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ _rvIlabstruct `IM.union` _eIlabstruct `IM.union` (IM.singleton _label _lhsIstruct)
-                   {-# LINE 1465 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1468 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 1470 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1473 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 1475 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1478 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 1480 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1483 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 68 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIinit
-                   {-# LINE 1485 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1488 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 1490 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1493 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 139 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    [(l', fromJust _rvIinit) | l' <- fromJust _eIfinal] ++ [(l', _label) | l' <- fromJust _rvIfinal]
-                   {-# LINE 1495 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1498 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eIconstraints
-                   {-# LINE 1500 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1503 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.fromList [(_rvIlabel :<=: _eIlabel), (_label :<=: _rvIlabel)] `S.union` _eIconstraints
-                   {-# LINE 1505 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1508 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 91 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    updateMapping (Identifier $ name _rvIself) _eIlabel (levels _rvIself) _constraints _eImapping
-                   {-# LINE 1510 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1513 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected =
                   ({-# LINE 49 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIexpected
-                   {-# LINE 1515 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1518 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    [(_label, "="), (_rvIlabel, render _rvIpp)] ++ _eInodeList
-                   {-# LINE 1520 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1523 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    [(_label, _rvIlabel, ()), (_label, _eIlabel, ())] ++ _eIedgeList
-                   {-# LINE 1525 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1528 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _rvIpp >|< text " = " >|< _eIpp
-                   {-# LINE 1530 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1533 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 120 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
@@ -1535,198 +1538,198 @@ sem_Node_Assign rv_ e_  =
                    dotAnnotate _label >|<
                    ppMapping _lattice     >|< text " | " >|<
                    _eIppcfg
-                   {-# LINE 1539 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1542 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lattice =
                   ({-# LINE 125 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    myfromJust $ IM.lookup _label _lhsIres
-                   {-# LINE 1544 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1547 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup2 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_rvOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup2
-                   {-# LINE 1551 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1554 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup2
-                   {-# LINE 1556 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1559 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIblocks `IM.union` _eIblocks
-                   {-# LINE 1561 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1564 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIcallMapping `IM.union` _eIcallMapping
-                   {-# LINE 1566 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1569 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIdeclarations `M.union` _eIdeclarations
-                   {-# LINE 1571 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1574 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _expected
-                   {-# LINE 1576 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1579 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 126 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _rvIlabstruct `IM.union` _eIlabstruct
-                   {-# LINE 1581 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1584 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvInodes `IM.union` _eInodes
-                   {-# LINE 1586 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1589 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _rvIparamMapping `IM.union` _eIparamMapping
-                   {-# LINE 1591 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1594 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _rvIwarnings `S.union` _eIwarnings
-                   {-# LINE 1596 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1599 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Assign _rvIannotated _eIannotated
-                   {-# LINE 1601 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1604 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIextractFunctions _eIextractFunctions
-                   {-# LINE 1606 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1609 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIextractParameters _eIextractParameters
-                   {-# LINE 1611 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1614 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIremoved _eIremoved
-                   {-# LINE 1616 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1619 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Assign _rvIself _eIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Assign _rvIsimplified _eIsimplified
-                   {-# LINE 1623 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1626 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 1628 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1631 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 1633 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1636 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 1638 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1641 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 1643 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1646 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 1650 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1653 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 1655 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1658 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 1660 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1663 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 1665 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1668 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 1670 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1673 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 1675 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1678 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 1680 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1683 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 1685 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1688 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rvOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 1690 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1693 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 1695 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1698 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 1700 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1703 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 1705 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1708 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rvIlabels
-                   {-# LINE 1710 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1713 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rvImapping
-                   {-# LINE 1715 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1718 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 1720 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1723 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 1725 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1728 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 1730 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1733 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _rvIannotated,_rvIblocks,_rvIcallMapping,_rvIconstraints,_rvIdeclarations,_rvIedgeList,_rvIexpected,_rvIextractFunctions,_rvIextractParameters,_rvIfinal,_rvIflow,_rvIinit,_rvIlabel,_rvIlabels,_rvIlabstruct,_rvImapping,_rvInodeList,_rvInodes,_rvIparamMapping,_rvIpp,_rvIppcfg,_rvIremoved,_rvIself,_rvIsimplified,_rvIwarnings) =
                   rv_ _rvOconstraints _rvOdeclaration _rvOdeclarations' _rvOlabels _rvOmapping _rvOres _rvOsimplifiedName _rvOstruct 
@@ -1805,191 +1808,191 @@ sem_Node_Block s_  =
               _lhsOinit =
                   ({-# LINE 72 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIinit
-                   {-# LINE 1809 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1812 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 107 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIfinal
-                   {-# LINE 1814 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1817 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIblocks
-                   {-# LINE 1819 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1822 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _sIcallMapping
-                   {-# LINE 1824 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1827 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIdeclarations
-                   {-# LINE 1829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _sIedgeList
-                   {-# LINE 1834 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1837 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _sIexpected
-                   {-# LINE 1839 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1842 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIflow
-                   {-# LINE 1844 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1847 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _sIlabstruct
-                   {-# LINE 1849 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1852 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _sInodeList
-                   {-# LINE 1854 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1857 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sInodes
-                   {-# LINE 1859 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1862 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _sIparamMapping
-                   {-# LINE 1864 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1867 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 11 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _sIpp
-                   {-# LINE 1869 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1872 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _sIppcfg
-                   {-# LINE 1874 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1877 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _sIwarnings
-                   {-# LINE 1879 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1882 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Block _sIannotated
-                   {-# LINE 1884 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1887 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIextractFunctions
-                   {-# LINE 1889 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1892 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIextractParameters
-                   {-# LINE 1894 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1897 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIremoved
-                   {-# LINE 1899 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1902 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Block _sIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Block _sIsimplified
-                   {-# LINE 1906 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1909 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 1911 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1914 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 1916 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1919 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 1921 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1924 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 1926 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1929 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 1933 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1936 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sIconstraints
-                   {-# LINE 1938 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1941 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIlabel
-                   {-# LINE 1943 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1946 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIlabels
-                   {-# LINE 1948 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1951 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sImapping
-                   {-# LINE 1953 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1956 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 1958 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1961 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 1963 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1966 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 1968 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1971 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIlabels
-                   {-# LINE 1973 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1976 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 1978 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1981 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 1983 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1986 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 1988 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1991 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 1993 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 1996 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _sIannotated,_sIblocks,_sIcallMapping,_sIconstraints,_sIdeclarations,_sIedgeList,_sIexpected,_sIextractFunctions,_sIextractParameters,_sIfinal,_sIflow,_sIinit,_sIlabel,_sIlabels,_sIlabstruct,_sImapping,_sInodeList,_sInodes,_sIparamMapping,_sIpp,_sIppcfg,_sIremoved,_sIself,_sIsimplified,_sIwarnings) =
                   s_ _sOconstraints _sOdeclaration _sOdeclarations' _sOlabels _sOmapping _sOres _sOsimplifiedName _sOstruct 
@@ -2034,168 +2037,168 @@ sem_Node_CloseTag  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 2038 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2041 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 2043 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2046 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 2048 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2051 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup3 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup3
-                   {-# LINE 2055 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2058 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup3
-                   {-# LINE 2060 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2063 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 2065 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2068 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 2070 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2073 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 2075 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2078 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 2080 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2083 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 2085 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2088 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 2090 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2093 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 2095 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2098 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 2100 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2103 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 2105 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2108 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 2110 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2113 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 2115 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2118 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 2120 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2123 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 11 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    P.empty
-                   {-# LINE 2125 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2128 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 2130 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2133 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 2135 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2138 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    CloseTag
-                   {-# LINE 2140 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2143 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
-                   {-# LINE 2145 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2148 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
-                   {-# LINE 2150 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2153 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
-                   {-# LINE 2155 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2158 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   CloseTag
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    CloseTag
-                   {-# LINE 2162 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2165 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 2167 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2170 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 2172 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2175 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 2177 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2180 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 2182 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2185 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 2189 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2192 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 2194 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2197 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 2199 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2202 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_ConstantEncapsedString :: T_Node  ->
@@ -2270,191 +2273,191 @@ sem_Node_ConstantEncapsedString n_  =
               _lhsOpp =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _nIpp
-                   {-# LINE 2274 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2277 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIblocks
-                   {-# LINE 2279 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2282 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIcallMapping
-                   {-# LINE 2284 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2287 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIdeclarations
-                   {-# LINE 2289 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2292 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _nIedgeList
-                   {-# LINE 2294 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2297 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _nIexpected
-                   {-# LINE 2299 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2302 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIfinal
-                   {-# LINE 2304 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2307 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIflow
-                   {-# LINE 2309 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2312 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIinit
-                   {-# LINE 2314 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2317 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _nIlabstruct
-                   {-# LINE 2319 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2322 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _nInodeList
-                   {-# LINE 2324 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2327 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nInodes
-                   {-# LINE 2329 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2332 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIparamMapping
-                   {-# LINE 2334 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2337 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _nIppcfg
-                   {-# LINE 2339 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2342 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _nIwarnings
-                   {-# LINE 2344 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2347 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    ConstantEncapsedString _nIannotated
-                   {-# LINE 2349 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2352 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIextractFunctions
-                   {-# LINE 2354 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2357 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIextractParameters
-                   {-# LINE 2359 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2362 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIremoved
-                   {-# LINE 2364 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2367 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   ConstantEncapsedString _nIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ConstantEncapsedString _nIsimplified
-                   {-# LINE 2371 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2374 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 2376 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2379 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 2381 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2384 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 2386 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2389 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 2391 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2394 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 2398 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2401 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _nIconstraints
-                   {-# LINE 2403 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2406 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIlabel
-                   {-# LINE 2408 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2411 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIlabels
-                   {-# LINE 2413 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2416 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _nImapping
-                   {-# LINE 2418 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2421 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 2423 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2426 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 2428 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2431 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 2433 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2436 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIlabels
-                   {-# LINE 2438 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2441 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 2443 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2446 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 2448 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2451 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 2453 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2456 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 2458 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2461 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _nIannotated,_nIblocks,_nIcallMapping,_nIconstraints,_nIdeclarations,_nIedgeList,_nIexpected,_nIextractFunctions,_nIextractParameters,_nIfinal,_nIflow,_nIinit,_nIlabel,_nIlabels,_nIlabstruct,_nImapping,_nInodeList,_nInodes,_nIparamMapping,_nIpp,_nIppcfg,_nIremoved,_nIself,_nIsimplified,_nIwarnings) =
                   n_ _nOconstraints _nOdeclaration _nOdeclarations' _nOlabels _nOmapping _nOres _nOsimplifiedName _nOstruct 
@@ -2509,168 +2512,168 @@ sem_Node_DQContent value_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 2513 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2516 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 2518 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2521 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 2523 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2526 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOsimplified =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String _valueIvalue
-                   {-# LINE 2528 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2531 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 91 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _valueIpp
-                   {-# LINE 2533 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2536 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup4 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup4
-                   {-# LINE 2540 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2543 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup4
-                   {-# LINE 2545 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2548 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 2550 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2553 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 2555 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2558 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 2560 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2563 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 2565 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2568 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 2570 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2573 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 2575 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2578 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 2580 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2583 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 2585 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2588 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 2590 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2593 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 2595 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2598 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 2600 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2603 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _valueIparamMapping
-                   {-# LINE 2605 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2608 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 2610 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2613 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 2615 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2618 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    DQContent _valueIannotated
-                   {-# LINE 2620 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2623 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIextractFunctions
-                   {-# LINE 2625 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2628 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIextractParameters
-                   {-# LINE 2630 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2633 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIremoved
-                   {-# LINE 2635 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2638 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   DQContent _valueIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    DQContent _valueIsimplified
-                   {-# LINE 2642 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2645 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 2647 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2650 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 2652 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2655 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 2657 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2660 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 2662 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2665 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 2669 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2672 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 2674 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2677 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _valueIannotated,_valueIextractFunctions,_valueIextractParameters,_valueIparamMapping,_valueIpp,_valueIremoved,_valueIself,_valueIsimplified,_valueIvalue) =
                   value_ 
@@ -2716,200 +2719,200 @@ sem_Node_Deci value_  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 2720 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2723 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 2725 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2728 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 148 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 2730 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2733 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 148 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ IM.singleton _label _lhsIstruct
-                   {-# LINE 2735 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2738 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 2740 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2743 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, show value_)]
-                   {-# LINE 2745 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2748 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 2750 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2753 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 2755 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2758 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 2760 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2763 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 2765 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2768 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 101 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 2770 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2773 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 61 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.singleton (_label :==: S.singleton TyInt)
-                   {-# LINE 2775 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2778 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.singleton (_label :==: S.singleton TyInt)
-                   {-# LINE 2780 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2783 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text $ show value_
-                   {-# LINE 2785 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2788 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 144 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    dotPort _label >|<
                    text (show value_) >|<
                    dotAnnotate _label
-                   {-# LINE 2792 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2795 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup5 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup5
-                   {-# LINE 2799 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2802 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup5
-                   {-# LINE 2804 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2807 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 2809 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2812 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 2814 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2817 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 2819 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2822 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 2824 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2827 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 2829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 148 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 2834 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2837 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 2839 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2842 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 2844 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2847 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 2849 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2852 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 2854 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2857 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Deci value_
-                   {-# LINE 2859 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2862 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
-                   {-# LINE 2864 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2867 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
-                   {-# LINE 2869 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2872 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
-                   {-# LINE 2874 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2877 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Deci value_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Deci value_
-                   {-# LINE 2881 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2884 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 2886 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2889 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 2891 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2894 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 2896 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2899 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 2901 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2904 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 2908 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2911 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 2913 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 2916 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_Document :: ([Node]) ->
@@ -3054,32 +3057,32 @@ sem_Node_Document before_ opentag_ stmt_ closetag_ after_  =
               _init =
                   ({-# LINE 57 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIinit
-                   {-# LINE 3058 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3061 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _init
-                   {-# LINE 3063 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3066 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _final =
                   ({-# LINE 90 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIfinal
-                   {-# LINE 3068 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3071 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 91 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _final
-                   {-# LINE 3073 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3076 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOdeclarations' =
                   ({-# LINE 163 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIdeclarations
-                   {-# LINE 3078 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3081 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "<?" >-< _stmtIpp >-< text "?>"
-                   {-# LINE 3083 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3086 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
@@ -3091,258 +3094,258 @@ sem_Node_Document before_ opentag_ stmt_ closetag_ after_  =
                    _stmtIppcfg >-<
                    _flowp     >-<
                    text "}"
-                   {-# LINE 3095 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3098 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flowp =
                   ({-# LINE 37 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text "init -> " >|< text (buildLabelRef _stmtIlabstruct (fromJust _init)) >|< text ";" >-<
                    above [text (buildLabelRef _stmtIlabstruct f) >|< text "-> final;" | f <- fromJust _final] >-<
                    ppConns _stmtIflow _stmtIlabstruct
-                   {-# LINE 3102 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3105 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _opentagIblocks `IM.union` _stmtIblocks `IM.union` _closetagIblocks
-                   {-# LINE 3107 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3110 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _opentagIcallMapping `IM.union` _stmtIcallMapping `IM.union` _closetagIcallMapping
-                   {-# LINE 3112 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3115 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _opentagIdeclarations `M.union` _stmtIdeclarations `M.union` _closetagIdeclarations
-                   {-# LINE 3117 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3120 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _opentagIedgeList ++ _stmtIedgeList ++ _closetagIedgeList
-                   {-# LINE 3122 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3125 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _opentagIexpected `S.union` _stmtIexpected `S.union` _closetagIexpected
-                   {-# LINE 3127 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3130 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _opentagIflow ++ _stmtIflow ++ _closetagIflow
-                   {-# LINE 3132 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3135 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _opentagIlabstruct `IM.union` _stmtIlabstruct `IM.union` _closetagIlabstruct
-                   {-# LINE 3137 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3140 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _opentagInodeList ++ _stmtInodeList ++ _closetagInodeList
-                   {-# LINE 3142 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3145 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _opentagInodes `IM.union` _stmtInodes `IM.union` _closetagInodes
-                   {-# LINE 3147 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3150 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _opentagIparamMapping `IM.union` _stmtIparamMapping `IM.union` _closetagIparamMapping
-                   {-# LINE 3152 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3155 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _opentagIwarnings `S.union` _stmtIwarnings `S.union` _closetagIwarnings
-                   {-# LINE 3157 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3160 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Document before_ _opentagIannotated _stmtIannotated _closetagIannotated after_
-                   {-# LINE 3162 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3165 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIextractFunctions _stmtIextractFunctions _closetagIextractFunctions after_
-                   {-# LINE 3167 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3170 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIextractParameters _stmtIextractParameters _closetagIextractParameters after_
-                   {-# LINE 3172 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3175 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIremoved _stmtIremoved _closetagIremoved after_
-                   {-# LINE 3177 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3180 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Document before_ _opentagIself _stmtIself _closetagIself after_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Document before_ _opentagIsimplified _stmtIsimplified _closetagIsimplified after_
-                   {-# LINE 3184 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3187 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 3189 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3192 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 3194 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3197 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 3199 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3202 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 3204 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3207 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 3211 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3214 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _closetagIconstraints
-                   {-# LINE 3216 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3219 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _closetagIlabel
-                   {-# LINE 3221 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3224 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _closetagIlabels
-                   {-# LINE 3226 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3229 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _closetagImapping
-                   {-# LINE 3231 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3234 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 3236 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3239 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 3241 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3244 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 3246 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3249 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIlabels
-                   {-# LINE 3251 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3254 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 3256 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3259 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 3261 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3264 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 3266 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3269 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _opentagOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 3271 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3274 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _opentagIconstraints
-                   {-# LINE 3276 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3279 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 3281 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3284 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _opentagIlabels
-                   {-# LINE 3286 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3289 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _opentagImapping
-                   {-# LINE 3291 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3294 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 3296 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3299 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 3301 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3304 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 3306 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3309 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _stmtIconstraints
-                   {-# LINE 3311 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3314 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 3316 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3319 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 3321 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3324 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIlabels
-                   {-# LINE 3326 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3329 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _stmtImapping
-                   {-# LINE 3331 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3334 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 3336 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3339 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 3341 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3344 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _closetagOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 3346 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3349 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _opentagIannotated,_opentagIblocks,_opentagIcallMapping,_opentagIconstraints,_opentagIdeclarations,_opentagIedgeList,_opentagIexpected,_opentagIextractFunctions,_opentagIextractParameters,_opentagIfinal,_opentagIflow,_opentagIinit,_opentagIlabel,_opentagIlabels,_opentagIlabstruct,_opentagImapping,_opentagInodeList,_opentagInodes,_opentagIparamMapping,_opentagIpp,_opentagIppcfg,_opentagIremoved,_opentagIself,_opentagIsimplified,_opentagIwarnings) =
                   opentag_ _opentagOconstraints _opentagOdeclaration _opentagOdeclarations' _opentagOlabels _opentagOmapping _opentagOres _opentagOsimplifiedName _opentagOstruct 
@@ -3411,203 +3414,203 @@ sem_Node_Echo e_  =
               _lhsOnodeList =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 3415 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3418 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "echo")]
-                   {-# LINE 3420 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3423 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 3425 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3428 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 3430 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3433 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 3435 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3438 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 113 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "echo " >|< _eIpp
-                   {-# LINE 3440 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3443 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup6 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_eOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup6
-                   {-# LINE 3447 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3450 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup6
-                   {-# LINE 3452 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3455 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 3457 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3460 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
-                   {-# LINE 3462 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3465 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIdeclarations
-                   {-# LINE 3467 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3470 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 3472 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3475 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 3477 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3480 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 3482 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3485 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 3487 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3490 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 3492 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3495 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 3497 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3500 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 3502 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3505 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eInodes
-                   {-# LINE 3507 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3510 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
-                   {-# LINE 3512 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3515 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 3517 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3520 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 3522 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3525 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Echo _eIannotated
-                   {-# LINE 3527 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3530 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIextractFunctions
-                   {-# LINE 3532 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3535 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIextractParameters
-                   {-# LINE 3537 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3540 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIremoved
-                   {-# LINE 3542 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3545 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Echo _eIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Echo _eIsimplified
-                   {-# LINE 3549 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3552 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 3554 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3557 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 3559 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3562 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 3564 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3567 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 3569 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3572 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 3576 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3579 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 3581 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3584 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 3586 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3589 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eImapping
-                   {-# LINE 3591 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3594 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 3596 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3599 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 3601 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3604 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 3606 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3609 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 3611 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3614 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _eIannotated,_eIcallMapping,_eIdeclarations,_eIextractFunctions,_eIextractParameters,_eIlabel,_eIlabels,_eImapping,_eInodes,_eIparamMapping,_eIpp,_eIremoved,_eIself,_eIsimplified) =
                   e_ _eOdeclaration _eOdeclarations' _eOlabels _eOmapping _eOsimplifiedName 
@@ -3718,231 +3721,231 @@ sem_Node_ElseIf e_ s_  =
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIblocks `IM.union` _sIblocks
-                   {-# LINE 3722 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3725 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping `IM.union` _sIcallMapping
-                   {-# LINE 3727 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3730 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIdeclarations `M.union` _sIdeclarations
-                   {-# LINE 3732 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3735 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eIedgeList ++ _sIedgeList
-                   {-# LINE 3737 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3740 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIexpected `S.union` _sIexpected
-                   {-# LINE 3742 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3745 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIfinal <|> _sIfinal
-                   {-# LINE 3747 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3750 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIflow ++ _sIflow
-                   {-# LINE 3752 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3755 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIinit <|> _sIinit
-                   {-# LINE 3757 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3760 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIlabstruct `IM.union` _sIlabstruct
-                   {-# LINE 3762 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3765 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eInodeList ++ _sInodeList
-                   {-# LINE 3767 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3770 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eInodes `IM.union` _sInodes
-                   {-# LINE 3772 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3775 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping `IM.union` _sIparamMapping
-                   {-# LINE 3777 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3780 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 11 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _eIpp >|< _sIpp
-                   {-# LINE 3782 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3785 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIppcfg >|< _sIppcfg
-                   {-# LINE 3787 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3790 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIwarnings `S.union` _sIwarnings
-                   {-# LINE 3792 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3795 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    ElseIf _eIannotated _sIannotated
-                   {-# LINE 3797 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3800 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIextractFunctions _sIextractFunctions
-                   {-# LINE 3802 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3805 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIextractParameters _sIextractParameters
-                   {-# LINE 3807 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3810 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIremoved _sIremoved
-                   {-# LINE 3812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   ElseIf _eIself _sIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    ElseIf _eIsimplified _sIsimplified
-                   {-# LINE 3819 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3822 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 3824 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3827 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 3829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 3834 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3837 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 3839 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3842 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 3846 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3849 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sIconstraints
-                   {-# LINE 3851 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3854 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIlabel
-                   {-# LINE 3856 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3859 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIlabels
-                   {-# LINE 3861 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3864 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sImapping
-                   {-# LINE 3866 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3869 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 3871 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3874 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 3876 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3879 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 3881 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3884 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIlabels
-                   {-# LINE 3886 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3889 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 3891 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3894 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 3896 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3899 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 3901 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3904 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 3906 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3909 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eIconstraints
-                   {-# LINE 3911 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3914 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 3916 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3919 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 3921 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3924 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 3926 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3929 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eImapping
-                   {-# LINE 3931 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3934 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 3936 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3939 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 3941 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3944 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 3946 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 3949 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _eIannotated,_eIblocks,_eIcallMapping,_eIconstraints,_eIdeclarations,_eIedgeList,_eIexpected,_eIextractFunctions,_eIextractParameters,_eIfinal,_eIflow,_eIinit,_eIlabel,_eIlabels,_eIlabstruct,_eImapping,_eInodeList,_eInodes,_eIparamMapping,_eIpp,_eIppcfg,_eIremoved,_eIself,_eIsimplified,_eIwarnings) =
                   e_ _eOconstraints _eOdeclaration _eOdeclarations' _eOlabels _eOmapping _eOres _eOsimplifiedName _eOstruct 
@@ -4024,233 +4027,233 @@ sem_Node_Expect expr_ ty_  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 4028 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4031 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 4033 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4036 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 4038 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4041 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 4043 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4046 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 4048 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4051 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 4053 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4056 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 4058 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4061 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.singleton (_label :<=: _exprIlabel) `S.union` _exprIconstraints
-                   {-# LINE 4063 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4066 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.singleton (_exprIlabel :==: ty_) `S.union` _exprIexpected
-                   {-# LINE 4068 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4071 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes =
                   ({-# LINE 76 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _exprInodes
-                   {-# LINE 4073 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4076 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 85 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.map (toWarning _self _nodes     _constraints    ) (violatedConstraints  _constraints     _expected    )
-                   {-# LINE 4078 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4081 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 46 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    [(_label, "expect: " ++ render _exprIpp ++ " == " ++ show ty_)]
-                   {-# LINE 4083 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4086 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 109 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "## Expect: " >|< _exprIpp >|< text " == " >|< text (show ty_)
-                   {-# LINE 4088 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4091 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup7 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_exprOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup7
-                   {-# LINE 4095 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4098 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup7
-                   {-# LINE 4100 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4103 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _exprIblocks
-                   {-# LINE 4105 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4108 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exprIcallMapping
-                   {-# LINE 4110 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4113 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _exprIdeclarations
-                   {-# LINE 4115 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4118 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _exprIedgeList
-                   {-# LINE 4120 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4123 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _expected
-                   {-# LINE 4125 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4128 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _exprIflow
-                   {-# LINE 4130 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4133 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _exprIlabstruct
-                   {-# LINE 4135 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4138 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nodes
-                   {-# LINE 4140 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4143 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _exprIparamMapping
-                   {-# LINE 4145 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4148 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _exprIppcfg
-                   {-# LINE 4150 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4153 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Expect _exprIannotated ty_
-                   {-# LINE 4155 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4158 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIextractFunctions ty_
-                   {-# LINE 4160 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4163 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIextractParameters ty_
-                   {-# LINE 4165 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4168 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIremoved ty_
-                   {-# LINE 4170 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4173 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Expect _exprIself ty_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expect _exprIsimplified ty_
-                   {-# LINE 4177 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4180 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 4182 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4185 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 4187 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4190 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 4192 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4195 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 4197 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4200 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 4204 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4207 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 4209 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4212 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _exprIlabels
-                   {-# LINE 4214 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4217 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _exprImapping
-                   {-# LINE 4219 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4222 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 4224 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4227 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 4229 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4232 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 4234 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4237 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 4239 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4242 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 4244 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4247 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 4249 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4252 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _exprOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 4254 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4257 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _exprIannotated,_exprIblocks,_exprIcallMapping,_exprIconstraints,_exprIdeclarations,_exprIedgeList,_exprIexpected,_exprIextractFunctions,_exprIextractParameters,_exprIfinal,_exprIflow,_exprIinit,_exprIlabel,_exprIlabels,_exprIlabstruct,_exprImapping,_exprInodeList,_exprInodes,_exprIparamMapping,_exprIpp,_exprIppcfg,_exprIremoved,_exprIself,_exprIsimplified,_exprIwarnings) =
                   expr_ _exprOconstraints _exprOdeclaration _exprOdeclarations' _exprOlabels _exprOmapping _exprOres _exprOsimplifiedName _exprOstruct 
@@ -4329,47 +4332,47 @@ sem_Node_Expr e_  =
               _lhsOedgeList =
                   ({-# LINE 36 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 4333 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4336 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 36 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _eIlabel, ())]
-                   {-# LINE 4338 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4341 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 35 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 4343 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4346 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 35 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "expr")]
-                   {-# LINE 4348 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4351 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 4353 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4356 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 4358 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4361 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 4363 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4366 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 66 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIinit
-                   {-# LINE 4368 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4371 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 99 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIfinal
-                   {-# LINE 4373 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4376 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 37 "src/MF/Language/PHP/AG/Simplify.ag" #-}
@@ -4377,203 +4380,203 @@ sem_Node_Expr e_  =
                        (Assign rv (FunctionCall (FunctionName name) params)) -> SimplifiedFunctionCall name params $ Just rv
                        (FunctionCall (FunctionName name) params)             -> SimplifiedFunctionCall name params Nothing
                        copy                                                  -> Expr copy
-                   {-# LINE 4381 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4384 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 63 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    extractFunctions (Expr _eIextractFunctions) _eIcallMapping
-                   {-# LINE 4386 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4389 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eIconstraints
-                   {-# LINE 4391 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4394 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected =
                   ({-# LINE 49 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIexpected
-                   {-# LINE 4396 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4399 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes =
                   ({-# LINE 72 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eInodes
-                   {-# LINE 4401 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4404 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 85 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.map (toWarning _self _nodes     _constraints    ) (violatedConstraints  _constraints     _expected    )
-                   {-# LINE 4406 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4409 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 90 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text _sname     >|< dotLabel _eIppcfg
-                   {-# LINE 4411 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4414 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOstruct =
                   ({-# LINE 91 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _sname
-                   {-# LINE 4416 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4419 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sname =
                   ({-# LINE 92 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "expr" ++ show _label
-                   {-# LINE 4421 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4424 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup8 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_eOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup8
-                   {-# LINE 4428 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4431 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup8
-                   {-# LINE 4433 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4436 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIblocks
-                   {-# LINE 4438 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4441 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
-                   {-# LINE 4443 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4446 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIdeclarations
-                   {-# LINE 4448 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4451 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 36 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eIedgeList
-                   {-# LINE 4453 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4456 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _expected
-                   {-# LINE 4458 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4461 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIflow
-                   {-# LINE 4463 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4466 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIlabstruct
-                   {-# LINE 4468 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4471 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 35 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eInodeList
-                   {-# LINE 4473 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4476 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nodes
-                   {-# LINE 4478 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4481 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
-                   {-# LINE 4483 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4486 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 11 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _eIpp
-                   {-# LINE 4488 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4491 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Expr _eIannotated
-                   {-# LINE 4493 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4496 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIextractFunctions
-                   {-# LINE 4498 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4501 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIextractParameters
-                   {-# LINE 4503 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4506 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIremoved
-                   {-# LINE 4508 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4511 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Expr _eIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Expr _eIsimplified
-                   {-# LINE 4515 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4518 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 4520 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4523 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 4525 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4528 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 4532 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4535 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 4537 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4540 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 4542 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4545 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eImapping
-                   {-# LINE 4547 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4550 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 4552 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4555 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 4557 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4560 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 4562 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4565 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 4567 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4570 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 4572 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4575 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 4577 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4580 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _eIannotated,_eIblocks,_eIcallMapping,_eIconstraints,_eIdeclarations,_eIedgeList,_eIexpected,_eIextractFunctions,_eIextractParameters,_eIfinal,_eIflow,_eIinit,_eIlabel,_eIlabels,_eIlabstruct,_eImapping,_eInodeList,_eInodes,_eIparamMapping,_eIpp,_eIppcfg,_eIremoved,_eIself,_eIsimplified,_eIwarnings) =
                   e_ _eOconstraints _eOdeclaration _eOdeclarations' _eOlabels _eOmapping _eOres _eOsimplifiedName _eOstruct 
@@ -4672,235 +4675,235 @@ sem_Node_FunctionCall name_ params_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 4676 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4679 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 4681 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4684 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 4686 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4689 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 54 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.singleton _label _self
-                   {-# LINE 4691 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4694 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    buildVariable _label
-                   {-# LINE 4696 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4699 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 16 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    case _nameIself of
                        (FunctionName "check")   -> buildExpect _paramsIself
                        otherwise                -> _self
-                   {-# LINE 4703 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4706 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _nameIpp >|< text "()"
-                   {-# LINE 4708 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4711 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup9 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_nameOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup9
-                   {-# LINE 4715 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4718 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup9
-                   {-# LINE 4720 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4723 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameIblocks
-                   {-# LINE 4725 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4728 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameIdeclarations `M.union` _paramsIdeclarations
-                   {-# LINE 4730 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4733 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _nameIedgeList
-                   {-# LINE 4735 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4738 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _nameIexpected
-                   {-# LINE 4740 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4743 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameIfinal
-                   {-# LINE 4745 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4748 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameIflow
-                   {-# LINE 4750 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4753 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameIinit
-                   {-# LINE 4755 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4758 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _nameIlabstruct
-                   {-# LINE 4760 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4763 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _nameInodeList
-                   {-# LINE 4765 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4768 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameInodes `IM.union` _paramsInodes
-                   {-# LINE 4770 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4773 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nameIparamMapping `IM.union` _paramsIparamMapping
-                   {-# LINE 4775 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4778 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _nameIppcfg
-                   {-# LINE 4780 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4783 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _nameIwarnings
-                   {-# LINE 4785 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4788 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    FunctionCall _nameIannotated _paramsIannotated
-                   {-# LINE 4790 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4793 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIextractFunctions _paramsIextractFunctions
-                   {-# LINE 4795 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4798 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIextractParameters _paramsIextractParameters
-                   {-# LINE 4800 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4803 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIremoved _paramsIremoved
-                   {-# LINE 4805 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4808 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   FunctionCall _nameIself _paramsIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionCall _nameIsimplified _paramsIsimplified
-                   {-# LINE 4812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 4817 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4820 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 4822 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4825 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 4829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _nameIconstraints
-                   {-# LINE 4834 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4837 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsIlabels
-                   {-# LINE 4839 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4842 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _paramsImapping
-                   {-# LINE 4844 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4847 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 4849 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4852 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 4854 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4857 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 4859 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4862 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 4864 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4867 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 4869 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4872 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 4874 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4877 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nameOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 4879 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4882 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 4884 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4887 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 4889 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4892 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nameIlabels
-                   {-# LINE 4894 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4897 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _nameImapping
-                   {-# LINE 4899 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4902 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 4904 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 4907 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _nameIannotated,_nameIblocks,_nameIcallMapping,_nameIconstraints,_nameIdeclarations,_nameIedgeList,_nameIexpected,_nameIextractFunctions,_nameIextractParameters,_nameIfinal,_nameIflow,_nameIinit,_nameIlabel,_nameIlabels,_nameIlabstruct,_nameImapping,_nameInodeList,_nameInodes,_nameIparamMapping,_nameIpp,_nameIppcfg,_nameIremoved,_nameIself,_nameIsimplified,_nameIwarnings) =
                   name_ _nameOconstraints _nameOdeclaration _nameOdeclarations' _nameOlabels _nameOmapping _nameOres _nameOsimplifiedName _nameOstruct 
@@ -5003,310 +5006,310 @@ sem_Node_FunctionDecl name_ params_ stmt_  =
               _lhsOblocks =
                   ({-# LINE 185 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 5007 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5010 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 185 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.fromList [(_ln, Entry _self)
                                   ,(_lx, Exit _self)]
-                   {-# LINE 5013 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5016 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 167 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _declarations_augmented_syn [_declarations_augmented_f1]
-                   {-# LINE 5018 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5021 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _declarations_augmented_f1 =
                   ({-# LINE 167 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.union $ M.singleton name_ _declaration
-                   {-# LINE 5023 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5026 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 5028 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5031 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_ln, _stmtIlabel, ())]
-                   {-# LINE 5033 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5036 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 134 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _flow_augmented_syn [_flow_augmented_f1]
-                   {-# LINE 5038 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5041 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_f1 =
                   ({-# LINE 134 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    (++) $ [(_ln, myfromJust _stmtIinit)]
-                   {-# LINE 5043 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5046 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 19 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 5048 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5051 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 19 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_ln, "function " ++ name_)]
-                   {-# LINE 5053 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5056 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 34 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 5058 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5061 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 34 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 5063 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5066 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 74 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 5068 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5071 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 109 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 5073 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5076 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _declaration =
                   ({-# LINE 165 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Declaration name_ _ln _lx
-                   {-# LINE 5078 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5081 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOdeclaration =
                   ({-# LINE 166 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _declaration
-                   {-# LINE 5083 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5086 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 83 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 5088 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5091 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _label =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _ln
-                   {-# LINE 5093 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5096 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 102 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "function " >|< text name_ >|< text "() {" >-< indent 4 _stmtIpp >-< text "}"
-                   {-# LINE 5098 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5101 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 48 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text ("subgraph cluster_"++(show _label)++" {") >-<
                    text "style=filled;" >-<
                    text "color=lightblue;" >-<
-                   text (show _ln    ) >|< text " [label=\"entry\", shape=circle]" >-<
-                   text (show _lx    ) >|< text " [label=\"exit\", shape=circle, style=filled, fillcolor=gray]" >-<
+                   text (show _ln    ) >|< text " [label=\"entry" >|< dotAnnotate _ln     >|< text "\", shape=circle]" >-<
+                   text (show _lx    ) >|< text " [label=\"exit" >|< dotAnnotate _lx     >|< text "\", shape=circle, style=filled, fillcolor=gray]" >-<
                    _stmtIppcfg >-<
                    text "label = \"function " >|< text name_ >|< text "\"; }"
-                   {-# LINE 5109 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5112 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sname =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "fun"++show _label
-                   {-# LINE 5114 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5117 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _stmtIlabstruct
-                   {-# LINE 5119 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5122 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOres =
                   ({-# LINE 57 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 5124 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5127 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup10 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, ln) -> case nextUnique __cont of { (__cont, lx) -> (__cont, ln,lx)}} )
               (_paramsOlabels,_,_) =
                   ({-# LINE 32 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup10
-                   {-# LINE 5131 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5134 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_ln,_) =
                   ({-# LINE 32 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup10
-                   {-# LINE 5136 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5139 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_,_lx) =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup10
-                   {-# LINE 5141 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5144 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 185 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIblocks
-                   {-# LINE 5146 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5149 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIcallMapping `IM.union` _stmtIcallMapping
-                   {-# LINE 5151 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5154 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _declarations_augmented_syn =
                   ({-# LINE 167 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsIdeclarations `M.union` _stmtIdeclarations
-                   {-# LINE 5156 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5159 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _stmtIedgeList
-                   {-# LINE 5161 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5164 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _stmtIexpected
-                   {-# LINE 5166 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5169 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_syn =
                   ({-# LINE 134 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIflow
-                   {-# LINE 5171 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5174 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 19 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _stmtInodeList
-                   {-# LINE 5176 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5179 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 34 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsInodes `IM.union` _stmtInodes
-                   {-# LINE 5181 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5184 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIparamMapping `IM.union` _stmtIparamMapping
-                   {-# LINE 5186 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5189 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    FunctionDecl name_ _paramsIannotated _stmtIannotated
-                   {-# LINE 5191 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5194 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIextractFunctions _stmtIextractFunctions
-                   {-# LINE 5196 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5199 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIextractParameters _stmtIextractParameters
-                   {-# LINE 5201 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5204 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIremoved _stmtIremoved
-                   {-# LINE 5206 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5209 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   FunctionDecl name_ _paramsIself _stmtIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionDecl name_ _paramsIsimplified _stmtIsimplified
-                   {-# LINE 5213 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5216 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 5218 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5221 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 5223 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5226 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 5228 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5231 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 5233 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5236 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 5240 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5243 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _stmtIconstraints
-                   {-# LINE 5245 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5248 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 5250 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5253 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _stmtIlabels
-                   {-# LINE 5255 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5258 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _stmtImapping
-                   {-# LINE 5260 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5263 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _declaration
-                   {-# LINE 5265 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 5270 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 5275 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 5280 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5283 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 5285 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5288 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 5290 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5293 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsIlabels
-                   {-# LINE 5295 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5298 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _paramsImapping
-                   {-# LINE 5300 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5303 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 5305 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5308 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _stmtOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 5310 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5313 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _paramsIannotated,_paramsIcallMapping,_paramsIdeclarations,_paramsIextractFunctions,_paramsIextractParameters,_paramsIlabel,_paramsIlabels,_paramsImapping,_paramsInodes,_paramsIparamMapping,_paramsIpp,_paramsIremoved,_paramsIself,_paramsIsimplified) =
                   params_ _paramsOdeclaration _paramsOdeclarations' _paramsOlabels _paramsOmapping _paramsOsimplifiedName 
@@ -5354,168 +5357,168 @@ sem_Node_FunctionName value_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 5358 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5361 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 5363 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5366 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 5368 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5371 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 97 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text value_
-                   {-# LINE 5373 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5376 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup11 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup11
-                   {-# LINE 5380 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5383 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup11
-                   {-# LINE 5385 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5388 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 5390 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5393 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 5395 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5398 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 5400 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5403 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 5405 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5408 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 5410 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5413 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 5415 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5418 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 5420 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5423 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 5425 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5428 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 5430 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5433 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 5435 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5438 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 5440 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5443 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 5445 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5448 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 5450 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5453 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 5455 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5458 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    FunctionName value_
-                   {-# LINE 5460 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5463 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
-                   {-# LINE 5465 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5468 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
-                   {-# LINE 5470 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5473 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
-                   {-# LINE 5475 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5478 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   FunctionName value_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    FunctionName value_
-                   {-# LINE 5482 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5485 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 5487 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5490 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 5492 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5495 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 5497 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5500 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 5502 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5505 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 5509 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5512 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 5514 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5517 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 5519 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5522 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_GreaterEqual :: T_Node  ->
@@ -5626,268 +5629,268 @@ sem_Node_GreaterEqual l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 5630 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5633 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyBool)
-                   {-# LINE 5635 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5638 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 5640 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5643 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, ">=")]
-                   {-# LINE 5645 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5648 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 5650 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5653 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 5655 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5658 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 5660 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5663 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 75 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " >= " >|< _rIpp
-                   {-# LINE 5665 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5668 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup12 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup12
-                   {-# LINE 5672 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5675 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup12
-                   {-# LINE 5677 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5680 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 5682 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5685 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 5687 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5690 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 5692 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5695 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 5697 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5700 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 5702 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5705 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 5707 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5710 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 5712 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5715 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 5717 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5720 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 5722 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5725 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 5727 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5730 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 5732 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5735 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 5737 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5740 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 5742 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5745 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 5747 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5750 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    GreaterEqual _lIannotated _rIannotated
-                   {-# LINE 5752 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5755 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIextractFunctions _rIextractFunctions
-                   {-# LINE 5757 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5760 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIextractParameters _rIextractParameters
-                   {-# LINE 5762 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5765 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIremoved _rIremoved
-                   {-# LINE 5767 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5770 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   GreaterEqual _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    GreaterEqual _lIsimplified _rIsimplified
-                   {-# LINE 5774 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5777 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 5779 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5782 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 5784 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5787 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 5789 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5792 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 5794 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5797 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 5801 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5804 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 5806 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5809 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 5811 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5814 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 5816 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5819 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 5821 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5824 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 5826 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5829 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 5831 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5834 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 5836 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5839 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 5841 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5844 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 5846 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5849 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 5851 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5854 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 5856 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5859 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 5861 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5864 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 5866 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5869 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 5871 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5874 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 5876 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5879 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 5881 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5884 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 5886 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5889 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 5891 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 5894 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -6037,87 +6040,87 @@ sem_Node_If c_ l_ elseIfs_ r_  =
               _lhsOedgeList =
                   ({-# LINE 39 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 6041 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6044 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 39 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _cIlabel, ()), (_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 6046 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6049 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 128 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _flow_augmented_syn [_flow_augmented_f1]
-                   {-# LINE 6051 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6054 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_f1 =
                   ({-# LINE 128 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    (++) $ [(label, myfromJust _lIinit) | label <- myfromJust _cIfinal] ++ [(label, myfromJust _rIinit) | label <- myfromJust _cIfinal]
-                   {-# LINE 6056 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6059 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 6061 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6064 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "if")]
-                   {-# LINE 6066 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6069 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 6071 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6074 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 6076 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6079 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 6081 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6084 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIinit
-                   {-# LINE 6086 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6089 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 105 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    pure (++) <*> _lIfinal <*> _rIfinal
-                   {-# LINE 6091 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6094 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints =
                   ({-# LINE 57 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _cIconstraints
-                   {-# LINE 6096 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6099 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.fromList [(_cIlabel :==: S.singleton TyBool)] `S.union` _cIexpected
-                   {-# LINE 6101 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6104 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 52 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _expected
-                   {-# LINE 6106 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6109 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes =
                   ({-# LINE 74 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _cInodes
-                   {-# LINE 6111 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6114 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 85 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.map (toWarning _self _nodes     _constraints    ) (violatedConstraints  _constraints     _expected    )
-                   {-# LINE 6116 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6119 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 37 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "if (" >|< _cIpp >|< text ") {" >-< indent 4 _lIpp >-< text "} else {" >-< indent 4 _rIpp >-< text "}"
-                   {-# LINE 6121 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6124 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 103 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
@@ -6125,248 +6128,248 @@ sem_Node_If c_ l_ elseIfs_ r_  =
                    text "color=lightgrey;" >-<
                    text ("cond" ++ show _label) >|< dotLabel _cIppcfg >|< _lIppcfg >|< _rIppcfg >-<
                    text "label = \"if #" >|< text (show _label) >|< text "\"; }"
-                   {-# LINE 6129 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6132 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOstruct =
                   ({-# LINE 107 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "cond" ++ show _label
-                   {-# LINE 6134 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6137 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup13 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_cOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup13
-                   {-# LINE 6141 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6144 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup13
-                   {-# LINE 6146 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6149 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIblocks `IM.union` _lIblocks `IM.union` _rIblocks
-                   {-# LINE 6151 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6154 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIcallMapping `IM.union` _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 6156 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6159 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIdeclarations `M.union` _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 6161 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6164 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 39 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _cIedgeList ++ _lIedgeList ++ _rIedgeList
-                   {-# LINE 6166 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6169 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_syn =
                   ({-# LINE 128 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIflow ++ _lIflow ++ _rIflow
-                   {-# LINE 6171 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6174 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _cIlabstruct `IM.union` _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 6176 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6179 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _cInodeList ++ _lInodeList ++ _rInodeList
-                   {-# LINE 6181 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6184 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nodes
-                   {-# LINE 6186 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6189 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIparamMapping `IM.union` _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 6191 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6194 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    If _cIannotated _lIannotated elseIfs_ _rIannotated
-                   {-# LINE 6196 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6199 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIextractFunctions _lIextractFunctions elseIfs_ _rIextractFunctions
-                   {-# LINE 6201 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6204 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIextractParameters _lIextractParameters elseIfs_ _rIextractParameters
-                   {-# LINE 6206 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6209 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIremoved _lIremoved elseIfs_ _rIremoved
-                   {-# LINE 6211 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6214 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   If _cIself _lIself elseIfs_ _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    If _cIsimplified _lIsimplified elseIfs_ _rIsimplified
-                   {-# LINE 6218 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6221 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 6223 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6226 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 6228 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6231 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 6233 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6236 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 6238 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6241 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 6245 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6248 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 6250 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6253 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 6255 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6258 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 6260 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6263 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 6265 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 6270 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 6275 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 6280 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6283 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 6285 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6288 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 6290 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6293 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 6295 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6298 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 6300 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6303 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 6305 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6308 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIlabels
-                   {-# LINE 6310 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6313 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _cImapping
-                   {-# LINE 6315 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6318 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 6320 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6323 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 6325 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6328 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 6330 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6333 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 6335 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6338 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 6340 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6343 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 6345 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6348 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 6350 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6353 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 6355 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6358 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 6360 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6363 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 6365 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6368 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 6370 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6373 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _cIannotated,_cIblocks,_cIcallMapping,_cIconstraints,_cIdeclarations,_cIedgeList,_cIexpected,_cIextractFunctions,_cIextractParameters,_cIfinal,_cIflow,_cIinit,_cIlabel,_cIlabels,_cIlabstruct,_cImapping,_cInodeList,_cInodes,_cIparamMapping,_cIpp,_cIppcfg,_cIremoved,_cIself,_cIsimplified,_cIwarnings) =
                   c_ _cOconstraints _cOdeclaration _cOdeclarations' _cOlabels _cOmapping _cOres _cOsimplifiedName _cOstruct 
@@ -6483,288 +6486,288 @@ sem_Node_IsEqual l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 6487 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6490 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyBool)
-                   {-# LINE 6492 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6495 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 6497 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6500 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 6502 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6505 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    foldr ($) _expected_augmented_syn [_expected_augmented_f1]
-                   {-# LINE 6507 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6510 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_f1 =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.union $ S.singleton (_lIlabel :<=: _rIlabel)
-                   {-# LINE 6512 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6515 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 6517 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6520 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "==")]
-                   {-# LINE 6522 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6525 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 6527 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6530 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 6532 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6535 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 6537 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6540 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 73 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " == " >|< _rIpp
-                   {-# LINE 6542 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6545 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup14 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup14
-                   {-# LINE 6549 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6552 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup14
-                   {-# LINE 6554 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6557 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 6559 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6562 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 6564 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6567 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 6569 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6572 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 6574 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6577 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_syn =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 6579 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6582 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 6584 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6587 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 6589 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6592 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 6594 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6597 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 6599 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6602 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 6604 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6607 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 6609 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6612 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 6614 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6617 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 6619 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6622 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 6624 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6627 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    IsEqual _lIannotated _rIannotated
-                   {-# LINE 6629 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6632 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIextractFunctions _rIextractFunctions
-                   {-# LINE 6634 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6637 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIextractParameters _rIextractParameters
-                   {-# LINE 6639 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6642 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIremoved _rIremoved
-                   {-# LINE 6644 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6647 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   IsEqual _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IsEqual _lIsimplified _rIsimplified
-                   {-# LINE 6651 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6654 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 6656 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6659 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 6661 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6664 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 6666 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6669 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 6671 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6674 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 6678 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6681 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 6683 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6686 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 6688 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6691 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 6693 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6696 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 6698 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6701 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 6703 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6706 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 6708 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6711 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 6713 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6716 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 6718 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6721 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 6723 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6726 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 6728 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6731 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 6733 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6736 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 6738 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6741 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 6743 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6746 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 6748 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6751 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 6753 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6756 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 6758 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6761 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 6763 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6766 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 6768 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6771 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -6811,188 +6814,188 @@ sem_Node_LFalse  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 6815 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6818 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 6820 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6823 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 76 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 6825 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6828 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 76 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "false")]
-                   {-# LINE 6830 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6833 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 6835 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6838 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 6840 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6843 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 6845 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6848 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 6850 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6853 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 101 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 6855 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6858 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 63 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.singleton (_label :==: S.singleton TyBool)
-                   {-# LINE 6860 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6863 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "false"
-                   {-# LINE 6865 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6868 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup15 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup15
-                   {-# LINE 6872 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6875 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup15
-                   {-# LINE 6877 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6880 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 6882 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6885 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 6887 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6890 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 6892 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6895 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 6897 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6900 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 6902 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6905 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 6907 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6910 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 6912 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6915 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 76 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 6917 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6920 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 6922 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6925 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 6927 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6930 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 6932 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6935 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 6937 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6940 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    LFalse
-                   {-# LINE 6942 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6945 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
-                   {-# LINE 6947 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6950 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
-                   {-# LINE 6952 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6955 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
-                   {-# LINE 6957 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6960 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   LFalse
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LFalse
-                   {-# LINE 6964 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6967 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 6969 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6972 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 6974 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6977 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 6979 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6982 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 6984 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6987 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 6991 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6994 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 6996 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 6999 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_LTrue :: T_Node 
@@ -7035,200 +7038,200 @@ sem_Node_LTrue  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 7039 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7042 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 7044 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7047 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 133 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 7049 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7052 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 133 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ IM.singleton _label _lhsIstruct
-                   {-# LINE 7054 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7057 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 74 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 7059 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7062 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 74 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "true")]
-                   {-# LINE 7064 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7067 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 7069 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7072 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 7074 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7077 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 7079 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7082 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 7084 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7087 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 101 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 7089 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7092 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 63 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.singleton (_label :==: S.singleton TyBool)
-                   {-# LINE 7094 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7097 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "true"
-                   {-# LINE 7099 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7102 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 130 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    dotPort _label >|<
                    text "true" >|<
                    dotAnnotate _label
-                   {-# LINE 7106 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7109 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup16 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup16
-                   {-# LINE 7113 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7116 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup16
-                   {-# LINE 7118 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7121 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 7123 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7126 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 7128 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7131 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 7133 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7136 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 7138 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7141 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 7143 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7146 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 7148 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7151 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 133 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 7153 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7156 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 74 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 7158 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7161 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 7163 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7166 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 7168 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7171 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 7173 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7176 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    LTrue
-                   {-# LINE 7178 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7181 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
-                   {-# LINE 7183 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7186 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
-                   {-# LINE 7188 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7191 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
-                   {-# LINE 7193 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7196 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   LTrue
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    LTrue
-                   {-# LINE 7200 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7203 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 7205 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7208 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 7210 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7213 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 7215 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7218 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 7220 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7223 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 7227 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7230 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 7232 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7235 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_Literal :: String ->
@@ -7272,168 +7275,168 @@ sem_Node_Literal value_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 7276 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7279 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 7281 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7284 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 7286 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7289 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup17 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup17
-                   {-# LINE 7293 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7296 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup17
-                   {-# LINE 7298 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7301 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 7303 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7306 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 7308 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7311 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 7313 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7316 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 7318 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7321 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 7323 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7326 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 7328 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7331 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 7333 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7336 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 7338 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7341 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 7343 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7346 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 7348 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7351 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 7353 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7356 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 7358 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7361 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 11 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    P.empty
-                   {-# LINE 7363 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7366 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 7368 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7371 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 7373 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7376 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Literal value_
-                   {-# LINE 7378 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7381 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
-                   {-# LINE 7383 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7386 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
-                   {-# LINE 7388 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7391 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
-                   {-# LINE 7393 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7396 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Literal value_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Literal value_
-                   {-# LINE 7400 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7403 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 7405 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7408 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 7410 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7413 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 7415 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7418 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 7420 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7423 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 7427 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7430 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 7432 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7435 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 7437 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7440 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_Min :: T_Node  ->
@@ -7544,288 +7547,288 @@ sem_Node_Min l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 7548 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7551 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyInt)
-                   {-# LINE 7553 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7556 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 7558 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7561 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 7563 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7566 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    foldr ($) _expected_augmented_syn [_expected_augmented_f1]
-                   {-# LINE 7568 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7571 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_f1 =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.union $ S.fromList [(_lIlabel :==: tyNum), (_rIlabel :==: tyNum)]
-                   {-# LINE 7573 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7576 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 7578 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7581 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "-")]
-                   {-# LINE 7583 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7586 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 7588 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7591 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 7593 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7596 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 7598 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7601 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 66 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " - " >|< _rIpp
-                   {-# LINE 7603 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7606 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup18 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup18
-                   {-# LINE 7610 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7613 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup18
-                   {-# LINE 7615 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7618 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 7620 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7623 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 7625 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7628 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 7630 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7633 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 7635 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7638 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_syn =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 7640 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7643 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 7645 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7648 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 7650 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7653 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 7655 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7658 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 7660 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7663 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 7665 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7668 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 7670 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7673 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 7675 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7678 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 7680 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7683 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 7685 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7688 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Min _lIannotated _rIannotated
-                   {-# LINE 7690 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7693 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIextractFunctions _rIextractFunctions
-                   {-# LINE 7695 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7698 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIextractParameters _rIextractParameters
-                   {-# LINE 7700 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7703 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIremoved _rIremoved
-                   {-# LINE 7705 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7708 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Min _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Min _lIsimplified _rIsimplified
-                   {-# LINE 7712 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7715 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 7717 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7720 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 7722 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7725 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 7727 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7730 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 7732 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7735 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 7739 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7742 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 7744 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7747 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 7749 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7752 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 7754 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7757 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 7759 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7762 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 7764 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7767 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 7769 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7772 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 7774 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7777 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 7779 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7782 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 7784 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7787 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 7789 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7792 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 7794 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7797 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 7799 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7802 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 7804 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7807 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 7809 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7812 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 7814 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7817 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 7819 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7822 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 7824 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7827 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 7829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -7940,288 +7943,288 @@ sem_Node_Mod l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 7944 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7947 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyInt)
-                   {-# LINE 7949 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7952 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 7954 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7957 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 7959 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7962 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 54 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    foldr ($) _expected_augmented_syn [_expected_augmented_f1]
-                   {-# LINE 7964 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7967 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_f1 =
                   ({-# LINE 54 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.union $ S.fromList [(_lIlabel :==: S.singleton TyInt), (_rIlabel :==: S.singleton TyInt)]
-                   {-# LINE 7969 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7972 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 66 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 7974 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7977 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 66 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "%")]
-                   {-# LINE 7979 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7982 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 7984 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7987 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 7989 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7992 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 7994 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 7997 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 70 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " % " >|< _rIpp
-                   {-# LINE 7999 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8002 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup19 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup19
-                   {-# LINE 8006 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8009 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup19
-                   {-# LINE 8011 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8014 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 8016 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8019 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 8021 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8024 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 8026 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8029 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 8031 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8034 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_syn =
                   ({-# LINE 54 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 8036 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8039 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 8041 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8044 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 8046 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8049 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 8051 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8054 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 8056 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8059 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 66 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 8061 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8064 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 8066 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8069 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 8071 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8074 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 8076 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8079 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 8081 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8084 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Mod _lIannotated _rIannotated
-                   {-# LINE 8086 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8089 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIextractFunctions _rIextractFunctions
-                   {-# LINE 8091 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8094 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIextractParameters _rIextractParameters
-                   {-# LINE 8096 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8099 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIremoved _rIremoved
-                   {-# LINE 8101 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8104 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Mod _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mod _lIsimplified _rIsimplified
-                   {-# LINE 8108 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8111 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 8113 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8116 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 8118 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8121 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 8123 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8126 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 8128 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8131 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 8135 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8138 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 8140 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8143 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 8145 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8148 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 8150 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8153 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 8155 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8158 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 8160 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8163 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 8165 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8168 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 8170 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8173 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 8175 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8178 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 8180 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8183 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 8185 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8188 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 8190 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8193 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 8195 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8198 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 8200 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8203 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 8205 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8208 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 8210 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8213 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 8215 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8218 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 8220 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8223 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 8225 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8228 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -8336,288 +8339,288 @@ sem_Node_Mul l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 8340 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8343 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyInt)
-                   {-# LINE 8345 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8348 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 8350 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8353 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 8355 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8358 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    foldr ($) _expected_augmented_syn [_expected_augmented_f1]
-                   {-# LINE 8360 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8363 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_f1 =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.union $ S.fromList [(_lIlabel :==: tyNum), (_rIlabel :==: tyNum)]
-                   {-# LINE 8365 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8368 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 8370 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8373 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "*")]
-                   {-# LINE 8375 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8378 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 8380 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8383 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 8385 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8388 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 8390 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8393 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 68 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " * " >|< _rIpp
-                   {-# LINE 8395 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8398 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup20 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup20
-                   {-# LINE 8402 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8405 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup20
-                   {-# LINE 8407 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8410 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 8412 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8415 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 8417 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8420 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 8422 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8425 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 8427 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8430 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_syn =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 8432 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8435 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 8437 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8440 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 8442 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8445 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 8447 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8450 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 8452 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8455 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 8457 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8460 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 8462 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8465 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 8467 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8470 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 8472 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8475 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 8477 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8480 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Mul _lIannotated _rIannotated
-                   {-# LINE 8482 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8485 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIextractFunctions _rIextractFunctions
-                   {-# LINE 8487 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8490 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIextractParameters _rIextractParameters
-                   {-# LINE 8492 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8495 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIremoved _rIremoved
-                   {-# LINE 8497 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8500 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Mul _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Mul _lIsimplified _rIsimplified
-                   {-# LINE 8504 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8507 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 8509 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8512 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 8514 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8517 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 8519 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8522 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 8524 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8527 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 8531 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8534 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 8536 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8539 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 8541 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8544 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 8546 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8549 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 8551 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8554 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 8556 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8559 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 8561 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8564 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 8566 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8569 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 8571 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8574 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 8576 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8579 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 8581 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8584 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 8586 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8589 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 8591 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8594 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 8596 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8599 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 8601 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8604 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 8606 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8609 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 8611 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8614 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 8616 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8619 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 8621 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8624 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -8664,168 +8667,168 @@ sem_Node_OpenTag  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 8668 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8671 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 8673 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8676 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 8678 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8681 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup21 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup21
-                   {-# LINE 8685 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8688 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup21
-                   {-# LINE 8690 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8693 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 8695 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8698 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 8700 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8703 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 8705 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8708 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 8710 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8713 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 8715 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8718 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 8720 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8723 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 8725 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8728 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 8730 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8733 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 8735 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8738 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 8740 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8743 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 8745 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8748 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 8750 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8753 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 11 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    P.empty
-                   {-# LINE 8755 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8758 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    P.empty
-                   {-# LINE 8760 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8763 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 8765 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8768 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    OpenTag
-                   {-# LINE 8770 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8773 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
-                   {-# LINE 8775 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8778 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
-                   {-# LINE 8780 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8783 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
-                   {-# LINE 8785 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8788 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   OpenTag
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    OpenTag
-                   {-# LINE 8792 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8795 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 8797 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8800 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 8802 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8805 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 8807 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8810 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 8812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 8819 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8822 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 8824 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8827 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 8829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8832 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_Or :: T_Node  ->
@@ -8936,288 +8939,288 @@ sem_Node_Or l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 8940 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8943 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyBool)
-                   {-# LINE 8945 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8948 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 8950 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8953 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 8955 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8958 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    foldr ($) _expected_augmented_syn [_expected_augmented_f1]
-                   {-# LINE 8960 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8963 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_f1 =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.union $ S.fromList [(_lIlabel :==: S.singleton TyBool), (_rIlabel :==: S.singleton TyBool)]
-                   {-# LINE 8965 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8968 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 8970 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8973 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "||")]
-                   {-# LINE 8975 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8978 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 8980 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8983 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 8985 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8988 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 8990 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8993 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 82 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " || " >|< _rIpp
-                   {-# LINE 8995 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 8998 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup22 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup22
-                   {-# LINE 9002 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9005 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup22
-                   {-# LINE 9007 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9010 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 9012 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9015 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 9017 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9020 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 9022 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9025 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 9027 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9030 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_syn =
                   ({-# LINE 58 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 9032 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9035 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 9037 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9040 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 9042 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9045 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 9047 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9050 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 9052 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9055 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 9057 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9060 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 9062 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9065 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 9067 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9070 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 9072 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9075 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 9077 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9080 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Or _lIannotated _rIannotated
-                   {-# LINE 9082 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9085 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIextractFunctions _rIextractFunctions
-                   {-# LINE 9087 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9090 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIextractParameters _rIextractParameters
-                   {-# LINE 9092 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9095 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIremoved _rIremoved
-                   {-# LINE 9097 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9100 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Or _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Or _lIsimplified _rIsimplified
-                   {-# LINE 9104 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9107 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 9109 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9112 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 9114 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9117 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 9119 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9122 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 9124 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9127 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 9131 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9134 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 9136 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9139 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 9141 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9144 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 9146 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9149 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 9151 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9154 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 9156 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9159 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 9161 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9164 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 9166 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9169 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 9171 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9174 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 9176 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9179 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 9181 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9184 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 9186 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9189 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 9191 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9194 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 9196 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9199 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 9201 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9204 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 9206 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9209 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 9211 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9214 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 9216 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9219 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 9221 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9224 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -9298,208 +9301,208 @@ sem_Node_Param e_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 9302 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9305 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 9307 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9310 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 9312 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9315 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.singleton _label _eIself
-                   {-# LINE 9317 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9320 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 104 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _eIpp
-                   {-# LINE 9322 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9325 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup23 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_eOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup23
-                   {-# LINE 9329 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9332 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup23
-                   {-# LINE 9334 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9337 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIblocks
-                   {-# LINE 9339 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9342 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
-                   {-# LINE 9344 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9347 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIdeclarations
-                   {-# LINE 9349 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9352 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eIedgeList
-                   {-# LINE 9354 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9357 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIexpected
-                   {-# LINE 9359 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9362 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIfinal
-                   {-# LINE 9364 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9367 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIflow
-                   {-# LINE 9369 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9372 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIinit
-                   {-# LINE 9374 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9377 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIlabstruct
-                   {-# LINE 9379 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9382 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eInodeList
-                   {-# LINE 9384 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9387 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eInodes
-                   {-# LINE 9389 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9392 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIppcfg
-                   {-# LINE 9394 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9397 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIwarnings
-                   {-# LINE 9399 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9402 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Param _eIannotated
-                   {-# LINE 9404 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9407 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIextractFunctions
-                   {-# LINE 9409 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9412 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIextractParameters
-                   {-# LINE 9414 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9417 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIremoved
-                   {-# LINE 9419 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9422 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Param _eIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Param _eIsimplified
-                   {-# LINE 9426 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9429 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 9431 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9434 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 9436 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9439 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 9441 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9444 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 9446 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9449 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 9453 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9456 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eIconstraints
-                   {-# LINE 9458 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9461 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 9463 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9466 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eImapping
-                   {-# LINE 9468 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9471 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 9473 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9476 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 9478 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9481 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 9483 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9486 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 9488 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9491 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 9493 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9496 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 9498 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9501 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 9503 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9506 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _eIannotated,_eIblocks,_eIcallMapping,_eIconstraints,_eIdeclarations,_eIedgeList,_eIexpected,_eIextractFunctions,_eIextractParameters,_eIfinal,_eIflow,_eIinit,_eIlabel,_eIlabels,_eIlabstruct,_eImapping,_eInodeList,_eInodes,_eIparamMapping,_eIpp,_eIppcfg,_eIremoved,_eIself,_eIsimplified,_eIwarnings) =
                   e_ _eOconstraints _eOdeclaration _eOdeclarations' _eOlabels _eOmapping _eOres _eOsimplifiedName _eOstruct 
@@ -9612,288 +9615,288 @@ sem_Node_Plus l_ r_  =
               _lhsOconstraints =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 9616 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9619 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :==: S.singleton TyInt)
-                   {-# LINE 9621 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9624 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 9626 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9629 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _lIlabel, ()), (_label, _rIlabel, ())]
-                   {-# LINE 9631 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9634 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    foldr ($) _expected_augmented_syn [_expected_augmented_f1]
-                   {-# LINE 9636 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9639 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_f1 =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.union $ S.fromList [(_lIlabel :==: tyNum), (_rIlabel :==: tyNum)]
-                   {-# LINE 9641 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9644 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 9646 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9649 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "+")]
-                   {-# LINE 9651 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9654 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 9656 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9659 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 9661 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9664 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 9666 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9669 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _lIpp >|< text " + " >|< _rIpp
-                   {-# LINE 9671 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9674 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup24 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup24
-                   {-# LINE 9678 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9681 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup24
-                   {-# LINE 9683 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9686 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIblocks `IM.union` _rIblocks
-                   {-# LINE 9688 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9691 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIcallMapping `IM.union` _rIcallMapping
-                   {-# LINE 9693 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9696 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIdeclarations `M.union` _rIdeclarations
-                   {-# LINE 9698 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9701 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 84 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lIedgeList ++ _rIedgeList
-                   {-# LINE 9703 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9706 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected_augmented_syn =
                   ({-# LINE 56 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIexpected `S.union` _rIexpected
-                   {-# LINE 9708 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9711 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIfinal <|> _rIfinal
-                   {-# LINE 9713 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9716 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIflow ++ _rIflow
-                   {-# LINE 9718 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9721 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIinit <|> _rIinit
-                   {-# LINE 9723 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9726 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIlabstruct `IM.union` _rIlabstruct
-                   {-# LINE 9728 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9731 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lInodeList ++ _rInodeList
-                   {-# LINE 9733 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9736 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lInodes `IM.union` _rInodes
-                   {-# LINE 9738 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9741 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _lIparamMapping `IM.union` _rIparamMapping
-                   {-# LINE 9743 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9746 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lIppcfg >|< _rIppcfg
-                   {-# LINE 9748 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9751 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _lIwarnings `S.union` _rIwarnings
-                   {-# LINE 9753 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9756 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Plus _lIannotated _rIannotated
-                   {-# LINE 9758 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9761 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIextractFunctions _rIextractFunctions
-                   {-# LINE 9763 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9766 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIextractParameters _rIextractParameters
-                   {-# LINE 9768 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9771 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIremoved _rIremoved
-                   {-# LINE 9773 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9776 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Plus _lIself _rIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Plus _lIsimplified _rIsimplified
-                   {-# LINE 9780 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9783 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 9785 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9788 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 9790 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9793 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 9795 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9798 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 9800 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9803 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 9807 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9810 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rIconstraints
-                   {-# LINE 9812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _rIlabels
-                   {-# LINE 9817 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9820 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _rImapping
-                   {-# LINE 9822 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9825 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 9827 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9830 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 9832 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9835 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 9837 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9840 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 9842 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9845 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 9847 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9850 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 9852 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9855 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 9857 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9860 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lIconstraints
-                   {-# LINE 9862 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9865 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 9867 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9870 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 9872 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9875 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lIlabels
-                   {-# LINE 9877 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9880 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lImapping
-                   {-# LINE 9882 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9885 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 9887 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9890 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 9892 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9895 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _rOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 9897 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9900 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _lIannotated,_lIblocks,_lIcallMapping,_lIconstraints,_lIdeclarations,_lIedgeList,_lIexpected,_lIextractFunctions,_lIextractParameters,_lIfinal,_lIflow,_lIinit,_lIlabel,_lIlabels,_lIlabstruct,_lImapping,_lInodeList,_lInodes,_lIparamMapping,_lIpp,_lIppcfg,_lIremoved,_lIself,_lIsimplified,_lIwarnings) =
                   l_ _lOconstraints _lOdeclaration _lOdeclarations' _lOlabels _lOmapping _lOres _lOsimplifiedName _lOstruct 
@@ -9974,208 +9977,208 @@ sem_Node_Print e_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 9978 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9981 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 9983 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9986 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 9988 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9991 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 117 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "print " >|< _eIpp
-                   {-# LINE 9993 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 9996 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup25 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_eOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup25
-                   {-# LINE 10000 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10003 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup25
-                   {-# LINE 10005 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10008 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIblocks
-                   {-# LINE 10010 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10013 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
-                   {-# LINE 10015 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10018 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIdeclarations
-                   {-# LINE 10020 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10023 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eIedgeList
-                   {-# LINE 10025 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10028 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIexpected
-                   {-# LINE 10030 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10033 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIfinal
-                   {-# LINE 10035 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10038 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIflow
-                   {-# LINE 10040 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10043 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIinit
-                   {-# LINE 10045 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10048 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIlabstruct
-                   {-# LINE 10050 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10053 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eInodeList
-                   {-# LINE 10055 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10058 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eInodes
-                   {-# LINE 10060 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10063 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
-                   {-# LINE 10065 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10068 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIppcfg
-                   {-# LINE 10070 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10073 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIwarnings
-                   {-# LINE 10075 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10078 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Print _eIannotated
-                   {-# LINE 10080 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10083 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIextractFunctions
-                   {-# LINE 10085 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10088 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIextractParameters
-                   {-# LINE 10090 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10093 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIremoved
-                   {-# LINE 10095 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10098 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Print _eIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Print _eIsimplified
-                   {-# LINE 10102 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10105 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 10107 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10110 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 10112 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10115 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 10117 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10120 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 10122 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10125 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 10129 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10132 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eIconstraints
-                   {-# LINE 10134 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10137 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 10139 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10142 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eImapping
-                   {-# LINE 10144 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10147 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 10149 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10152 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 10154 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10157 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 10159 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10162 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 10164 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10167 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 10169 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10172 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 10174 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10177 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 10179 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10182 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _eIannotated,_eIblocks,_eIcallMapping,_eIconstraints,_eIdeclarations,_eIedgeList,_eIexpected,_eIextractFunctions,_eIextractParameters,_eIfinal,_eIflow,_eIinit,_eIlabel,_eIlabels,_eIlabstruct,_eImapping,_eInodeList,_eInodes,_eIparamMapping,_eIpp,_eIppcfg,_eIremoved,_eIself,_eIsimplified,_eIwarnings) =
                   e_ _eOconstraints _eOdeclaration _eOdeclarations' _eOlabels _eOmapping _eOres _eOsimplifiedName _eOstruct 
@@ -10254,284 +10257,284 @@ sem_Node_Return e_  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 10258 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10261 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 10263 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10266 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 26 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 10268 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10271 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 26 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _eIlabel, ())]
-                   {-# LINE 10273 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10276 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 132 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _flow_augmented_syn [_flow_augmented_f1]
-                   {-# LINE 10278 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10281 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_f1 =
                   ({-# LINE 132 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    (++) $ [(_label, lx _lhsIdeclaration)]
-                   {-# LINE 10283 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10286 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 100 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 10288 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10291 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 100 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ _eIlabstruct `IM.union` (IM.singleton _label _sname    )
-                   {-# LINE 10293 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10296 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 25 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 10298 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10301 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 25 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "return")]
-                   {-# LINE 10303 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10306 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 10308 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10311 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 10313 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10316 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 10318 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10321 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 10323 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10326 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 10328 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10331 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 65 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    extractFunctions (Return _eIextractFunctions) _eIcallMapping
-                   {-# LINE 10333 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10336 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _eIconstraints
-                   {-# LINE 10338 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10341 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 93 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    updateMapping ReturnValue                  _eIlabel 0                 _constraints _eImapping
-                   {-# LINE 10343 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10346 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected =
                   ({-# LINE 49 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eIexpected
-                   {-# LINE 10348 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10351 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes =
                   ({-# LINE 72 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _eInodes
-                   {-# LINE 10353 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10356 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 85 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.map (toWarning _self _nodes     _constraints    ) (violatedConstraints  _constraints     _expected    )
-                   {-# LINE 10358 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10361 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "return " >|< _eIpp
-                   {-# LINE 10363 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10366 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text _sname     >|<
                    dotLabel (dotPort _label >|< text "return" >|< dotAnnotate _label >|< ppMapping _lattice     >|< text " | " >|< _eIppcfg)
-                   {-# LINE 10369 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10372 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOstruct =
                   ({-# LINE 97 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _sname
-                   {-# LINE 10374 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10377 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sname =
                   ({-# LINE 98 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "expr" ++ show _label
-                   {-# LINE 10379 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10382 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lattice =
                   ({-# LINE 99 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    myfromJust $ IM.lookup _label _lhsIres
-                   {-# LINE 10384 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10387 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup26 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_eOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup26
-                   {-# LINE 10391 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10394 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup26
-                   {-# LINE 10396 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10399 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIblocks
-                   {-# LINE 10401 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10404 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIcallMapping
-                   {-# LINE 10406 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10409 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIdeclarations
-                   {-# LINE 10411 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10414 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 26 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eIedgeList
-                   {-# LINE 10416 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10419 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _expected
-                   {-# LINE 10421 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10424 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_syn =
                   ({-# LINE 132 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIflow
-                   {-# LINE 10426 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10429 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 100 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _eIlabstruct
-                   {-# LINE 10431 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10434 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 25 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _eInodeList
-                   {-# LINE 10436 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10439 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nodes
-                   {-# LINE 10441 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10444 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _eIparamMapping
-                   {-# LINE 10446 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10449 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Return _eIannotated
-                   {-# LINE 10451 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10454 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIextractFunctions
-                   {-# LINE 10456 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10459 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIextractParameters
-                   {-# LINE 10461 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10464 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIremoved
-                   {-# LINE 10466 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10469 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Return _eIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Return _eIsimplified
-                   {-# LINE 10473 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10476 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 10478 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10481 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 10483 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10486 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 10488 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10491 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 10495 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10498 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 10500 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10503 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _eIlabels
-                   {-# LINE 10505 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10508 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 10510 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10513 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 10515 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10518 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 10520 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10523 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 10525 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10528 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 10530 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10533 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _eOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 10535 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10538 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _eIannotated,_eIblocks,_eIcallMapping,_eIconstraints,_eIdeclarations,_eIedgeList,_eIexpected,_eIextractFunctions,_eIextractParameters,_eIfinal,_eIflow,_eIinit,_eIlabel,_eIlabels,_eIlabstruct,_eImapping,_eInodeList,_eInodes,_eIparamMapping,_eIpp,_eIppcfg,_eIremoved,_eIself,_eIsimplified,_eIwarnings) =
                   e_ _eOconstraints _eOdeclaration _eOdeclarations' _eOlabels _eOmapping _eOres _eOsimplifiedName _eOstruct 
@@ -10644,278 +10647,278 @@ sem_Node_Sequence f_ s_  =
               _lhsOedgeList =
                   ({-# LINE 31 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 10648 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10651 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 31 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _fIlabel, ()), (_label, _sIlabel, ())]
-                   {-# LINE 10653 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10656 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 126 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _flow_augmented_syn [_flow_augmented_f1]
-                   {-# LINE 10658 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10661 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_f1 =
                   ({-# LINE 126 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    (++) $ if isNothing _sIinit || isNothing _fIfinal then [] else [(l, fromJust _sIinit) | l <- fromJust _fIfinal]
-                   {-# LINE 10663 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10666 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 30 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 10668 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10671 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 30 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, ";")]
-                   {-# LINE 10673 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10676 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 10678 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10681 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 10683 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10686 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 10688 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10691 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 70 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _fIinit <|> _sIinit
-                   {-# LINE 10693 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10696 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 103 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIfinal <|> _fIfinal
-                   {-# LINE 10698 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10701 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 31 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _fIpp >|< text ";" >-< _sIpp
-                   {-# LINE 10703 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10706 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 43 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _fIppcfg >-< _sIppcfg
-                   {-# LINE 10708 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10711 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup27 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_fOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup27
-                   {-# LINE 10715 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10718 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup27
-                   {-# LINE 10720 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10723 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _fIblocks `IM.union` _sIblocks
-                   {-# LINE 10725 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10728 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _fIcallMapping `IM.union` _sIcallMapping
-                   {-# LINE 10730 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10733 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _fIdeclarations `M.union` _sIdeclarations
-                   {-# LINE 10735 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10738 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 31 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _fIedgeList ++ _sIedgeList
-                   {-# LINE 10740 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10743 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _fIexpected `S.union` _sIexpected
-                   {-# LINE 10745 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10748 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_syn =
                   ({-# LINE 126 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _fIflow ++ _sIflow
-                   {-# LINE 10750 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10753 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _fIlabstruct `IM.union` _sIlabstruct
-                   {-# LINE 10755 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10758 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 30 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _fInodeList ++ _sInodeList
-                   {-# LINE 10760 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10763 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _fInodes `IM.union` _sInodes
-                   {-# LINE 10765 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10768 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _fIparamMapping `IM.union` _sIparamMapping
-                   {-# LINE 10770 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10773 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _fIwarnings `S.union` _sIwarnings
-                   {-# LINE 10775 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10778 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Sequence _fIannotated _sIannotated
-                   {-# LINE 10780 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10783 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIextractFunctions _sIextractFunctions
-                   {-# LINE 10785 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10788 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIextractParameters _sIextractParameters
-                   {-# LINE 10790 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10793 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIremoved _sIremoved
-                   {-# LINE 10795 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10798 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Sequence _fIself _sIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Sequence _fIsimplified _sIsimplified
-                   {-# LINE 10802 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10805 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 10807 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10810 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 10812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 10817 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10820 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 10822 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10825 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 10829 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10832 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sIconstraints
-                   {-# LINE 10834 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10837 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIlabels
-                   {-# LINE 10839 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10842 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sImapping
-                   {-# LINE 10844 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10847 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 10849 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10852 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 10854 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10857 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 10859 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10862 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 10864 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10867 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 10869 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10872 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 10874 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10877 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _fOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 10879 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10882 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _fIconstraints
-                   {-# LINE 10884 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10887 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 10889 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10892 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 10894 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10897 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _fIlabels
-                   {-# LINE 10899 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10902 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _fImapping
-                   {-# LINE 10904 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10907 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 10909 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10912 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 10914 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10917 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 10919 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10922 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _fIannotated,_fIblocks,_fIcallMapping,_fIconstraints,_fIdeclarations,_fIedgeList,_fIexpected,_fIextractFunctions,_fIextractParameters,_fIfinal,_fIflow,_fIinit,_fIlabel,_fIlabels,_fIlabstruct,_fImapping,_fInodeList,_fInodes,_fIparamMapping,_fIpp,_fIppcfg,_fIremoved,_fIself,_fIsimplified,_fIwarnings) =
                   f_ _fOconstraints _fOdeclaration _fOdeclarations' _fOlabels _fOmapping _fOres _fOsimplifiedName _fOstruct 
@@ -10963,170 +10966,170 @@ sem_Node_Simple value_  =
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 10967 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10970 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 10972 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10975 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 10977 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10980 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 75 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    case M.lookup (Identifier value_) _lhsImapping of
                        Just c  -> S.singleton (_label :==: fromArrayRepeatedly (levels (fromJust _lhsIsimplifiedName)) c)
                        Nothing -> S.singleton (_label :==: S.empty)
-                   {-# LINE 10984 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10987 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text value_
-                   {-# LINE 10989 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10992 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 117 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text value_
-                   {-# LINE 10994 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 10997 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup28 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup28
-                   {-# LINE 11001 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11004 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup28
-                   {-# LINE 11006 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11009 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11011 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11014 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 11016 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11019 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 11021 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11024 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11026 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11029 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11031 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11034 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 11036 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11039 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 11041 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11044 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Nothing
-                   {-# LINE 11046 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11049 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 11051 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11054 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11056 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11059 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11061 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11064 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 11066 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11069 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11071 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11074 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Simple value_
-                   {-# LINE 11076 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11079 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
-                   {-# LINE 11081 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11084 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
-                   {-# LINE 11086 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11089 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
-                   {-# LINE 11091 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11094 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Simple value_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Simple value_
-                   {-# LINE 11098 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11101 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 11103 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11106 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 11108 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11111 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 11113 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11116 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 11118 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11121 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 11125 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11128 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 11130 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11133 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_SimplifiedFunctionCall :: String ->
@@ -11207,7 +11210,7 @@ sem_Node_SimplifiedFunctionCall name_ params_ result_  =
               _lhsOblocks =
                   ({-# LINE 180 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 11211 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11214 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 180 "src/MF/Language/PHP/AG/Flow.ag" #-}
@@ -11215,278 +11218,278 @@ sem_Node_SimplifiedFunctionCall name_ params_ result_  =
                                   ,(_lc, Call _lc _lr _self)
                                   ,(_lr, F.Return _lc _lr _self)
                                   ,(_la, Normal Skip)]
-                   {-# LINE 11219 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11222 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 136 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _flow_augmented_syn [_flow_augmented_f1]
-                   {-# LINE 11224 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11227 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_f1 =
                   ({-# LINE 136 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    let (Declaration name ln lx) = lookupDeclaration name_ _lhsIdeclarations'
                    in (++) [(_lb, _la), (_lb, _lc), (_lr, _la), (_lc, ln), (lx, _lr)]
-                   {-# LINE 11230 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11233 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 11235 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11238 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_lc, name_ ++ "() [lb: " ++ show _lb ++ ", lc: " ++ show _lc ++ ", lr: " ++ show _lr ++ ", la: " ++ show _la ++ "]")]
-                   {-# LINE 11240 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11243 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 11245 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11248 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 11250 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11253 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 60 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _lb
-                   {-# LINE 11255 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11258 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 93 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_la]
-                   {-# LINE 11260 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11263 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 69 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    extractFunctions (SimplifiedFunctionCall name_ _paramsIextractFunctions _resultIself) _paramsIcallMapping
-                   {-# LINE 11265 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 91 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    extractParameters _self _paramsIparamMapping
-                   {-# LINE 11270 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _label =
                   ({-# LINE 22 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _lc
-                   {-# LINE 11275 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 43 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    case _resultIself of
                       Just v  -> pp v >|< text " := " >|< text name_ >|< text "(" >|< _paramsIpp >|< text ")"
                       Nothing -> text ":: " >|< text name_ >|< text "(" >|< _paramsIpp >|< text ")"
-                   {-# LINE 11282 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11285 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text ("subgraph cluster_"++(show _lc    )++" {") >-<
                    text "color=green;" >-<
-                   text (show _lc    ) >|< text " [label=\"call " >|< text name_ >|<
+                   text (show _lc    ) >|< text " [label=\"call " >|< text name_ >|< dotAnnotate _lc     >|<
                    ppMapping (_lattice     _lc    ) >|<
-                   text " \", shape=circle]" >-<
-                   text (show _la    ) >|< text " [label=\"$" >|< text (name (fromJust _resultIself)) >|< text " after " >|<
+                   text " \"]" >-<
+                   text (show _la    ) >|< text " [label=\"$" >|< text (name (fromJust _resultIself)) >|< text " after " >|< dotAnnotate _la     >|<
                    ppMapping (_lattice     _la    ) >|< text "\"]" >-<
-                   text (show _lr    ) >|< text " [label=\"return " >|< text name_ >|<
+                   text (show _lr    ) >|< text " [label=\"return " >|< text name_ >|< dotAnnotate _lr     >|<
                    ppMapping (_lattice     _lc    ) >|<
-                   text "\", shape=circle, style=filled, fillcolor=gray]" >-<
-                   text (show _lb    ) >|< text " [label=\"$" >|< text (name (fromJust _resultIself)) >|< text " before " >|<
+                   text "\", style=filled, fillcolor=gray]" >-<
+                   text (show _lb    ) >|< text " [label=\"$" >|< text (name (fromJust _resultIself)) >|< text " before " >|< dotAnnotate _lb     >|<
                    ppMapping (_lattice     _lb    ) >|< text "\"]" >-<
                    text "label = \"call " >|< text name_ >|< text "\"; }"
-                   {-# LINE 11299 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11302 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _resultOstruct =
                   ({-# LINE 76 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _sname
-                   {-# LINE 11304 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11307 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sname =
                   ({-# LINE 77 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "res" ++ show _lr
-                   {-# LINE 11309 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11312 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lattice =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    \l -> fromMaybe M.empty $ IM.lookup l _lhsIres
-                   {-# LINE 11314 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11317 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup29 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, la) -> case nextUnique __cont of { (__cont, lb) -> case nextUnique __cont of { (__cont, lc) -> case nextUnique __cont of { (__cont, lr) -> (__cont, la,lb,lc,lr)}}}} )
               (_paramsOlabels,_,_,_,_) =
                   ({-# LINE 40 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup29
-                   {-# LINE 11321 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11324 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_la,_,_,_) =
                   ({-# LINE 40 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup29
-                   {-# LINE 11326 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11329 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_,_lb,_,_) =
                   ({-# LINE 37 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup29
-                   {-# LINE 11331 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11334 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_,_,_lc,_) =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup29
-                   {-# LINE 11336 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11339 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_,_,_,_lr) =
                   ({-# LINE 39 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup29
-                   {-# LINE 11341 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11344 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 180 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11346 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11349 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIcallMapping
-                   {-# LINE 11351 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11354 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsIdeclarations
-                   {-# LINE 11356 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11359 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11361 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11364 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11366 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11369 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_syn =
                   ({-# LINE 136 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 11371 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11374 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _resultIlabstruct
-                   {-# LINE 11376 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11379 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11381 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11384 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsInodes
-                   {-# LINE 11386 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11389 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _paramsIparamMapping
-                   {-# LINE 11391 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11394 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11396 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11399 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIannotated _resultIannotated
-                   {-# LINE 11401 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11404 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIextractFunctions _resultIextractFunctions
-                   {-# LINE 11406 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11409 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIextractParameters _resultIextractParameters
-                   {-# LINE 11411 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11414 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIremoved _resultIremoved
-                   {-# LINE 11416 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11419 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   SimplifiedFunctionCall name_ _paramsIself _resultIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    SimplifiedFunctionCall name_ _paramsIsimplified _resultIsimplified
-                   {-# LINE 11423 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11426 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 11428 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11431 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 11433 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11436 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 11440 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11443 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 11445 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11448 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 11450 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11453 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _resultIlabels
-                   {-# LINE 11455 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11458 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _paramsImapping
-                   {-# LINE 11460 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11463 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 11465 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11468 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 11470 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11473 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 11475 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11478 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _paramsOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 11480 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11483 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _resultOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _paramsIlabels
-                   {-# LINE 11485 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11488 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _resultOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 11490 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11493 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _paramsIannotated,_paramsIcallMapping,_paramsIdeclarations,_paramsIextractFunctions,_paramsIextractParameters,_paramsIlabel,_paramsIlabels,_paramsImapping,_paramsInodes,_paramsIparamMapping,_paramsIpp,_paramsIremoved,_paramsIself,_paramsIsimplified) =
                   params_ _paramsOdeclaration _paramsOdeclarations' _paramsOlabels _paramsOmapping _paramsOsimplifiedName 
@@ -11533,203 +11536,203 @@ sem_Node_Skip  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 11537 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11540 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 11542 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11545 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 153 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 11547 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11550 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 153 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ IM.singleton _label _labtag
-                   {-# LINE 11552 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11555 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 11557 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11560 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "[skip]")]
-                   {-# LINE 11562 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11565 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 11567 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11570 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 11572 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11575 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 11577 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11580 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 62 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 11582 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11585 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 11587 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11590 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    P.empty
-                   {-# LINE 11592 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11595 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 152 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    text _labtag     >|< dotLabel (dotPort _label >|< text "Skip" >|< dotAnnotate _label)
-                   {-# LINE 11597 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11600 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labtag =
                   ({-# LINE 154 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "skip" ++ show _label
-                   {-# LINE 11602 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11605 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup30 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup30
-                   {-# LINE 11609 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11612 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup30
-                   {-# LINE 11614 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11617 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11619 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11622 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 11624 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11627 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 11629 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11632 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11634 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11637 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11639 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11642 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 11644 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11647 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 153 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 11649 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11652 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11654 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11657 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11659 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11662 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 11664 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11667 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11669 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11672 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Skip
-                   {-# LINE 11674 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11677 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
-                   {-# LINE 11679 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11682 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
-                   {-# LINE 11684 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11687 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
-                   {-# LINE 11689 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11692 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Skip
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Skip
-                   {-# LINE 11696 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11699 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 11701 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11704 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 11706 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11709 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 11711 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11714 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 11716 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11719 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 11723 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11726 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 11728 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11731 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 11733 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11736 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_String :: String ->
@@ -11773,67 +11776,67 @@ sem_Node_String value_  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 11777 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11780 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 11782 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11785 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 140 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 11787 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11790 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 140 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ IM.singleton _label _lhsIstruct
-                   {-# LINE 11792 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11795 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 11797 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11800 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, value_)]
-                   {-# LINE 11802 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11805 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 11807 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11810 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 11812 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11815 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 11817 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11820 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 78 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 11822 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11825 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 101 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 11827 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11830 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 65 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.singleton (_label :==: S.singleton TyString)
-                   {-# LINE 11832 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11835 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 57 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "\"" >|< text value_ >|< text "\""
-                   {-# LINE 11837 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11840 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 136 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
@@ -11841,138 +11844,138 @@ sem_Node_String value_  =
                    ppString value_ >|<
                    dotAnnotate _label >|<
                    ppMapping _lattice
-                   {-# LINE 11845 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11848 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lattice =
                   ({-# LINE 141 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    myfromJust $ IM.lookup _label _lhsIres
-                   {-# LINE 11850 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11853 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup31 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup31
-                   {-# LINE 11857 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11860 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup31
-                   {-# LINE 11862 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11865 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11867 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11870 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 11872 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11875 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 11877 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11880 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11882 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11885 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11887 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11890 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    []
-                   {-# LINE 11892 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11895 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 140 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.empty
-                   {-# LINE 11897 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11900 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 55 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    []
-                   {-# LINE 11902 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11905 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 11907 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11910 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 11912 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11915 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.empty
-                   {-# LINE 11917 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11920 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    String value_
-                   {-# LINE 11922 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11925 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
-                   {-# LINE 11927 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11930 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
-                   {-# LINE 11932 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11935 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
-                   {-# LINE 11937 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11940 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   String value_
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    String value_
-                   {-# LINE 11944 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11947 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 11949 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11952 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 11954 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11957 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 11959 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11962 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 11964 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11967 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 11971 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11974 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 11976 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 11979 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOblocks,_lhsOcallMapping,_lhsOconstraints,_lhsOdeclarations,_lhsOedgeList,_lhsOexpected,_lhsOextractFunctions,_lhsOextractParameters,_lhsOfinal,_lhsOflow,_lhsOinit,_lhsOlabel,_lhsOlabels,_lhsOlabstruct,_lhsOmapping,_lhsOnodeList,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOppcfg,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOwarnings)))
 sem_Node_Variable :: T_Node  ->
@@ -12049,77 +12052,77 @@ sem_Node_Variable n_  =
               _lhsOblocks =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _blocks_augmented_syn [_blocks_augmented_f1]
-                   {-# LINE 12053 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12056 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_f1 =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label $ Normal _self
-                   {-# LINE 12058 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12061 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    foldr ($) _constraints_augmented_syn [_constraints_augmented_f1]
-                   {-# LINE 12063 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12066 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_f1 =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    S.union $ S.singleton (_label :<=: _nIlabel)
-                   {-# LINE 12068 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12071 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    foldr ($) _labstruct_augmented_syn [_labstruct_augmented_f1]
-                   {-# LINE 12073 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12076 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_f1 =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    IM.union $ IM.singleton _label _lhsIstruct
-                   {-# LINE 12078 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12081 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 12083 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12086 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "$" ++ render _nIpp)]
-                   {-# LINE 12088 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12091 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 12093 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12096 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 12098 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12101 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 12103 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12106 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 76 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just _label
-                   {-# LINE 12108 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12111 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 95 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    Just [_label]
-                   {-# LINE 12113 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12116 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOsimplifiedName =
                   ({-# LINE 44 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName <|> pure _self
-                   {-# LINE 12118 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12121 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 49 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "$" >|< _nIpp
-                   {-# LINE 12123 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12126 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 82 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
@@ -12127,178 +12130,178 @@ sem_Node_Variable n_  =
                    text "$" >|< _nIppcfg >|<
                    dotAnnotate _label >|<
                    ppMapping _lattice
-                   {-# LINE 12131 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12134 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lattice =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    fromMaybe M.empty $ IM.lookup _label _lhsIres
-                   {-# LINE 12136 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12139 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup32 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_nOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup32
-                   {-# LINE 12143 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12146 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup32
-                   {-# LINE 12148 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12151 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _blocks_augmented_syn =
                   ({-# LINE 178 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIblocks
-                   {-# LINE 12153 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12156 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIcallMapping
-                   {-# LINE 12158 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12161 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIdeclarations
-                   {-# LINE 12163 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12166 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOedgeList =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _nIedgeList
-                   {-# LINE 12168 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12171 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _nIexpected
-                   {-# LINE 12173 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12176 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 122 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIflow
-                   {-# LINE 12178 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12181 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _labstruct_augmented_syn =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _nIlabstruct
-                   {-# LINE 12183 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12186 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 53 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _nInodeList
-                   {-# LINE 12188 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12191 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nInodes
-                   {-# LINE 12193 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12196 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _nIparamMapping
-                   {-# LINE 12198 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12201 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 79 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _nIwarnings
-                   {-# LINE 12203 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12206 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    Variable _nIannotated
-                   {-# LINE 12208 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12211 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIextractFunctions
-                   {-# LINE 12213 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12216 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIextractParameters
-                   {-# LINE 12218 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12221 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIremoved
-                   {-# LINE 12223 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12226 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   Variable _nIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    Variable _nIsimplified
-                   {-# LINE 12230 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12233 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 12235 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12238 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 12240 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12243 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 12245 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12248 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 12250 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12253 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 12257 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12260 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints_augmented_syn =
                   ({-# LINE 71 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _nIconstraints
-                   {-# LINE 12262 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12265 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nIlabels
-                   {-# LINE 12267 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12270 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _nImapping
-                   {-# LINE 12272 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12275 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIconstraints
-                   {-# LINE 12277 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12280 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 12282 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12285 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 12287 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12290 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 12292 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12295 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 12297 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12300 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 12302 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12305 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _nIannotated,_nIblocks,_nIcallMapping,_nIconstraints,_nIdeclarations,_nIedgeList,_nIexpected,_nIextractFunctions,_nIextractParameters,_nIfinal,_nIflow,_nIinit,_nIlabel,_nIlabels,_nIlabstruct,_nImapping,_nInodeList,_nInodes,_nIparamMapping,_nIpp,_nIppcfg,_nIremoved,_nIself,_nIsimplified,_nIwarnings) =
                   n_ _nOconstraints _nOdeclaration _nOdeclarations' _nOlabels _nOmapping _nOres _nOsimplifiedName _nOstruct 
@@ -12411,92 +12414,92 @@ sem_Node_While c_ s_  =
               _lhsOedgeList =
                   ({-# LINE 42 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _edgeList_augmented_syn [_edgeList_augmented_f1]
-                   {-# LINE 12415 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12418 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_f1 =
                   ({-# LINE 42 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, _cIlabel, ()), (_label, _sIlabel, ())]
-                   {-# LINE 12420 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12423 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOflow =
                   ({-# LINE 130 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _flow_augmented_syn [_flow_augmented_f1]
-                   {-# LINE 12425 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12428 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_f1 =
                   ({-# LINE 130 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    (++) $ [(l, fromJust _sIinit) | l <- fromJust _cIfinal ] ++ [(l', fromJust _cIinit) | l' <- fromJust _sIfinal]
-                   {-# LINE 12430 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12433 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodeList =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    foldr ($) _nodeList_augmented_syn [_nodeList_augmented_f1]
-                   {-# LINE 12435 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12438 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_f1 =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    (++) [(_label, "while")]
-                   {-# LINE 12440 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12443 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    foldr ($) _nodes_augmented_syn [_nodes_augmented_f1]
-                   {-# LINE 12445 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12448 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_f1 =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.union $ IM.singleton _label _self
-                   {-# LINE 12450 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12453 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabel =
                   ({-# LINE 28 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 12455 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12458 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOinit =
                   ({-# LINE 64 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIinit
-                   {-# LINE 12460 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12463 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOfinal =
                   ({-# LINE 97 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIfinal
-                   {-# LINE 12465 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12468 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 67 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    extractFunctions (While _cIextractFunctions _sIextractFunctions) _cIcallMapping
-                   {-# LINE 12470 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12473 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _constraints =
                   ({-# LINE 57 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _cIconstraints
-                   {-# LINE 12475 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12478 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _expected =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.fromList [(_cIlabel :==: S.singleton TyBool)] `S.union` _cIexpected
-                   {-# LINE 12480 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12483 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOexpected =
                   ({-# LINE 52 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _expected
-                   {-# LINE 12485 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12488 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes =
                   ({-# LINE 74 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _cInodes
-                   {-# LINE 12490 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12493 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOwarnings =
                   ({-# LINE 85 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    S.map (toWarning _self _nodes     _constraints    ) (violatedConstraints  _constraints     _expected    )
-                   {-# LINE 12495 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12498 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 39 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    text "while (" >|< _cIpp >|< text ") {" >-< indent 4 _sIpp >-< text "}"
-                   {-# LINE 12500 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12503 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOppcfg =
                   ({-# LINE 110 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
@@ -12504,203 +12507,203 @@ sem_Node_While c_ s_  =
                    text "color=lightgrey;" >-<
                    text ("cond" ++ show _label) >|< dotLabel _cIppcfg >|< _sIppcfg >-<
                    text "label = \"while #" >|< text (show _label) >|< text "\"; }"
-                   {-# LINE 12508 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12511 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOstruct =
                   ({-# LINE 114 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    "cond" ++ show _label
-                   {-# LINE 12513 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12516 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup33 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_cOlabels,_) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup33
-                   {-# LINE 12520 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12523 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 27 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup33
-                   {-# LINE 12525 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12528 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOblocks =
                   ({-# LINE 174 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIblocks `IM.union` _sIblocks
-                   {-# LINE 12530 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12533 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIcallMapping `IM.union` _sIcallMapping
-                   {-# LINE 12535 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12538 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIdeclarations `M.union` _sIdeclarations
-                   {-# LINE 12540 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12543 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _edgeList_augmented_syn =
                   ({-# LINE 42 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _cIedgeList ++ _sIedgeList
-                   {-# LINE 12545 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12548 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _flow_augmented_syn =
                   ({-# LINE 130 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIflow ++ _sIflow
-                   {-# LINE 12550 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12553 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabstruct =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _cIlabstruct `IM.union` _sIlabstruct
-                   {-# LINE 12555 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12558 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodeList_augmented_syn =
                   ({-# LINE 41 "src/MF/Language/PHP/AG/PP/PPast.ag" #-}
                    _cInodeList ++ _sInodeList
-                   {-# LINE 12560 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12563 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _nodes_augmented_syn =
                   ({-# LINE 29 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _nodes
-                   {-# LINE 12565 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12568 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _cIparamMapping `IM.union` _sIparamMapping
-                   {-# LINE 12570 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12573 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    While _cIannotated _sIannotated
-                   {-# LINE 12575 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12578 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIextractFunctions _sIextractFunctions
-                   {-# LINE 12580 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12583 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIextractParameters _sIextractParameters
-                   {-# LINE 12585 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12588 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIremoved _sIremoved
-                   {-# LINE 12590 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12593 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   While _cIself _sIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    While _cIsimplified _sIsimplified
-                   {-# LINE 12597 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12600 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 12602 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12605 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 12607 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12610 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 12612 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12615 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 12619 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12622 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 12624 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12627 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _sIlabels
-                   {-# LINE 12629 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12632 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _sImapping
-                   {-# LINE 12634 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12637 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 12639 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12642 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 12644 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12647 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 12649 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12652 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 12654 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12657 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 12659 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12662 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _cOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 12664 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12667 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _constraints
-                   {-# LINE 12669 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12672 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 12674 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12677 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 12679 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12682 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _cIlabels
-                   {-# LINE 12684 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12687 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _cImapping
-                   {-# LINE 12689 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12692 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIres
-                   {-# LINE 12694 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12697 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 12699 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12702 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _sOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    _lhsIstruct
-                   {-# LINE 12704 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 12707 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _cIannotated,_cIblocks,_cIcallMapping,_cIconstraints,_cIdeclarations,_cIedgeList,_cIexpected,_cIextractFunctions,_cIextractParameters,_cIfinal,_cIflow,_cIinit,_cIlabel,_cIlabels,_cIlabstruct,_cImapping,_cInodeList,_cInodes,_cIparamMapping,_cIpp,_cIppcfg,_cIremoved,_cIself,_cIsimplified,_cIwarnings) =
                   c_ _cOconstraints _cOdeclaration _cOdeclarations' _cOlabels _cOmapping _cOres _cOsimplifiedName _cOstruct 
@@ -12742,71 +12745,71 @@ sem_OptionalString_None  =
          _lhsOvalue =
              ({-# LINE 26 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               ""
-              {-# LINE 12746 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12749 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOpp =
              ({-# LINE 17 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
               text "\"\""
-              {-# LINE 12751 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12754 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOparamMapping =
              ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               IM.empty
-              {-# LINE 12756 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12759 "src/MF/Language/PHP/AG.hs" #-}
               )
          _annotated =
              ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
               None
-              {-# LINE 12761 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12764 "src/MF/Language/PHP/AG.hs" #-}
               )
          _extractFunctions =
              ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
-              {-# LINE 12766 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12769 "src/MF/Language/PHP/AG.hs" #-}
               )
          _extractParameters =
              ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
-              {-# LINE 12771 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12774 "src/MF/Language/PHP/AG.hs" #-}
               )
          _removed =
              ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
-              {-# LINE 12776 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12779 "src/MF/Language/PHP/AG.hs" #-}
               )
          _self =
              None
          _simplified =
              ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               None
-              {-# LINE 12783 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12786 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOannotated =
              ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
               _annotated
-              {-# LINE 12788 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12791 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOextractFunctions =
              ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _extractFunctions
-              {-# LINE 12793 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12796 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOextractParameters =
              ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _extractParameters
-              {-# LINE 12798 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12801 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOremoved =
              ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _removed
-              {-# LINE 12803 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12806 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOself =
              _self
          _lhsOsimplified =
              ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _simplified
-              {-# LINE 12810 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12813 "src/MF/Language/PHP/AG.hs" #-}
               )
      in  ( _lhsOannotated,_lhsOextractFunctions,_lhsOextractParameters,_lhsOparamMapping,_lhsOpp,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOvalue))
 sem_OptionalString_Some :: String ->
@@ -12824,71 +12827,71 @@ sem_OptionalString_Some value_  =
          _lhsOvalue =
              ({-# LINE 24 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               value_
-              {-# LINE 12828 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12831 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOpp =
              ({-# LINE 15 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
               text "\"" >|< text value_ >|< text "\""
-              {-# LINE 12833 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12836 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOparamMapping =
              ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               IM.empty
-              {-# LINE 12838 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12841 "src/MF/Language/PHP/AG.hs" #-}
               )
          _annotated =
              ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
               Some value_
-              {-# LINE 12843 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12846 "src/MF/Language/PHP/AG.hs" #-}
               )
          _extractFunctions =
              ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
-              {-# LINE 12848 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12851 "src/MF/Language/PHP/AG.hs" #-}
               )
          _extractParameters =
              ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
-              {-# LINE 12853 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12856 "src/MF/Language/PHP/AG.hs" #-}
               )
          _removed =
              ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
-              {-# LINE 12858 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12861 "src/MF/Language/PHP/AG.hs" #-}
               )
          _self =
              Some value_
          _simplified =
              ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               Some value_
-              {-# LINE 12865 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12868 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOannotated =
              ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
               _annotated
-              {-# LINE 12870 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12873 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOextractFunctions =
              ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _extractFunctions
-              {-# LINE 12875 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12878 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOextractParameters =
              ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _extractParameters
-              {-# LINE 12880 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12883 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOremoved =
              ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _removed
-              {-# LINE 12885 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12888 "src/MF/Language/PHP/AG.hs" #-}
               )
          _lhsOself =
              _self
          _lhsOsimplified =
              ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
               _simplified
-              {-# LINE 12892 "src/MF/Language/PHP/AG.hs" #-}
+              {-# LINE 12895 "src/MF/Language/PHP/AG.hs" #-}
               )
      in  ( _lhsOannotated,_lhsOextractFunctions,_lhsOextractParameters,_lhsOparamMapping,_lhsOpp,_lhsOremoved,_lhsOself,_lhsOsimplified,_lhsOvalue))
 -- ParamList ---------------------------------------------------
@@ -12993,168 +12996,168 @@ sem_ParamList_Cons hd_ tl_  =
               _lhsOlabel =
                   ({-# LINE 46 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 12997 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13000 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    _hdIpp >|< text "," >|< _tlIpp
-                   {-# LINE 13002 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13005 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup34 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_hdOlabels,_) =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup34
-                   {-# LINE 13009 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13012 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup34
-                   {-# LINE 13014 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13017 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _hdIcallMapping `IM.union` _tlIcallMapping
-                   {-# LINE 13019 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13022 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _hdIdeclarations `M.union` _tlIdeclarations
-                   {-# LINE 13024 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13027 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _hdInodes `IM.union` _tlInodes
-                   {-# LINE 13029 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13032 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _hdIparamMapping `IM.union` _tlIparamMapping
-                   {-# LINE 13034 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13037 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    (:) _hdIannotated _tlIannotated
-                   {-# LINE 13039 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13042 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIextractFunctions _tlIextractFunctions
-                   {-# LINE 13044 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13047 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIextractParameters _tlIextractParameters
-                   {-# LINE 13049 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13052 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIremoved _tlIremoved
-                   {-# LINE 13054 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13057 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   (:) _hdIself _tlIself
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    (:) _hdIsimplified _tlIsimplified
-                   {-# LINE 13061 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13064 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 13066 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13069 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 13071 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13074 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 13076 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13079 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 13081 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13084 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 13088 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13091 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOlabels =
                   ({-# LINE 18 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _tlIlabels
-                   {-# LINE 13093 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13096 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _tlImapping
-                   {-# LINE 13098 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13101 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOconstraints =
                   ({-# LINE 51 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    error "missing rule: ParamList.Cons.hd.constraints"
-                   {-# LINE 13103 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13106 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 13108 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13111 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 13113 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13116 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 13118 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13121 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOres =
                   ({-# LINE 21 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    error "missing rule: ParamList.Cons.hd.res"
-                   {-# LINE 13123 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13126 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 13128 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13131 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _hdOstruct =
                   ({-# LINE 20 "src/MF/Language/PHP/AG/PP/PPcfg.ag" #-}
                    error "missing rule: ParamList.Cons.hd.struct"
-                   {-# LINE 13133 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13136 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _tlOdeclaration =
                   ({-# LINE 159 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclaration
-                   {-# LINE 13138 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13141 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _tlOdeclarations' =
                   ({-# LINE 157 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _lhsIdeclarations'
-                   {-# LINE 13143 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13146 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _tlOlabels =
                   ({-# LINE 17 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _hdIlabels
-                   {-# LINE 13148 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13151 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _tlOmapping =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _hdImapping
-                   {-# LINE 13153 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13156 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _tlOsimplifiedName =
                   ({-# LINE 38 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsIsimplifiedName
-                   {-# LINE 13158 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13161 "src/MF/Language/PHP/AG.hs" #-}
                    )
               ( _hdIannotated,_hdIblocks,_hdIcallMapping,_hdIconstraints,_hdIdeclarations,_hdIedgeList,_hdIexpected,_hdIextractFunctions,_hdIextractParameters,_hdIfinal,_hdIflow,_hdIinit,_hdIlabel,_hdIlabels,_hdIlabstruct,_hdImapping,_hdInodeList,_hdInodes,_hdIparamMapping,_hdIpp,_hdIppcfg,_hdIremoved,_hdIself,_hdIsimplified,_hdIwarnings) =
                   hd_ _hdOconstraints _hdOdeclaration _hdOdeclarations' _hdOlabels _hdOmapping _hdOres _hdOsimplifiedName _hdOstruct 
@@ -13187,102 +13190,102 @@ sem_ParamList_Nil  =
               _lhsOlabel =
                   ({-# LINE 46 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    _label
-                   {-# LINE 13191 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13194 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOpp =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/PP/PPcode.ag" #-}
                    P.empty
-                   {-# LINE 13196 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13199 "src/MF/Language/PHP/AG.hs" #-}
                    )
               __tup35 =
                   let __cont = _lhsIlabels in seq __cont ( case nextUnique __cont of { (__cont, label) -> (__cont, label)} )
               (_lhsOlabels,_) =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup35
-                   {-# LINE 13203 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13206 "src/MF/Language/PHP/AG.hs" #-}
                    )
               (_,_label) =
                   ({-# LINE 45 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    __tup35
-                   {-# LINE 13208 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13211 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOcallMapping =
                   ({-# LINE 50 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 13213 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13216 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOdeclarations =
                   ({-# LINE 156 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    M.empty
-                   {-# LINE 13218 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13221 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOnodes =
                   ({-# LINE 23 "src/MF/Language/PHP/AG/Flow.ag" #-}
                    IM.empty
-                   {-# LINE 13223 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13226 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOparamMapping =
                   ({-# LINE 80 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    IM.empty
-                   {-# LINE 13228 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13231 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _annotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    []
-                   {-# LINE 13233 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13236 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
-                   {-# LINE 13238 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13241 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _extractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
-                   {-# LINE 13243 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13246 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _removed =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
-                   {-# LINE 13248 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13251 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _self =
                   []
               _simplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    []
-                   {-# LINE 13255 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13258 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOannotated =
                   ({-# LINE 12 "src/MF/Language/PHP/AG/Checking.ag" #-}
                    _annotated
-                   {-# LINE 13260 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13263 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractFunctions =
                   ({-# LINE 59 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractFunctions
-                   {-# LINE 13265 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13268 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOextractParameters =
                   ({-# LINE 87 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _extractParameters
-                   {-# LINE 13270 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13273 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOremoved =
                   ({-# LINE 33 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _removed
-                   {-# LINE 13275 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13278 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOself =
                   _self
               _lhsOsimplified =
                   ({-# LINE 13 "src/MF/Language/PHP/AG/Simplify.ag" #-}
                    _simplified
-                   {-# LINE 13282 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13285 "src/MF/Language/PHP/AG.hs" #-}
                    )
               _lhsOmapping =
                   ({-# LINE 86 "src/MF/Language/PHP/AG/Typing.ag" #-}
                    _lhsImapping
-                   {-# LINE 13287 "src/MF/Language/PHP/AG.hs" #-}
+                   {-# LINE 13290 "src/MF/Language/PHP/AG.hs" #-}
                    )
           in  ( _lhsOannotated,_lhsOcallMapping,_lhsOdeclarations,_lhsOextractFunctions,_lhsOextractParameters,_lhsOlabel,_lhsOlabels,_lhsOmapping,_lhsOnodes,_lhsOparamMapping,_lhsOpp,_lhsOremoved,_lhsOself,_lhsOsimplified)))

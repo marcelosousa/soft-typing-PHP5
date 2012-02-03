@@ -6,6 +6,7 @@ import Data.List hiding (init)
 
 type Label = Int
 type Flow = [(Label, Label)]
+type FlowOut = ((Label,Label),Flow,Flow)
 
 class Flowable node where
     init     :: node -> Label
