@@ -107,6 +107,12 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
         transfer (Normal s@(Variable _))= id
         transfer (Normal LTrue)         = id
         transfer (Normal (String _))    = id
+        transfer (Normal (Plus _ _))    = id
+        transfer (Normal (Min _ _))    = id
+        transfer (Normal (Mul _ _))    = id
+        transfer (Normal (Mod _ _))    = id
+        transfer (Normal (IsEqual _ _)) = id
+        transfer (Normal (GreaterEqual _ _)) = id
         transfer (Normal s@(Assign rv e)) = updateMapping s 
 --        transfer (Normal (Expr e))      = id  this should be irrelevant
 --        transfer (Normal (If c _ _ _ )) = updateMapping c
@@ -158,11 +164,11 @@ typing' (m,w) = (IM.map (M.fold join M.empty) m ,w)
 -- Report Typing
 -------------------------------------------------------------------------------
 
-reporterty :: Component (ValueMap (ValueMap (Identifier :-> TypeSet))) Doc
+reporterty :: Component (ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)) Doc
 reporterty = component $ return . reporty'     
              
-reporty' ::ValueMap (ValueMap (Identifier :-> TypeSet)) -> Doc
-reporty' m = IM.fold (\it r -> reporty it >-< r) P.empty m
+reporty' ::ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut) -> Doc
+reporty' m = IM.fold (\it r -> reporty (fst it) >-< r) P.empty m
 
 reporty ::ValueMap (Identifier :-> TypeSet) -> Doc
 reporty vm = IM.foldWithKey foldvm P.empty vm

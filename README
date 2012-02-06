@@ -103,12 +103,12 @@ The following files and directories might be of special interest:
 Done
 ~~~~
 1. Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
-2. Simple assignments (test/simple.php) 
+2. Simple assignments (tests/simple.php) 
 3. If-constructs with no else clauses (tests/controlstruct/if.php)
 4. Ifelse constructs (tests/controlstruct/ifelse.php)
 5. Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
 6. Strings with escapes characters (tests/basicdatatypes/scalar/string/doublequoted.php)
-7. Simple interprocedural analysis (tests/functions/id.php)
+7. Simple interprocedural analysis (tests/functions/id.php, tests/functions/id2.php)
 8. While-construct (tests/controlstruct/while.php)
 
 Supported PHP5 features
@@ -122,6 +122,10 @@ Supported PHP5 features
 
 Non-Supported PHP5 features
 ---------------------------
+
+Parser 
+~~~~~~
+
 
 General
 ~~~~~~~
@@ -206,6 +210,10 @@ Functions
 TODO
 ----
 3. Implement items not supported
+-- Arithmetic 
+-- Arrays
+-- References
+-- The arity in the CCO library does not allow for productions to have more than one rule.
 
 MFP - Minimal Fixed Point
 --------------------------

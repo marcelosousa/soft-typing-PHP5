@@ -1,0 +1,62 @@
+digraph structs {
+bgcolor=transparent;
+node [shape=Mrecord];
+init [label="init", shape=circle]
+final [label="final", shape=circle, style=filled, fillcolor=gray]
+subgraph cluster_1 {
+style=filled;
+color=lightblue;
+1 [label="entry (1) ", shape=circle]
+2 [label="exit (2) ", shape=circle, style=filled, fillcolor=gray]
+subgraph cluster_8 {
+color=lightgrey;
+cond8 [label="<10>$n (10) \n ( $n\=\>\{ TyInt\})|<9> ==  (9) \n ( $n\=\>\{ TyInt\}) | <12>0 (12) "];expr13 [label="<13>return (13) \n ( $n\=\>\{ TyInt\}),\n ( ReturnValue\=\>\{ TyInt\}) | <14>1 (14) "];expr17 [label="<19>$#21 (19) \n ( $n\=\>\{ TyInt\}) | <18>=  (18) \n ( $#21\=\>\{ TyInt\}),\n ( $n\=\>\{ TyInt\}) | <22>$n (22) \n ( $n\=\>\{ TyInt\})|<21> -  (21) \n ( $n\=\>\{ TyInt\}) | <24>1 (24) "];
+                                                                                                                                                                                                          subgraph cluster_27 {
+                                                                                                                                                                                                          color=green;
+                                                                                                                                                                                                          27 [label="call fac (27) \n ( Param 0\=\>\{ TyInt\}) "]
+                                                                                                                                                                                                          25 [label="$#19 after  (25) \n ( $#19\=\>\{ TyInt\}),\n ( $#21\=\>\{ TyInt\}),\n ( $n\=\>\{ TyInt\})"]
+                                                                                                                                                                                                          28 [label="return fac (28) \n ( Param 0\=\>\{ TyInt\})", style=filled, fillcolor=gray]
+                                                                                                                                                                                                          26 [label="$#19 before  (26) \n ( $#21\=\>\{ TyInt\}),\n ( $n\=\>\{ TyInt\})"]
+                                                                                                                                                                                                          label = "call fac"; }
+                                                                                                                                                                                                          expr36 [label="<36>return (36) \n ( $#19\=\>\{ TyInt\}),\n ( $#21\=\>\{ TyInt\}),\n ( $n\=\>\{ TyInt\}),\n ( ReturnValue\=\>\{ TyInt\}) | <38>$n (38) |<37> *  (37)  | <40>$#19 (40) "];
+label = "if #8"; }
+label = "function fac"; }
+expr43 [label="<45>$#40 (45)  | <44>=  (44) \n ( $#40\=\>\{ TyInt\}) | <47>5 (47) "];
+subgraph cluster_50 {
+color=green;
+50 [label="call fac (50) \n ( Param 0\=\>\{ TyInt\}) "]
+48 [label="$a after  (48) \n ( $#40\=\>\{ TyInt\}),\n ( $a\=\>\{ TyInt\})"]
+51 [label="return fac (51) \n ( Param 0\=\>\{ TyInt\})", style=filled, fillcolor=gray]
+49 [label="$a before  (49) \n ( $#40\=\>\{ TyInt\})"]
+label = "call fac"; }
+init -> expr43:47;
+48-> final;
+1-> cond8:12;
+cond8:9-> expr13:13;
+cond8:9-> expr17:24;
+cond8:12-> cond8:10;
+cond8:10-> cond8:9;
+expr13:13-> 2;
+25-> expr36:36;
+expr17:18-> 26;
+expr17:21-> expr17:19;
+expr17:19-> expr17:18;
+expr17:24-> expr17:22;
+expr17:22-> expr17:21;
+26-> 25;
+26-> 27;
+28-> 25;
+27-> 1;
+2-> 28;
+expr36:36-> 2;
+expr36:40-> expr36:38;
+expr36:38-> expr36:37;
+expr43:44-> 49;
+expr43:47-> expr43:45;
+expr43:45-> expr43:44;
+49-> 48;
+49-> 50;
+51-> 48;
+50-> 1;
+2-> 51;
+}

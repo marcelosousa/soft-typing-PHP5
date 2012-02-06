@@ -91,6 +91,31 @@ sem Node
         e.struct = @loc.sname
         loc.sname = "expr" ++ show @label
 
+    | Plus  
+        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " + " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+
+    | Min  
+        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " - " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+        
+    | Mul  
+        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " * " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+
+    | IsEqual  
+        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " == " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+
+    | Mod  
+        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " % " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct    
+    
     | Return
         lhs.ppcfg = text @loc.sname >|< 
                     dotLabel (dotPort @label >|< text "return" >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @e.ppcfg)

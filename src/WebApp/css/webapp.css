@@ -166,7 +166,7 @@ color:#7D7D7D;
 
 /* slideshow stuff */
 #container{
-  width:750px;
+/*  width:750px;*/
 	position:relative;
 }
 
@@ -222,4 +222,5 @@ html, body {
 text-align: center;
 }
 p {text-align:justify;  	
+overflow:auto;
 text-justify:inter-word;}

@@ -11,7 +11,7 @@ function gcd ($a, $b)
 
 $a = gcd (24, 8);
 
-check ($a, "[TyInt]");
+//check ($a, "[TyInt]");
 
 
 ?>

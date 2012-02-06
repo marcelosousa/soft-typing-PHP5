@@ -73,6 +73,6 @@ solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialVal
               foutt = ((start,end), w, worklistTail)
               foute = ((start,end), w, newWorklist)
           in if (effect <: previous)
-             then solve' (n+1) (IM.insert n (valueMap, foutt) it) p valueMap worklistTail
-             else solve' (n+1) (IM.insert n (newValueMap, foute) it) p newValueMap newWorklist                                  
+             then solve' 1 IM.empty p valueMap worklistTail --solve' (n+1) (IM.insert n (valueMap, foutt) it) p valueMap worklistTail
+             else solve' 1 IM.empty p newValueMap newWorklist   --solve' (n+1) (IM.insert n (newValueMap, foute) it) p newValueMap newWorklist                                  
                 

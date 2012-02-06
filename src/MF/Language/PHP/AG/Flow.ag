@@ -23,7 +23,7 @@ attr Node ParamList
     syn nodes use {`IM.union`} {IM.empty} :: {IntMap Node}
 
 sem Node
-    | OpenTag CloseTag If While Skip Assign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return IsEqual GreaterEqual Or Expect Return FunctionCall Param String Expr DQContent FunctionName Literal Echo Print
+    | If While Skip Assign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return IsEqual GreaterEqual Or Expect Return FunctionCall Param String Expr DQContent FunctionName Literal Echo Print
         loc.label :: uniqueref labels
         lhs.label = @loc.label
         +nodes    = IM.union $ IM.singleton @label @self
@@ -74,6 +74,8 @@ sem Node
         lhs.init = Nothing
     | Variable
         lhs.init = Just @label
+    | Plus Min Mul Mod IsEqual GreaterEqual
+        lhs.init = @r.init
     | Deci LTrue LFalse String
         lhs.init = Just @label
         
@@ -97,7 +99,7 @@ sem Node
         lhs.final = @c.final
     | Expr 
         lhs.final = @e.final
-    | Deci LTrue LFalse String
+    | Deci LTrue LFalse String Plus Min Mul Mod IsEqual GreaterEqual
         lhs.final = Just [@label]
     | Sequence 
         lhs.final = @s.final <|> @f.final
@@ -136,7 +138,9 @@ sem Node
         +flow = let (Declaration name ln lx) = lookupDeclaration @name @lhs.declarations'
                 in (++) [(@lb, @la), (@lb, @lc), (@lr, @la), (@lc, ln), (lx, @lr)]
     | Assign
-        lhs.flow = [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
+        +flow = (++) $ [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
+    | Plus Min Mul Mod  IsEqual GreaterEqual
+        +flow = (++) $ [(l', fromJust @l.init) | l' <- fromJust @r.final] ++ [(l', @label) | l' <- fromJust @l.final]
 
 {
 lookupDeclaration name declarations = case M.lookup name declarations of 
@@ -174,7 +178,7 @@ attr Node
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Assign Variable Deci Return LTrue LFalse String
+    | Skip Expect Assign Variable Deci Return LTrue LFalse String Plus Min Mul Mod IsEqual GreaterEqual
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
         +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)

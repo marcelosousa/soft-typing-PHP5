@@ -119,18 +119,18 @@ debug c pres dinfo ast imgs = docTypeHtml $ do
             H.a ! A.href "mailto:dipython@gmail.com" $ "Copyright © 2012 - Marcelo Sousa"
 
 iterationGen res n = do let (img, (we,wb,wa)) = res !! (n-1)
-                        H.div ! A.class_ "contentBox" $ do
-                            H.div ! A.class_ "innerBox" $ do
-                                H.div ! A.class_ "contentText" $ do
-                                    p $ toHtml $ "Control Flow for Iteration " ++ show n
-                                    p $ toHtml $ "Solving worklist elem " ++ show we
-                                    p $ toHtml $ "Worklist before effect " ++ show wb
-                                    p $ toHtml $ "Worklist after affect " ++ show wa 
-                                    br
+                        --H.div ! A.class_ "contentBox" $ do
+                        --    H.div ! A.class_ "innerBox" $ do
+                        --        H.div ! A.class_ "contentText" $ do
+                        p $ toHtml $ "Control Flow for Iteration " ++ show n
+                        p $ toHtml $ "Solving worklist elem " ++ show we
+                        p $ toHtml $ "Worklist before effect " ++ show wb
+                        p $ toHtml $ "Worklist after effect " ++ show wa 
+                        br
                         simpleImage img
                         
 simpleImage :: String -> Html
-simpleImage str = H4.center $ img ! src (toValue str) -- ! width "550" ! height "700"
+simpleImage str = H4.center $ img ! src (toValue str) ! width "100%" ! height "100%"
     
 index :: FilePath -> Html
 index fpi = docTypeHtml $ do

@@ -30,7 +30,7 @@ data Node
       stmt     :: Node -- this one is important
       closetag :: Node 
       after    :: {[Node]}
-    
+  
     | OpenTag
     | CloseTag
     
@@ -119,6 +119,7 @@ sequence []     = Skip
 sequence [x]    = x
 sequence xs     = foldr Sequence (last xs) (L.init xs)
 
+buildDocument ::  [Node] -> Node -> [Node] -> Node -> [Node] -> Node
 buildDocument before opentag stmts = Document before opentag (sequence stmts)
 
 instance Tree OptionalString where

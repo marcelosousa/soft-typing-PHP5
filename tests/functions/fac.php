@@ -11,6 +11,6 @@ function fac ($n)
 
 $a = fac (5);
 
-check ($a, "[TyInt]");
+//check ($a, "[TyInt]");
 
 ?>

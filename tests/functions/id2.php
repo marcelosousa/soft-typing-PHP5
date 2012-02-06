@@ -11,10 +11,10 @@ $b = id ($a);
 $c = true;
 $d = id ($c);
 
-check ($a, "[TyInt]");
+/*check ($a, "[TyInt]");
 check ($b, "[TyInt]");
 
 check ($c, "[TyBool]");
 check ($d, "[TyBool]");
-
+*/
 ?>
