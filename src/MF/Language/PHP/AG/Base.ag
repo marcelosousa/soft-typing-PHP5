@@ -33,6 +33,7 @@ data Node
   
     | OpenTag
     | CloseTag
+    | InlineHTML
     
     -- InlineHTML
     | Literal value :: String
@@ -51,22 +52,45 @@ data Node
    
     -- Expr
     | Assign  rv :: Node e :: Node
+  
+    | PlusAssign rv :: Node e :: Node
+    | MinAssign rv :: Node e :: Node
+    | MulAssign rv :: Node e :: Node
+    | DivAssign rv :: Node e :: Node
+    | ModAssign rv :: Node e :: Node
+    
+    | ConcatAssign rv :: Node e :: Node
+    
     --| LNumber ln  :: Node
     | LTrue
     | LFalse
     
     -- Arithmetic
     | Plus l :: Node r :: Node
-    | Min l :: Node r :: Node
-    | Mul l :: Node r :: Node
-    | Mod l :: Node r :: Node
+    | Min  l :: Node r :: Node
+    | Mul  l :: Node r :: Node
+    | Mod  l :: Node r :: Node
+    
+    | PostInc e :: Node
+    | PreInc  e :: Node
     
     -- Compare
-    | IsEqual l :: Node r :: Node
-    | GreaterEqual l :: Node r :: Node
+    | IsEqual        l :: Node r :: Node
+    | IsIdentical    l :: Node r :: Node
+    | IsNotEqual     l :: Node r :: Node
+    | IsNotIdentical l :: Node r :: Node
+    | Less           l :: Node r :: Node
+    | Greater        l :: Node r :: Node
+    | LessEqual      l :: Node r :: Node
+    | GreaterEqual   l :: Node r :: Node
     
     -- Logical
-    | Or l :: Node r :: Node
+    | LAnd l :: Node r :: Node
+    | LOr  l :: Node r :: Node
+    | LXor l :: Node r :: Node
+    | Not  e :: Node
+    | And  l :: Node r :: Node
+    | Or   l :: Node r :: Node
     
     | FunctionCall name :: Node params :: ParamList
     | FunctionName value :: String
@@ -100,7 +124,7 @@ data Node
     | Expect expr :: Node ty :: {TypeSet}
     
     -- Echo function
-    | Echo e :: ParamList
+    | Echo e :: Node
     
     -- Print function
     | Print e :: Node
@@ -141,6 +165,7 @@ instance Tree Node where
                        , app "ASPCloseTag"   (pure CloseTag)
                        
                          -- InlineHTML
+                       , app "InlineHTML"    (buildInlineHtml <$> arg <*> arg <*> arg)
                        , app "Literal"       (Literal <$> arg)
                        
                          -- Statement
@@ -156,6 +181,15 @@ instance Tree Node where
     
                          -- Expression
                        , app "Assign"        (Assign <$> arg <*> arg)
+
+                       , app "PlusAssign"    (PlusAssign <$> arg <*> arg)
+                       , app "MinAssign"     (MinAssign <$> arg <*> arg)
+                       , app "MulAssign"     (MulAssign <$> arg <*> arg)
+                       , app "DivAssign"     (DivAssign <$> arg <*> arg)
+                       , app "ModAssign"     (ModAssign <$> arg <*> arg)
+                       
+                       , app "ConcatAssign"  (ConcatAssign <$> arg <*> arg)
+                       
                        , app "LNumber"       (id <$> arg)
                        , app "True"          (pure LTrue)
                        , app "False"         (pure LFalse)
@@ -163,11 +197,27 @@ instance Tree Node where
                        , app "Plus"          (Plus <$> arg <*> arg)
                        , app "Min"           (Min <$> arg <*> arg)
                        , app "Mul"           (Mul <$> arg <*> arg)
-                       , app "Mod"           (Mod <$> arg <*> arg)
+                       , app "Mod"           (Mod <$> arg <*> arg)                                              
                        
-                       , app "IsEqual"       (IsEqual <$> arg <*> arg)
-                       , app "GreaterEqual"  (GreaterEqual <$> arg <*> arg)
-                       , app "Or"            (Or <$> arg <*> arg)
+                       , app "PostInc"       (PostInc <$> arg)
+                       , app "PreInc"        (PreInc <$> arg)
+                       
+                       , app "IsEqual"       (IsEqual       <$> arg <*> arg )
+                       , app "IsIdentical"   (IsIdentical   <$> arg <*> arg )
+                       , app "IsNotEqual"    (IsNotEqual    <$> arg <*> arg )
+                       , app "IsNotIdentical"(IsNotIdentical<$> arg <*> arg )
+                       , app "Less"          (Less          <$> arg <*> arg )
+                       , app "Greater"       (Greater       <$> arg <*> arg )
+                       , app "LessEqual"     (LessEqual     <$> arg <*> arg )
+                       , app "GreaterEqual"  (GreaterEqual  <$> arg <*> arg )
+                       
+                       , app "LAnd"          (LAnd <$> arg <*> arg)
+                       , app "LOr"           (LOr  <$> arg <*> arg)
+                       , app "LXor"          (LXor <$> arg <*> arg)
+                       , app "Not"           (Not  <$> arg)
+                       , app "And"           (And  <$> arg <*> arg)
+                       , app "Or"            (Or   <$> arg <*> arg)
+                       
                        , app "FunctionCall"  (buildFunctionCall <$> arg <*> arg)
                        
                          -- FunctionName 
@@ -207,7 +257,9 @@ instance Tree Node where
                        , app "Print"         (Print <$> arg)
                        ]
 
-buildEcho params = Echo params
+buildInlineHtml :: Node -> [Node] -> Node -> Node
+buildInlineHtml _ _ _ = InlineHTML
+buildEcho params = Echo (sequence params)
 buildFunctionDecl name params stmt = FunctionDecl name params (sequence stmt)
 buildFunctionCall name params      = FunctionCall name params -- (sequence params)
 

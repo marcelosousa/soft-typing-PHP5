@@ -48,16 +48,16 @@ ioWrap' input (C f) = do
     Just output -> putStrLn output >> exitWith ExitSuccess
 
     
-generateWebApp :: FilePath -> FilePath -> String -> Component String ((IM.IntMap (String, FlowOut)), (String, (String, String))) -> IO ()
-generateWebApp fpi fp input (C f) = do
+generateWebApp :: FilePath -> FilePath -> String -> String -> Component String ((IM.IntMap (String, FlowOut)), (String, String)) -> IO ()
+generateWebApp fpi fp input c (C f) = do
   result <- runFeedback (f input) 1 1 stderr
   case result of
     Nothing   -> exitFailure
-    Just (lout, (asts, (c, dinfo))) -> do let (ldots,lw) = unzip $ IM.elems lout
-                                          fps <- mapM (\(it, out) -> generate (show it) fp out) (zip (IM.keys lout) ldots)
-                                          ast <- generate "ast" fp asts
-                                          webapp fpi fp c input dinfo ast (zip fps lw)
-                                          exitWith ExitSuccess
+    Just (lout, (asts, dinfo)) -> do let (ldots,lw) = unzip $ IM.elems lout
+                                     fps <- mapM (\(it, out) -> generate (show it) fp out) (zip (IM.keys lout) ldots)
+                                     ast <- generate "ast" fp asts
+                                     webapp fpi fp c input dinfo ast (zip fps lw)
+                                     exitWith ExitSuccess
 
 (<+>) :: Component Node [a] -> Component Node [a] -> Component Node [a]
 (C f) <+> (C g) = C $ \doc -> do 
@@ -96,18 +96,18 @@ instance Default Options where
   def = Visualize
 
 -- Run Pipelines
-runOption :: FilePath -> FilePath -> Options -> String -> IO ()
-runOption fpi fp Visualize inp = generateWebApp fpi fp inp (parser >>> reader >>> simplifier >>> ((cfgprinter >>> renderIt) &&& visualizer &&& printer &&& debugger))
-runOption _ _ DebugVis   inp = ioWrap' inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt >>> debugApp)
-runOption _ _ Debug     inp = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
-runOption _ _ DebugSimplifier inp = ioWrap' inp (parser >>> reader >>> simplifier >>> debugger)
+runOption :: FilePath -> FilePath -> Options -> String -> String -> IO ()
+runOption fpi fp Visualize inp c = generateWebApp fpi fp inp c (parser >>> reader >>> simplifier >>> ((cfgprinter >>> renderIt) &&& visualizer &&& debugger))
+runOption _ _ DebugVis  inp c = ioWrap' inp (parser >>> reader >>> simplifier >>> cfgprinter >>> renderIt >>> debugApp)
+runOption _ _ Debug     inp c = ioWrap' inp (parser >>> reader >>> (debugger <+> printer))
+runOption _ _ DebugSimplifier inp c = ioWrap' inp (parser >>> reader >>> simplifier >>> debugger)
 --runOption DebugSimplifier     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> printer)
-runOption _ _ Check     inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
+runOption _ _ Check     inp c = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> checker >>> reporter >>> render)
 --runOption _ Print     inp = ioWrap' inp (parser >>> reader >>> printer)
-runOption _ _ Type      inp = ioWrap' inp (parser >>> reader >>> simplifier >>> typer >>> reporterty >>> render)
-runOption _ _ ASTGraph  inp = ioWrap' inp (parser >>> reader >>> visualizer)
+runOption _ _ Type      inp c = ioWrap' inp (parser >>> reader >>> simplifier >>> typer >>> reporterty >>> render)
+runOption _ _ ASTGraph  inp c = ioWrap' inp (parser >>> reader >>> visualizer)
 --runOption ASTGraph  inp = ioWrap' inp (parser >>> reader >>> annotator >>> simplifier >>> visualizer)
-runOption _ _ Parser    inp = print inp
+runOption _ _ Parser    inp c = print inp
 
 data ProgramOptions = PHPAnalysis {
     output :: String
@@ -133,9 +133,9 @@ main = do args <- cmdArgsRun standard
 runAnalysis :: ProgramOptions -> IO ()
 runAnalysis options = do let filename = input options
                              outputdir = (dropExtension filename)++"output"                             
-                         str <- readFile filename                         
-                         str' <- readProcess "sglri" ["-p", "src/grammar/PHP5.tbl"] str
-                         runOption filename outputdir (typeoutput options) str'                       
+                         code <- readFile filename                         
+                         str' <- readProcess "sglri" ["-p", "src/grammar/PHP5.tbl"] code
+                         runOption filename outputdir (typeoutput options) str' code            
                          
 usage :: String
 usage = unlines ["PHP-5 Analysis"]

@@ -46,46 +46,44 @@ sem Node
         lhs.nodeList = [(@label, "expect: " ++ render @expr.pp ++ " == " ++ show @ty)]
                
     -- Expressions
-    | Assign
-        lhs.nodeList = [(@label, "="), (@rv.label, render @rv.pp)] ++ @e.nodeList
+    | Deci Plus Min Mul Mod LTrue LFalse LAnd LOr LXor Not And Or Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual
+        +nodeList = (++) [(@label, toString @self)]    
+
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign    
         lhs.edgeList = [(@label, @rv.label, ()), (@label, @e.label, ())] ++ @e.edgeList
+
     | Variable 
         +nodeList = (++) [(@label, "$" ++ render @n.pp)]
     | String
         +nodeList = (++) [(@label, @value)]
-    -- Arithmetic
-    | Deci
-        +nodeList = (++) [(@label, show @value)]    
-    | Plus 
-        +nodeList = (++) [(@label, "+")]
-    | Min
-        +nodeList = (++) [(@label, "-")]
-    | Mul
-        +nodeList = (++) [(@label, "*")]
-    | Mod 
-        +nodeList = (++) [(@label, "%")]
-    -- Compare
-    | IsEqual
-        +nodeList = (++) [(@label, "==")]
-    | GreaterEqual
-        +nodeList = (++) [(@label, ">=")]
-    -- Logical
-    | LTrue
-        +nodeList = (++) [(@label, "true")]
-    | LFalse
-        +nodeList = (++) [(@label, "false")]
-    | Or
-        +nodeList = (++) [(@label, "||")]
+
     | Echo
         +nodeList = (++) [(@label, "echo")]
+        +edgeList = (++) [(@label, @e.label, ())]
 
     -- | Connect binary operators
-    | Plus Min Mul Mod IsEqual Or
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or
         +edgeList = (++) [(@label, @l.label, ()), (@label, @r.label, ())]
-               
+
+    | Not
+        +edgeList = (++) [(@label, @e.label, ())]
+
+    | Print
+        +nodeList = (++) [(@label, "print")]
+        +edgeList = (++) [(@label, @e.label, ())]
+    | PostInc 
+        +nodeList = (++) [(@label, "PostInc")]
+        +edgeList = (++) [(@label, @e.label, ())]
+    | PreInc
+        +nodeList = (++) [(@label, "PreInc")]
+        +edgeList = (++) [(@label, @e.label, ())]
+    | InlineHTML
+        +nodeList = (++) [(@label, "InlineHTML")]
+        
 {
 
-visualize p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeList ++ ", p: " ++ show p) $ graphviz' (mkGraph nodeList edgeList :: Gr String ())
+--visualize p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeList ++ ", p: " ++ show p) $ graphviz' (mkGraph nodeList edgeList :: Gr String ())
+visualize p = graphviz' (mkGraph nodeList edgeList :: Gr String ())
     where
         nodeList = nodeList_Syn_Node . execute M.empty undefined $ p
         edgeList = edgeList_Syn_Node . execute M.empty undefined $ p

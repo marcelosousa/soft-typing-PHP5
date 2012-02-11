@@ -10,6 +10,6 @@ if($condition){
     
 #echo $name, $surname;
 
-check ($condition, "[TyBool]");
+#check ($condition, "[TyBool]");
 
 ?>

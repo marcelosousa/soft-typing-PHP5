@@ -130,7 +130,7 @@ iterationGen res n = do let (img, (we,wb,wa)) = res !! (n-1)
                         simpleImage img
                         
 simpleImage :: String -> Html
-simpleImage str = H4.center $ img ! src (toValue str) ! width "100%" ! height "100%"
+simpleImage str = H4.center $ img ! src (toValue str) -- ! width "100%" ! height "100%"
     
 index :: FilePath -> Html
 index fpi = docTypeHtml $ do

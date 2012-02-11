@@ -23,7 +23,7 @@ attr Node ParamList
     syn nodes use {`IM.union`} {IM.empty} :: {IntMap Node}
 
 sem Node
-    | If While Skip Assign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return IsEqual GreaterEqual Or Expect Return FunctionCall Param String Expr DQContent FunctionName Literal Echo Print
+    | If While Skip Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return Expect Return FunctionCall Param String Expr DQContent FunctionName Literal Echo Print PostInc PreInc IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not InlineHTML
         loc.label :: uniqueref labels
         lhs.label = @loc.label
         +nodes    = IM.union $ IM.singleton @label @self
@@ -58,13 +58,13 @@ sem Node
         lhs.init = @loc.init
     | SimplifiedFunctionCall
         lhs.init = Just @lb
-    | Skip Expect Return
+    | Skip Expect Return InlineHTML
         lhs.init = Just @label
     | If While
         lhs.init = @c.init
     | Expr
         lhs.init = @e.init
-    | Assign
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Not
         lhs.init = @e.init
     | Sequence 
         lhs.init = @f.init <|> @s.init
@@ -74,11 +74,14 @@ sem Node
         lhs.init = Nothing
     | Variable
         lhs.init = Just @label
-    | Plus Min Mul Mod IsEqual GreaterEqual
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or 
         lhs.init = @r.init
     | Deci LTrue LFalse String
         lhs.init = Just @label
-        
+    | Print Echo
+        lhs.init = @e.init
+    | PostInc PreInc
+        lhs.init = @e.init
         
 -------------------------------------------------------------------------------
 -- Final
@@ -93,13 +96,13 @@ sem Node
         lhs.final = @loc.final
     | SimplifiedFunctionCall
         lhs.final = Just [@la]
-    | Skip Expect Return Assign Variable 
+    | InlineHTML Skip Expect Return Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Variable Print Echo
         lhs.final = Just [@label]
     | While
         lhs.final = @c.final
     | Expr 
         lhs.final = @e.final
-    | Deci LTrue LFalse String Plus Min Mul Mod IsEqual GreaterEqual
+    | Deci LTrue LFalse String Plus Min Mul Mod PostInc PreInc IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not  
         lhs.final = Just [@label]
     | Sequence 
         lhs.final = @s.final <|> @f.final
@@ -137,9 +140,11 @@ sem Node
     | SimplifiedFunctionCall
         +flow = let (Declaration name ln lx) = lookupDeclaration @name @lhs.declarations'
                 in (++) [(@lb, @la), (@lb, @lc), (@lr, @la), (@lc, ln), (lx, @lr)]
-    | Assign
+    | Print Echo PostInc PreInc Not
+        +flow = (++) $ [(l', @label) | l' <- fromJust @e.final]
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign 
         +flow = (++) $ [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
-    | Plus Min Mul Mod  IsEqual GreaterEqual
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or
         +flow = (++) $ [(l', fromJust @l.init) | l' <- fromJust @r.final] ++ [(l', @label) | l' <- fromJust @l.final]
 
 {
@@ -178,7 +183,7 @@ attr Node
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Assign Variable Deci Return LTrue LFalse String Plus Min Mul Mod IsEqual GreaterEqual
+    | Skip Expect Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Variable Deci Return LTrue LFalse String Plus Min Mul Mod Print Echo PostInc PreInc IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
         +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)

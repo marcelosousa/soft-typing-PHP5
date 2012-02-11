@@ -5,6 +5,7 @@ import CCO.Printing as P hiding (render, join)
 
 -------------------------------------------------------------------------------
 -- Pretty printer for input code
+-- Currently not used in the website and not fully maintained 
 -------------------------------------------------------------------------------
 
 attr Node ParamList OptionalString

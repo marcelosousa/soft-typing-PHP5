@@ -59,7 +59,7 @@ instance Lattice TypeSet where
     -- This is different than the original widening functions. 
     -- 1. We take the maximum value when we extend the depth function to sets
     -- 2. We always return a array type of depth k when the depth of l `union` r exceeds k. 
-    join l r | depth' < k = trace ("Joining")  $ l `S.union` r
+    join l r | depth' < k = trace ("Joining " ++ show l ++ " with " ++ show r)  $ l `S.union` r
              | otherwise  = trace ("Failback") $ S.singleton $ toArrayRepeatedly k TyAny
                           where
                               depth' = depth $ l `S.union` r
@@ -88,8 +88,9 @@ hasLabel label _          = False
 
 
 resolve :: Set Constraint -> Set Constraint
-resolve constraints = trace (show constraints) $ S.fold resolve' S.empty constraints
+resolve constraints = trace ("Resolving " ++ show constraints ++ " produces " ++ show result) $ result
     where
+        result = S.fold resolve' S.empty constraints
         resolve' c@(l1 :<=: l2) r = S.insert c r `S.union` S.fold update S.empty constraints
                                   where
                                       update (l2' :==: t) r | l2 == l2' = S.insert (l1 :==: t) r
@@ -121,21 +122,18 @@ type Mapping = Identifier :-> TypeSet
     
 -- hard to understand what this is actually doing
 updateMapping :: Identifier -> Label -> Int -> Set Constraint -> Mapping -> Mapping
-updateMapping identifier label depth constraints mapping = trace ("Processing " ++ (show identifier) ++ "(" ++ show label ++ ") with " ++ show constraints ++ " resulting in: " ++ show effect) $ 
-  M.insert identifier effect mapping
+updateMapping identifier label depth constraints mapping = 
+      let context = case M.lookup identifier mapping of
+                    Just t  -> t
+                    Nothing -> S.empty
+          effect =  S.fold join context . types . (fixPoint resolve) $ constraints
+          types = S.map (\(l :==: t) -> toArrayRepeatedly depth t) . S.filter isApplicable      
+      in trace ("Processing " ++ (show identifier) ++ "(" ++ show label ++ ") with " ++ show constraints ++ " resulting in: " ++ show effect) $ 
+         M.insert identifier effect mapping
     where        
         -- We add to what we already know
-        context = case M.lookup identifier mapping of
-                      Just t  -> t
-                      Nothing -> S.empty
-       
         -- We resolve the constraints and join the result with our context value
-        effect =  S.fold join context . types . (fixPoint resolve) $ constraints
-    
         -- Filter equality constraints and lift there type in case of any arrays
-        types = S.map (\(l :==: t) -> toArrayRepeatedly depth t) . S.filter isApplicable
-    
-    
         isApplicable (l :==: t) = l == label
         isApplicable _          = False
                         

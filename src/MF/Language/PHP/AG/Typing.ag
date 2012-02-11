@@ -55,9 +55,13 @@ sem Node
         loc.constraints = @e.constraints
     | If While
         loc.constraints = @c.constraints
-    | Assign
+    | Assign 
         lhs.constraints = S.fromList [(@rv.label :<=: @e.label), (@label :<=: @rv.label)] `S.union` @e.constraints -- `S.union` @rv.constraints
-    | Deci 
+    | PlusAssign MinAssign MulAssign DivAssign ModAssign 
+        loc.constraints = S.fromList [(@rv.label :==: S.singleton TyInt)] -- `S.union` @e.constraints
+    | ConcatAssign 
+        loc.constraints = S.fromList [(@rv.label :==: S.singleton TyString)] -- `S.union` @e.constraints
+    | Deci Print PlusAssign MinAssign
         lhs.constraints = S.singleton (@label :==: S.singleton TyInt)
     | LTrue LFalse
         lhs.constraints = S.singleton (@label :==: S.singleton TyBool)
@@ -65,7 +69,7 @@ sem Node
         lhs.constraints = S.singleton (@label :==: S.singleton TyString)
     | Plus Min Mod Mul
         +constraints    = S.union $ S.singleton (@label :==: S.singleton TyInt)  
-    | IsEqual Or GreaterEqual
+    | LAnd LOr LXor And Or Not IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual
         +constraints    = S.union $ S.singleton (@label :==: S.singleton TyBool)
     | Variable
         +constraints    = S.union $ S.singleton (@label :<=: @n.label) 
@@ -77,6 +81,8 @@ sem Node
                               Nothing -> S.singleton (@label :==: S.empty)
     | Expect 
         loc.constraints = S.singleton (@label :<=: @expr.label) `S.union` @expr.constraints
+    | PostInc PreInc
+        +constraints = S.union $ S.singleton (@label :==: S.singleton TyInt)
                                                                   
 -------------------------------------------------------------------------------
 -- Mapping
@@ -87,8 +93,10 @@ attr Node ParamList
     inh mapping :: {Mapping}
     
 sem Node
-    | Assign 
+    | Assign
         lhs.mapping = updateMapping (Identifier $ name @rv.self) @e.label (levels @rv.self) @constraints @e.mapping
+    | PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign
+        lhs.mapping = updateMapping (Identifier $ name @rv.self) @rv.label (levels @rv.self) @constraints @e.mapping
     | Return 
         lhs.mapping = updateMapping ReturnValue                  @e.label 0                 @constraints @e.mapping
       
@@ -101,19 +109,13 @@ solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping), FlowOut)
 solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
     where        
         transfer :: Block Node -> Mapping -> Mapping
-        transfer (Normal Skip)          = id
-        transfer (Normal (Expect _ _))  = id
-        transfer (Normal (Deci _))      = id
-        transfer (Normal s@(Variable _))= id
-        transfer (Normal LTrue)         = id
-        transfer (Normal (String _))    = id
-        transfer (Normal (Plus _ _))    = id
-        transfer (Normal (Min _ _))    = id
-        transfer (Normal (Mul _ _))    = id
-        transfer (Normal (Mod _ _))    = id
-        transfer (Normal (IsEqual _ _)) = id
-        transfer (Normal (GreaterEqual _ _)) = id
         transfer (Normal s@(Assign rv e)) = updateMapping s 
+        transfer (Normal s@(PlusAssign rv e)) = updateMapping s
+        transfer (Normal s@(MinAssign rv e)) = updateMapping s
+        transfer (Normal s@(MulAssign rv e)) = updateMapping s
+        transfer (Normal s@(DivAssign rv e)) = updateMapping s
+        transfer (Normal s@(ModAssign rv e)) = updateMapping s
+        transfer (Normal s@(ConcatAssign rv e)) = updateMapping s                   
 --        transfer (Normal (Expr e))      = id  this should be irrelevant
 --        transfer (Normal (If c _ _ _ )) = updateMapping c
         transfer (Normal (While c _))   = updateMapping c
@@ -134,7 +136,8 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
         transfer (F.Return lc lr (SimplifiedFunctionCall name params result)) = maybe id (\node -> M.mapKeys (returnValueToIdentifier node)) result 
             where
                 returnValueToIdentifier node ReturnValue = Identifier $ toName node
-        
+        transfer _ = id
+
         updateMapping :: Node -> Mapping -> Mapping
         updateMapping node mapping = mapping_Syn_Node . execute mapping IM.empty $ node
                 
@@ -152,10 +155,10 @@ typer :: Component Node (ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut))
 typer = component $ return . typing
              
 typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)
-typing p = trace ("mappings: " ++ show mappings) $ mappings
+typing p = mappings -- trace ("mappings: " ++ show mappings) $ mappings
     where
         solve = MF.Language.PHP.AG.solve
-        mappings = IM.map typing' (solve p) --IM.map ((m,w) -> ((IM.map (M.fold join M.empty) m), w)) (solve p)        
+        mappings = IM.map typing' (solve p) -- IM.map ((m,w) -> ((IM.map (M.fold join M.empty) m), w)) (solve p)        
 
 typing' :: (ValueMap (Stack :-> Mapping), FlowOut) -> (ValueMap (Identifier :-> TypeSet), FlowOut)
 typing' (m,w) = (IM.map (M.fold join M.empty) m ,w)

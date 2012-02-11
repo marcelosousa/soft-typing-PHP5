@@ -42,7 +42,6 @@ sem Node
     | Sequence 
         lhs.ppcfg = @f.ppcfg >-< @s.ppcfg
 
-        --                    text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @l.ppcfg >|< @r.ppcfg >-<         
         --FunctionDecl name :: String params :: ParamList stmt :: Node
     | FunctionDecl -- missing the params
         lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
@@ -91,30 +90,43 @@ sem Node
         e.struct = @loc.sname
         loc.sname = "expr" ++ show @label
 
-    | Plus  
-        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " + " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
-        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
-        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
-
-    | Min  
-        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " - " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
-        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
-        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+    | Echo
+        lhs.ppcfg = text @loc.sname >|< dotLabel ( 
+                    dotPort @label >|< text "Echo " >|< 
+                    dotAnnotate @label >|<
+                    text " | " >|< @e.ppcfg)
+        e.struct = @loc.sname
+        loc.sname = "echo" ++ show @label
+        +labstruct = IM.union $ @e.labstruct `IM.union` (IM.singleton @label @loc.sname)
         
-    | Mul  
-        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " * " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+    | Print
+        lhs.ppcfg = dotPort @label >|< text "Print " >|< 
+                    dotAnnotate @label >|<
+                    text " | " >|< @e.ppcfg
+        +labstruct = IM.union $ (IM.singleton @label @lhs.struct)
+
+    | PostInc
+        lhs.ppcfg = @e.ppcfg >|< text "|" >|< dotPort @label >|< text " ++ " >|< dotAnnotate @label >|< ppMapping @loc.lattice
         loc.lattice = myfromJust $ IM.lookup @label @lhs.res
         +labstruct  = IM.union $ IM.singleton @label @lhs.struct
 
-    | IsEqual  
-        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " == " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+    | PreInc
+        lhs.ppcfg = dotPort @label >|< text " ++ " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @e.ppcfg
         loc.lattice = myfromJust $ IM.lookup @label @lhs.res
         +labstruct  = IM.union $ IM.singleton @label @lhs.struct
 
-    | Mod  
-        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text " % " >|< dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or
+        lhs.ppcfg = @l.ppcfg >|< text "|" >|< dotPort @label >|< text (toString @self) >|< 
+                    dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @r.ppcfg
         loc.lattice = myfromJust $ IM.lookup @label @lhs.res
-        +labstruct  = IM.union $ IM.singleton @label @lhs.struct    
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+
+    | Not
+        lhs.ppcfg = dotPort @label >|< text (toString @self) >|< 
+                    dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @e.ppcfg
+        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
+        +labstruct  = IM.union $ IM.singleton @label @lhs.struct
+
     
     | Return
         lhs.ppcfg = text @loc.sname >|< 
@@ -141,44 +153,68 @@ sem Node
     | Simple
         lhs.ppcfg = text @value
         
-    | Assign
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign
         lhs.ppcfg = @rv.ppcfg >|< 
-                    text " | " >|< dotPort @label >|< text "= " >|< 
+                    text " | " >|< dotPort @label >|< text (toString @self) >|< 
                     dotAnnotate @label >|<
                     ppMapping @loc.lattice >|< text " | " >|< 
                     @e.ppcfg
         loc.lattice = myfromJust $ IM.lookup @label @lhs.res
         +labstruct = IM.union $ @rv.labstruct `IM.union` @e.labstruct `IM.union` (IM.singleton @label @lhs.struct)
-  
-    -- Arithmetic
-    | LTrue
+    
+    | LTrue LFalse Deci
       lhs.ppcfg = dotPort @label >|< 
-                  text "true" >|< 
+                  text (toString @self) >|< 
                   dotAnnotate @label    
       +labstruct = IM.union $ IM.singleton @label @lhs.struct      
     
     | String
-        lhs.ppcfg = dotPort @label >|< 
-                    ppString @value >|< 
-                    dotAnnotate @label >|<
-                    ppMapping @loc.lattice
-        +labstruct = IM.union $ IM.singleton @label @lhs.struct
-        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
-        
-    | Deci
-        lhs.ppcfg = dotPort @label >|< 
-                    text (show @value) >|< 
-                    dotAnnotate @label -->|<
---                    ppMapping @loc.lattice
+        lhs.ppcfg = dotPort @label >|< ppString @value >|< dotAnnotate @label
+--                >|< ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
 --        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
-    
+            
     | Skip
         lhs.ppcfg = text @loc.labtag >|< dotLabel (dotPort @label >|< text "Skip" >|< dotAnnotate @label)
         +labstruct = IM.union $ IM.singleton @label @loc.labtag
         loc.labtag = "skip" ++ show @label
 
 {
+toString :: Node -> String
+toString LTrue            = "true"
+toString LFalse           = "false"
+
+toString (Assign _ _)     = "="
+toString (PlusAssign _ _) = "+="
+toString (MinAssign _ _)  = "-="
+toString (MulAssign _ _)  = "*=" 
+toString (DivAssign _ _)  = "/="
+toString (ModAssign _ _)  = "%="
+toString (ConcatAssign _ _) = ".="
+
+toString (Plus _ _    )   = "+"
+toString (Min _ _     )   = "-"
+toString (Mul _ _     )   = "*"
+toString (Mod _ _     )   = "%"
+
+toString (LAnd _ _) = "And"
+toString (LOr  _ _) = "Or"
+toString (LXor _ _) = "Xor"
+toString (Not  _  ) = "!"
+toString (And  _ _) = "&&"
+toString (Or _ _ )  = "||"
+
+toString (Deci v)  = show v
+
+toString (IsEqual        _ _) = "==" 
+toString (IsIdentical    _ _) = "==="
+toString (IsNotEqual     _ _) = "!="
+toString (IsNotIdentical _ _) = "!==="
+toString (Less           _ _) = "\\<"
+toString (Greater        _ _) = "\\>"
+toString (LessEqual      _ _) = "\\<="
+toString (GreaterEqual   _ _) = "\\>="
+
 dotAnnotate :: Show a => a -> Doc
 dotAnnotate a = text " (" >|< text (show a) >|< text ") "
 
