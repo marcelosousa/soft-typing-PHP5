@@ -590,8 +590,8 @@ footnotes: function () {
 <div class="sect1">
 <h2 id="_author">1. Author</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>Henk Erik van der Hoek (Initial Project (<a href="https://github.com/henkerik/typing">https://github.com/henkerik/typing</a>))
-Marcelo Sousa &lt;<a href="mailto:dipython@gmail.com">dipython@gmail.com</a>&gt; (MSc. Computing Science student Utrecht Universiteit)</p></div>
+<div class="paragraph"><p>Henk Erik van der Hoek - First version (<a href="https://github.com/henkerik/typing">https://github.com/henkerik/typing</a>)</p></div>
+<div class="paragraph"><p>Marcelo Sousa &lt;<a href="mailto:dipython@gmail.com">dipython@gmail.com</a>&gt; (<a href="https://github.com/marcelosousa/soft-typing-PHP5">https://github.com/marcelosousa/soft-typing-PHP5</a>)</p></div>
 <div class="admonitionblock">
 <table><tr>
 <td class="icon">
@@ -610,15 +610,42 @@ Marcelo Sousa &lt;<a href="mailto:dipython@gmail.com">dipython@gmail.com</a>&gt;
 <div class="paragraph"><p>This Experimentation Project is related to my MSc. Computing Science
 at the University of Utrecht from October 2011 and it&#8217;s based on previous work of
 Henk Erik van der Hoek (<a href="https://github.com/henkerik/typing">https://github.com/henkerik/typing</a>).
-The goal of the project continues to be static type inference of variables in
-PHP programs to provide suitable warnings whenever a program is likely to be incorrect.</p></div>
+The goal of this project was to create a useful GUI and to extend the analysis of PHP5 features.
+A list of the current working features can be found below.</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_installing">3. Installing</h2>
+<h2 id="_requirements">3. Requirements</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>All of these can be installed using cabal. The code itself can
-be compiled with the command:</p></div>
+<div class="paragraph"><p>To be able to properly compile and use this tool the following packages must be installed:</p></div>
+<div class="ulist"><div class="title">Packages Required</div><ul>
+<li>
+<p>
+Special version of the cco haskell library in lib/
+</p>
+</li>
+<li>
+<p>
+sglri tool (<a href="http://strategoxt.org/">http://strategoxt.org/</a>)
+</p>
+</li>
+<li>
+<p>
+Graphviz (<a href="http://www.graphviz.org/">http://www.graphviz.org/</a>)
+</p>
+</li>
+<li>
+<p>
+asciidoc (to be able to generate the html of this README)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing">4. Installing</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The code itself can be compiled with the command:</p></div>
 <div class="listingblock">
 <div class="content"><!-- Generator: GNU source-highlight 3.1.4
 by Lorenzo Bettini
@@ -635,122 +662,374 @@ http://www.gnu.org/software/src-highlite -->
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running">4. Running</h2>
+<h2 id="_usage">5. Usage</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>To analyze the file input.php use:</p></div>
+<div class="paragraph"><p>To run the tool use with the command:</p></div>
 <div class="listingblock">
 <div class="content"><!-- Generator: GNU source-highlight 3.1.4
 by Lorenzo Bettini
 http://www.lorenzobettini.it
 http://www.gnu.org/software/src-highlite -->
-<pre><tt><span style="color: #990000">.</span>/run</tt></pre></div></div>
-<div class="paragraph"><p>To run the testsuite type:</p></div>
-<div class="listingblock">
-<div class="content"><!-- Generator: GNU source-highlight 3.1.4
-by Lorenzo Bettini
-http://www.lorenzobettini.it
-http://www.gnu.org/software/src-highlite -->
-<pre><tt>typing_tester</tt></pre></div></div>
+<pre><tt>php5analysis -t<span style="color: #990000">=</span>Option inputfile</tt></pre></div></div>
+<div class="ulist"><div class="title">Options</div><ul>
+<li>
+<p>
+Parse - Prints the output from the parser sglri.
+</p>
+</li>
+<li>
+<p>
+Code  - Pretty prints the ast in the form on php code. This component was first implemented by Henk Erik van der Hoek and is not completely up to date. The Analyse option prints the actual file and does not use this component.
+</p>
+</li>
+<li>
+<p>
+Check - Performs the analysis and generates warnings concerning the assertions specified by the function check. This component was first implemented by Henk Erik van der Hoek and is not completely up to date, although their integration is easy since only warning generation is missing.
+</p>
+</li>
+<li>
+<p>
+Type - Performs the analysis and prints the lattice for all labels. This information might be hard to grasp if not familiarized with code.
+</p>
+</li>
+<li>
+<p>
+Flow - Prints the Flow instance for Node and the nodes elements that are used by TreeDot.
+</p>
+</li>
+<li>
+<p>
+TreeDot - Prints a dot file representing the AST.
+</p>
+</li>
+<li>
+<p>
+Simplify - Prints the code using Code after simplifying the AST.
+</p>
+</li>
+<li>
+<p>
+DumpIterations - Dumps all information used by Analyse to build the website. This information are dots files for each iteration of the control flow annotated with the lattice.
+</p>
+</li>
+<li>
+<p>
+Analyse - Generates a website under the directory of the testfile with the name (testfile ++ "output").
+</p>
+</li>
+<li>
+<p>
+Debug - Prints both Flow and Code.
+</p>
+</li>
+</ul></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_analysis">5. The analysis</h2>
+<h2 id="_the_analysis">6. The analysis</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>The goal of the analysis is to find for each program-point in the program which
-variables are in scope and what their possible types are at that point.
-Following the initial approach by Henk Erik this was realized by specifying the
-problem as a monotone framework instance for a forward analysis and by solving the instance using a iterative work-list algorithm.
-The theory behind monotone frameworks is described in Principles of Program Analysis by Nielson, Nielson &amp; Hankin (NNH).
-During the execution of each transfer function constraints for the PHP expression at hand are generated,
-and the type of an expression is found by resolving these constraints. This idea was described
-by Camphuijsen in his thesis "Soft typing and analyses on PHP programs".</p></div>
+<div class="paragraph"><p>The goal of the analysis is to discover for each program-point which
+variables are in scope and what their possible types are at that point.</p></div>
+<div class="paragraph"><p>This work follows Henk Erik&#8217;s approach by specifying the
+problem as a monotone framework instance for a forward analysis and by solving the instance using a work-list algorithm.
+The theory behind monotone frameworks is described in Principles of Program Analysis by Nielson, Nielson &amp; Hankin (NNH).</p></div>
+<div class="paragraph"><p>During the execution of each transfer function constraints for the PHP expression at hand are generated,
+and the type of an expression is found by resolving these constraints.
+This idea was described by Camphuijsen in his thesis "Soft typing and analyses on PHP programs".</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_general_architecture">6. General Architecture</h2>
+<h2 id="_general_architecture">7. General Architecture</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>(heavily based on Henk Erik&#8217;s work)</p></div>
-<div class="paragraph"><p>At the moment the code base is clearly separated between the monotone framework and a generic work-list algorithm
-on one side and the framework instances on the other side. Beside soft typing, several other analyses were
-implemented as well (*). This was done to get the boundary between framework and instances clear.
-These additional analyses all operate on the While language, a small imperative language defined by NNH.</p></div>
+<div class="paragraph"><p>Following Henk&#8217;s work the code base continues to be clearly separated between the monotone framework and a generic work-list algorithm
+on one side and the framework instances on the other side.</p></div>
 <div class="paragraph"><p>The soft typing analyses contains two distinct phases. In the first phase an instance of the monotone
-framework is specified and solved. The result is a mapping between variable and type for any given
-program point. In the second phase this result is used to check wether these types match the types
-we expect. The second process doesn&#8217;t specify or solve a monotone framework instance and could be
-considered a post processing step.</p></div>
-<div class="paragraph"><p>The following files and directories might be of special interest:</p></div>
+framework is specified and solved. The result is an IntMap where the key represents the iteration number and the value
+a mapping between variable and type set for any given program point.</p></div>
+<div class="paragraph"><p>The second phase was split into two variants:</p></div>
+<div class="paragraph"><p>a) Henk&#8217;s initial work whereas this result is used to check wether these types match the types
+we expect.</p></div>
+<div class="paragraph"><p>b) Website containing all relevant information to visualization of the analysis. Particularly important are the annotated control flow graphs where we can view the lattice for each program point.</p></div>
+<div class="paragraph"><p>The second process doesn&#8217;t specify or solve a monotone framework instance and could be considered a post processing step.</p></div>
+<div class="paragraph"><p>All previous executables were collapsed to options in one executable and also a more refined file structure was created to help code navigation.</p></div>
+<div class="paragraph"><p>File Roadmap</p></div>
 <div class="listingblock">
 <div class="content">
 <pre><tt>| File or directory                      | Description                                                           |
 |:---------------------------------------|:----------------------------------------------------------------------|
-| src/grammar                            | sglri php5 definitions (do not change)                                |
-| src/MF/Core.hs                         | Implements the work-list algorithm (look for the 'solve' function)    |
-| src/MF/Languages/PHP/AG/Flow.ag        | Implements the conversion of an AST to a flow graph                   |
-| src/MF/Languages/PHP/AG/Typing.ag      | Implements the constraint generation, the transfer function and       |
+| src/grammar                            | sglri php5 definitions (very sensitive)                               |
+| src/MF/Core                            | Modules related to the Monotone Framework                             |
+| src/MF/Core/Solver.hs                  | Implements the work-list algorithm ('solve' function)                 |
+| src/MF/Language/PHP/AG/Base.ag         | Defines the Node data and also the parser ATerm to Node               |
+| src/MF/Language/PHP/AG/Flow.ag         | Implements the conversion of an AST to a flow graph                   |
+| src/MF/Language/PHP/AG/Typing.ag       | Implements the constraint generation, the transfer function and       |
 |                                        | specifies an instance of the monotone framework                       |
-| src/MF/Languages/PHP/AG/Checking.ag    | Implements the expected constraint generation and generates warnings  |
+| src/MF/Language/PHP/AG/Checking.ag     | Implements the expected constraint generation and generates warnings  |
 |                                        | when the expected constraints don't match the types found by running  |
-|                                        | the work-list algorithm.                                                  |
-
-
-(*) : Currently these analyses additional analyses don't compile due to recent changes in the Flowable class
-
-Done
-~~~~
-1. Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
-2. Simple assignments (tests/simple.php) -- Should we add contexts?
-3. If-constructs with no else clauses (tests/controlstruct/if.php)
-4. Ifelse constructs (tests/controlstruct/ifelse.php)
-5. Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
-6. Strings with escapes characters (tests/basicdatatypes/scalar/string/doublequoted.php)
-7. Simple interprocedural analysis (tests/functions/id.php, tests/functions/id2.php)
-8. While-construct (tests/controlstruct/while.php)
-9. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
-10. User-defined functions without parameters (tests/functions/simple.php)
-11. Return statement (tests/functions/simple.php)
-12. Recursive functions (tests/functions/fac.php, tests/functions/recursive.php)
-13. Print function (tests/print.php)
-14. Echo function (tests/echo.php) - Missing case when echo receives something that not a string as input.
-15. Incrementing/Decrementing Operators (tests/preposincrement.php tests/preposdecrement.php)
-16. Assignment operators (Arithmetic, String and Bitwise) (tests/assignop.php)
-17. Comparison Operators (tests/basicdatatypes/scalar/boolean/boolop.php)
-18. Logical Operators (tests/basicdatatypes/scalar/boolean/logicop.php)
-19. Supports HTML Embedding (tests/syntax/htmlembedding.php)
-20. InlineHTML implemented (tests/syntax/advancedescaping.php)
-21. Standard tags (tests/syntax/phptagsimple.php)
-22. ASP tags (tests/syntax/phptagasp.php)
-23. "In PHP 5.2 and earlier, the parser does not allow the &lt;?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php)
-24. Circular functions (tests/functions/recursive2.php)
-25. Else-if (tests/controlstruct/elseif.php)
-26. AltIf, AltIfElse (tests/controlstruct/ifelsealt.php)
-27. AltWhile (tests/controlstruct/while3.php)
-28. Ternary conditional operator (tests/ternaryconditionalop.php)
-29. Creating/modifying with square bracket syntax
-30. ReferenceAssign (tests/variables/varreference.php)
-31. IndirectReference (tests/variables/indirectrefvar.php)
-32. ParameterReference (tests/assign.php)
-33. SingleQuoted strings (tests/basicsdatatypes/scalar/string/singlequoted.php)
-34. Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-35. Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-36. Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-37. Floating-point types (tests/basicdatatypes/scalar/float/*)
-38. NULL type (tests/basicdatatypes/null.php)
-39. StringAccess (tests/basicdatatypes/scalar/string/stringindex.php)
-40. None (tests/basicdatatypes/compound/array/arraycreation3.php)
-41. Standard array creation (tests/basicdatatypes/compound/array/arraycreation*.php) (check nesting)
-42. Assignments in conditions (tests/controlstruct/conditional.php)
-43. DoWhile (tests/controlstruct/dowhile.php, tests/controlstruct/dowhilebreak.php)
-44. Break for while and dowhile (tests/controlstruct/whilebreak.php)
-45. Continue (tests/controlstruct/whilecontinue.php)
-46. For (tests/controlstruct/for.php)
-47. function with array as parameter (tests/functions/funtakesarray.php)
-48. function within a function (tests/functions/funfun.php)
-
-Non-Supported PHP5 features</tt></pre>
+|                                        | the work-list algorithm.     (not up to date)                         |
+| src/MF/Language/PHP/Types.hs           | Contains the Type Universe for PHP and function 'updateMapping' which |
+|                                        | is very important for inter procedural analysis.                      |
+| src/MF/Analyses                        | Contains other unfinished analyses                                    |
+| src/Tester.hs                          | Test suite executable not up to date                                  |
+| src/WebApp                             | Website generation                                                    |
+| src/Main.hs                            | Main module                                                           |
+|----------------------------------------------------------------------------------------------------------------|</tt></pre>
 </div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_php5_features">8. Supported PHP5 Features</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>By supported I consider usable with option <em>Analyse</em>.</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
+</p>
+</li>
+<li>
+<p>
+Simple assignments (tests/simple.php)&#8201;&#8212;&#8201;Should we add contexts?
+</p>
+</li>
+<li>
+<p>
+If-constructs with no else clauses (tests/controlstruct/if.php)
+</p>
+</li>
+<li>
+<p>
+Ifelse constructs (tests/controlstruct/ifelse.php)
+</p>
+</li>
+<li>
+<p>
+Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
+</p>
+</li>
+<li>
+<p>
+Strings with escapes characters (tests/basicdatatypes/scalar/string/doublequoted.php)
+</p>
+</li>
+<li>
+<p>
+Simple interprocedural analysis (tests/functions/id.php, tests/functions/id2.php)
+</p>
+</li>
+<li>
+<p>
+While-construct (tests/controlstruct/while.php)
+</p>
+</li>
+<li>
+<p>
+Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
+</p>
+</li>
+<li>
+<p>
+User-defined functions without parameters (tests/functions/simple.php)
+</p>
+</li>
+<li>
+<p>
+Return statement (tests/functions/simple.php)
+</p>
+</li>
+<li>
+<p>
+Recursive functions (tests/functions/fac.php, tests/functions/recursive.php)
+</p>
+</li>
+<li>
+<p>
+Print function (tests/print.php)
+</p>
+</li>
+<li>
+<p>
+Echo function (tests/echo.php) - Missing case when echo receives something that not a string as input.
+</p>
+</li>
+<li>
+<p>
+Incrementing/Decrementing Operators (tests/preposincrement.php tests/preposdecrement.php)
+</p>
+</li>
+<li>
+<p>
+Assignment operators (Arithmetic, String and Bitwise) (tests/assignop.php)
+</p>
+</li>
+<li>
+<p>
+Comparison Operators (tests/basicdatatypes/scalar/boolean/boolop.php)
+</p>
+</li>
+<li>
+<p>
+Logical Operators (tests/basicdatatypes/scalar/boolean/logicop.php)
+</p>
+</li>
+<li>
+<p>
+Supports HTML Embedding (tests/syntax/htmlembedding.php)
+</p>
+</li>
+<li>
+<p>
+InlineHTML implemented (tests/syntax/advancedescaping.php)
+</p>
+</li>
+<li>
+<p>
+Standard tags (tests/syntax/phptagsimple.php)
+</p>
+</li>
+<li>
+<p>
+ASP tags (tests/syntax/phptagasp.php)
+</p>
+</li>
+<li>
+<p>
+"In PHP 5.2 and earlier, the parser does not allow the &lt;?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php)
+</p>
+</li>
+<li>
+<p>
+Circular functions (tests/functions/recursive2.php)
+</p>
+</li>
+<li>
+<p>
+Else-if (tests/controlstruct/elseif.php)
+</p>
+</li>
+<li>
+<p>
+AltIf, AltIfElse (tests/controlstruct/ifelsealt.php)
+</p>
+</li>
+<li>
+<p>
+AltWhile (tests/controlstruct/while3.php)
+</p>
+</li>
+<li>
+<p>
+Ternary conditional operator (tests/ternaryconditionalop.php)
+</p>
+</li>
+<li>
+<p>
+Creating/modifying with square bracket syntax
+</p>
+</li>
+<li>
+<p>
+ReferenceAssign (tests/variables/varreference.php)
+</p>
+</li>
+<li>
+<p>
+IndirectReference (tests/variables/indirectrefvar.php)
+</p>
+</li>
+<li>
+<p>
+ParameterReference (tests/assign.php)
+</p>
+</li>
+<li>
+<p>
+SingleQuoted strings (tests/basicsdatatypes/scalar/string/singlequoted.php)
+</p>
+</li>
+<li>
+<p>
+Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+</p>
+</li>
+<li>
+<p>
+Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+</p>
+</li>
+<li>
+<p>
+Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+</p>
+</li>
+<li>
+<p>
+Floating-point types (tests/basicdatatypes/scalar/float/*)
+</p>
+</li>
+<li>
+<p>
+NULL type (tests/basicdatatypes/null.php)
+</p>
+</li>
+<li>
+<p>
+StringAccess (tests/basicdatatypes/scalar/string/stringindex.php)
+</p>
+</li>
+<li>
+<p>
+None (tests/basicdatatypes/compound/array/arraycreation3.php)
+</p>
+</li>
+<li>
+<p>
+Standard array creation (tests/basicdatatypes/compound/array/arraycreation*.php) (check nesting)
+</p>
+</li>
+<li>
+<p>
+Assignments in conditions (tests/controlstruct/conditional.php)
+</p>
+</li>
+<li>
+<p>
+DoWhile (tests/controlstruct/dowhile.php, tests/controlstruct/dowhilebreak.php)
+</p>
+</li>
+<li>
+<p>
+Break for while and dowhile (tests/controlstruct/whilebreak.php)
+</p>
+</li>
+<li>
+<p>
+Continue (tests/controlstruct/whilecontinue.php)
+</p>
+</li>
+<li>
+<p>
+For (tests/controlstruct/for.php)
+</p>
+</li>
+<li>
+<p>
+function with array as parameter (tests/functions/funtakesarray.php)
+</p>
+</li>
+<li>
+<p>
+function within a function (tests/functions/funfun.php)
+</p>
+</li>
+</ol></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_non_supported_php5_features">9. Non-Supported PHP5 features</h2>
+<div class="sectionbody">
 <div class="sect2">
-<h3 id="_parser">6.1. Parser</h3>
+<h3 id="_parser">9.1. Parser</h3>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -770,7 +1049,7 @@ sglri does not support Goto                                             (tests/c
 </ol></div>
 </div>
 <div class="sect2">
-<h3 id="_various">6.2. Various</h3>
+<h3 id="_various">9.2. Various</h3>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
@@ -789,7 +1068,7 @@ Exceptions                                 (tests/exceptions/*)
 </li>
 <li>
 <p>
-Classes and Objects                        (tests/oo/<strong>, tests/basicdatatypes/compound/object/</strong>)
+Classes and Objects                        (tests/oo/, tests/basicdatatypes/compound/object/*)
 </p>
 </li>
 <li>
@@ -907,14 +1186,8 @@ conditional functions                     (tests/functions/funconditional.php)
 </div>
 </div>
 <div class="sect1">
-<h2 id="_usage_and_graph_generation">7. Usage and Graph Generation</h2>
+<h2 id="_notes_on_the_language">10. Notes on the language</h2>
 <div class="sectionbody">
-</div>
-</div>
-<div class="sect1">
-<h2 id="_notes_on_the_language">8. Notes on the language</h2>
-<div class="sectionbody">
-<div class="paragraph"><p>PHP 5 is a high-order language.</p></div>
 <div class="ulist"><div class="title">Useful functions</div><ul>
 <li>
 <p>
@@ -959,11 +1232,72 @@ function_exists()
 </ul></div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_notes_for_new_developers">11. Notes for new developers</h2>
+<div class="sectionbody">
+<div class="ulist"><div class="title">The typical procedure to implement a new feature is</div><ul>
+<li>
+<p>
+New constructor to <em>Node</em> in Base.ag
+</p>
+</li>
+<li>
+<p>
+New production to <em>toTree</em> in Base.ag
+</p>
+</li>
+<li>
+<p>
+Probably rules for all attributes in Flow.ag
+</p>
+</li>
+<li>
+<p>
+Debug with option Flow and check new control flow
+</p>
+</li>
+<li>
+<p>
+Add new constraints and (possibly new transfer function) in Typing.ag
+</p>
+</li>
+<li>
+<p>
+Debug with option Type
+</p>
+</li>
+<li>
+<p>
+Support for PP/PPcfg.ag and PP/PPast.ag
+</p>
+</li>
+<li>
+<p>
+Run with option Analyse
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Sometimes it&#8217;s difficult to know how PHP works under the hoods.
+I used the <strong>Vulcan Logic Dumper</strong> has a debugger and it was quite helpful.</p></div>
+<div class="ulist"><div class="title">Vulcan Logic Dumper related links</div><ul>
+<li>
+<p>
+<a href="http://fabien.potencier.org/article/8/print-vs-echo-which-one-is-faster">http://fabien.potencier.org/article/8/print-vs-echo-which-one-is-faster</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://derickrethans.nl/projects.html#vld">http://derickrethans.nl/projects.html#vld</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
 </div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-02-16 03:59:54 EET
+Last updated 2012-02-16 20:29:03 EET
 </div>
 </div>
 </body>

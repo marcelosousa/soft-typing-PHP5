@@ -1,3 +1,11 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  Test Main
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This file is out of date!
+-------------------------------------------------------------------------------
+}
+
 module Main where
 
 import CCO.Component             hiding (parser)

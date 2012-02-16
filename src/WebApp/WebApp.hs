@@ -1,5 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-------------------------------------------------------------------------------
+-- Module    :  WebApp.WebApp
+-- Website generation with Blaze
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-------------------------------------------------------------------------------
+
 module WebApp.WebApp where
 
 import Control.Monad (forM_)
@@ -59,19 +65,15 @@ analysis c ast imgs = docTypeHtml $ do
             hr
             H.div ! A.id "contentTitle" $ "Monotone Framework"
         H.div ! A.id "container" $ do
-            ul $ forM_ [1 .. (length imgs)] (li . (iterationGen imgs))
+            ul $ do
+              li $ simpleItGen (Prelude.head imgs) 1
+              li $ simpleItGen (Prelude.last imgs) (length imgs)          
             H.span ! A.class_ "button prevButton" $ ""
             H.span ! A.class_ "button nextButton" $ ""
         H.script ! A.src "http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" $ ""
         H.script ! A.src "http://dl.dropbox.com/u/279177/softtyper/js/script.js" $ ""
         H.div ! A.id "footer" $ do
             H.a ! A.href "mailto:dipython@gmail.com" $ "Copyright © 2012 - Marcelo Sousa"
-{-  where iterationGen n = do let (img, w) = imgs !! (n-1)
-                            p $ toHtml $ "Control Flow for Iteration " ++ show n
-                            p $ toHtml $ "Solving worklist " ++ show w
-                            br
-                            simpleImage img
--}
 
 debug c pres dinfo ast imgs = docTypeHtml $ do
     H.head $ do
@@ -118,6 +120,14 @@ debug c pres dinfo ast imgs = docTypeHtml $ do
         H.div ! A.id "footer" $ do
             H.a ! A.href "mailto:dipython@gmail.com" $ "Copyright © 2012 - Marcelo Sousa"
 
+simpleItGen (img, (we,wb,wa)) n = do 
+                        p $ toHtml $ "Control Flow for Iteration " ++ show n
+                        p $ toHtml $ "Solving worklist elem " ++ show we
+                        p $ toHtml $ "Worklist before effect " ++ show wb
+                        p $ toHtml $ "Worklist after effect " ++ show wa 
+                        br
+                        simpleImage img
+                        
 iterationGen res n = do let (img, (we,wb,wa)) = res !! (n-1)
                         --H.div ! A.class_ "contentBox" $ do
                         --    H.div ! A.class_ "innerBox" $ do

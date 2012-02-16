@@ -1,3 +1,13 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- Declares data Node (AST used in the analysis) 
+-- and toTree (ATerm -> Node parser).
+-------------------------------------------------------------------------------
+}
+
 imports 
 {
 import CCO.Tree             (ATerm (App), Tree (fromTree, toTree))
@@ -8,8 +18,9 @@ import Data.Char            (chr)
 import MF.Language.PHP.Types
 }
 
+
 -------------------------------------------------------------------------------
--- Document
+-- OptionalString - Helper data for String
 -------------------------------------------------------------------------------
 
 data OptionalString
@@ -20,13 +31,17 @@ deriving OptionalString: Show
 deriving OptionalString: Eq
 deriving OptionalString: Ord
 
+-------------------------------------------------------------------------------
+-- Node - Flat AST that represents PHP5 code
+-------------------------------------------------------------------------------
+
 type ParamList = [Node]
 type ListNode  = [Node]
 type Pairs     = [Node]
 type MaybeNode = maybe Node
     
 data Node
-    -- Document
+    -- Document - PHP5 script
     | Document 
       before   :: {[Node]} 
       opentag  :: Node 
@@ -34,67 +49,75 @@ data Node
       closetag :: Node 
       after    :: {[Node]}
   
+    -- Tags
     | OpenTag
     | CloseTag
+    
+    -- Useful syntactic elements 
     | InlineHTML
+    | Literal    value :: String
+    | Escape     value :: Int
     
-    -- InlineHTML
-    | Literal value :: String
-    | Escape value :: Int
+    -- Statements
+    | Sequence f :: Node s :: Node    
+    | Block    s :: Node
+    | Expr     e :: Node
+    | Return   e :: Node
+    | Skip
+    | LBreak
+    | LContinue
+    | LNone
     
-    -- Statement
-    | While c :: Node s :: Node
+    -- Control Structures
+    | Ternary c :: Node t :: Node f :: Node
+    | While   c :: Node s :: Node
     | DoWhile s :: Node c :: Node
+    | ElseIf  c :: Node s :: Node
     | If 
         c :: Node 
         l :: Node 
         elseIfs :: ListNode 
         r :: Node
-        
-    | Ternary
-        c :: Node
-        t :: Node
-        f :: Node
-        
-    | Block s :: Node
-    | Expr e :: Node
-    
-    | Sequence f :: Node s :: Node
-    
-    | Skip
-    | Return e :: Node
-    
-    -- ElseIfStatement        
-    | ElseIf c :: Node s :: Node
-  
-    | LBreak
-    | LContinue
-   
-    -- Expr
-    | LNone
-    
-    | Assign  rv :: Node e :: Node
+       
+    -- Assignments    
+    | Assign          rv :: Node e :: Node
     | ReferenceAssign rv :: Node v :: Node
-    | PlusAssign rv :: Node e :: Node
-    | MinAssign rv :: Node e :: Node
-    | MulAssign rv :: Node e :: Node
-    | DivAssign rv :: Node e :: Node
-    | ModAssign rv :: Node e :: Node
+    | PlusAssign      rv :: Node e :: Node
+    | MinAssign       rv :: Node e :: Node
+    | MulAssign       rv :: Node e :: Node
+    | DivAssign       rv :: Node e :: Node
+    | ModAssign       rv :: Node e :: Node
+                     
+    | ConcatAssign    rv :: Node e :: Node
     
-    | ConcatAssign rv :: Node e :: Node
+    | AndAssign       rv :: Node e :: Node
+    | OrAssign        rv :: Node e :: Node
+    | XorAssign       rv :: Node e :: Node
+    | SLAssign        rv :: Node e :: Node
+    | SRAssign        rv :: Node e :: Node
     
-    | AndAssign rv :: Node e :: Node
-    | OrAssign  rv :: Node e :: Node
-    | XorAssign rv :: Node e :: Node
-    | SLAssign  rv :: Node e :: Node
-    | SRAssign  rv :: Node e :: Node
-    
+    -- Types
+    -- Null
+    | LNull
+
     -- Booleans
     | LTrue
     | LFalse
     
-    -- Null
-    | LNull
+    -- Integers and Floats
+    | Number      value :: Integer
+    | FloatNumber value :: Float
+  
+    -- Strings
+    | ConstantEncapsedString n :: Node
+    | DQContent              value :: OptionalString
+    | String                 value :: String -- The Simplify AG turns every quoted character sequences into a String node 
+    
+    -- Arrays
+    | Array pairs :: Pairs
+    | Pair l :: Node r :: Node
+   -- | Key e :: Node
+   -- | Value e :: Node
     
     -- Arithmetic
     | Plus l :: Node r :: Node
@@ -102,12 +125,13 @@ data Node
     | Mul  l :: Node r :: Node
     | Mod  l :: Node r :: Node
     
+    -- Decrement and Increment Operators
     | PostInc e :: Node
     | PreInc  e :: Node
     | PostDec e :: Node
     | PreDec  e :: Node
     
-    -- Compare
+    -- Comparison Operators
     | IsEqual        l :: Node r :: Node
     | IsIdentical    l :: Node r :: Node
     | IsNotEqual     l :: Node r :: Node
@@ -117,7 +141,7 @@ data Node
     | LessEqual      l :: Node r :: Node
     | GreaterEqual   l :: Node r :: Node
     
-    -- Logical
+    -- Logical operators
     | LAnd l :: Node r :: Node
     | LOr  l :: Node r :: Node
     | LXor l :: Node r :: Node
@@ -125,40 +149,29 @@ data Node
     | And  l :: Node r :: Node
     | Or   l :: Node r :: Node    
 
-    -- Strings
-    | ConstantEncapsedString n :: Node
-    | DQContent value :: OptionalString
-    | String value :: String                    -- The Simplify AG turns every quoted character sequences into a String node 
+    -- Concat
     | Concat l :: Node r :: Node
-    | StringAccess rv :: Node index :: Node
         
-    | Array pairs :: Pairs
-    | Pair l :: Node r :: Node
---    | Key e :: Node
---    | Value e :: Node
-    
-    -- ReferenceVariable
+    -- Variables
     | Variable n :: Node
-    | ArrayAccess rv :: Node index :: Node
-    | IndirectReference rv :: Node
-    
-    -- VariableName
-    | Simple value :: String
-    
-    -- LNumber and DNumber
-    | Number value :: Integer
-    | FloatNumber value :: Float
+    | Simple   value :: String
 
+    -- Reference Variable
+    | IndirectReference rv :: Node
+    | StringAccess      rv :: Node index :: Node
+    | ArrayAccess       rv :: Node index :: Node
+
+    -- Functions
     | FunctionName value :: String
         
     -- FunctionDecl
     | FunctionDecl 
-        name :: String 
+        name   :: String 
         params :: ParamList 
-        stmt :: Node
+        stmt   :: Node
     
     | FunctionCall 
-        name :: Node 
+        name   :: Node 
         params :: ParamList
 
     -- Introduced by the simplifier: result = name (params)
@@ -167,71 +180,26 @@ data Node
         params :: ParamList 
         result :: MaybeNode
     
-    -- Params 
-    | Param e :: Node
+    -- Parameters 
+    | Param    e :: Node
     | ParamRef e :: Node
-
+    
+    -- Useful functions
+    | Echo  e :: Node
+    | Print e :: Node
+    
     -- Additional: Special node for type check, used for unit testing, not part of the language. Check nodes are generated by the Simplify AG
     | Expect expr :: Node ty :: {TypeSet}
-    
-    -- Echo function
-    | Echo e :: Node
-    
-    -- Print function
-    | Print e :: Node
     
 deriving Node: Show
 deriving Node: Eq
 deriving Node: Ord
 
-{    
-sequence :: [Node] -> Node
-sequence []     = Skip
-sequence [x]    = x
-sequence xs     = foldr Sequence (last xs) (L.init xs)
+{
+-------------------------------------------------------------------------------
+-- Parsers
+-------------------------------------------------------------------------------
 
-sequenceExpr :: [Node] -> Node
-sequenceExpr [] = Skip
-sequenceExpr [x] = Expr x
-sequenceExpr xs  = foldr (\l r -> Sequence (Expr l) r) (Expr $ last xs) (L.init xs)  
-
-buildDocument ::  [Node] -> Node -> [Node] -> Node -> [Node] -> Node
-buildDocument before opentag stmts = Document before opentag (sequence stmts)
-
-buildAltIf :: Node -> [Node] -> [Node] -> [Node] -> Node
-buildAltIf c t e r = If c (sequence t) e (sequence r)
-
-buildAltElseIf :: Node -> [Node] -> Node
-buildAltElseIf c e = ElseIf c (sequence e)
-
-buildAltWhile :: Node -> [Node] -> Node
-buildAltWhile c e = While c (sequence e)
-
-buildSingleQuotedString :: [Node] -> Node
-buildSingleQuotedString = String . buildLiteralString
-
-buildLiteralString :: [Node] -> String
-buildLiteralString [] = ""
-buildLiteralString ((Literal v):xs) = v ++ buildLiteralString xs
-buildLiteralString ((Escape d):xs) = (chr d):buildLiteralString xs
-
-buildBreak :: Node -> Node
-buildBreak _ = LBreak
-
-buildContinue :: Node -> Node
-buildContinue _ = LContinue
-
-sequenceConds :: [Node] -> Node
-sequenceConds [] = LTrue
-sequenceConds xs = sequence xs
-
-forToWhile :: [Node] -> [Node] -> [Node] -> Node -> Node
-forToWhile initAssign conds postAssign stat = let initAssignNode = sequenceExpr initAssign
-                                                  condsNode = sequenceConds conds
-                                                  postAssignNode = sequenceExpr postAssign
-                                                  whileNode = While condsNode (Sequence postAssignNode stat)
-                                              in Sequence initAssignNode whileNode
-                                                  
 instance Tree OptionalString where
     fromTree = undefined
     toTree = parseTree [ app "Some" (Some <$> arg), app "None" (pure None)]
@@ -386,10 +354,73 @@ instance Tree Node where
                        , app "Print"         (Print <$> arg)
                        ]
 
+-- Transform a list of Nodes into a Sequence
+sequence :: [Node] -> Node
+sequence []     = Skip
+sequence [x]    = x
+sequence xs     = foldr Sequence (last xs) (L.init xs)
+
+-- Transform a list of conditions into a Sequence
+-- Useful to transform a for into a while
+sequenceConds :: [Node] -> Node
+sequenceConds [] = LTrue
+sequenceConds xs = sequence xs
+
+-- Same as sequence but wraps each element
+-- in an Expr
+sequenceExpr :: [Node] -> Node
+sequenceExpr [] = Skip
+sequenceExpr [x] = Expr x
+sequenceExpr xs  = foldr (\l r -> Sequence (Expr l) r) (Expr $ last xs) (L.init xs)  
+
+-- Transforms a for into a while
+forToWhile :: [Node] -> [Node] -> [Node] -> Node -> Node
+forToWhile initAssign conds postAssign stat = let initAssignNode = sequenceExpr initAssign
+                                                  condsNode = sequenceConds conds
+                                                  postAssignNode = sequenceExpr postAssign
+                                                  whileNode = While condsNode (Sequence postAssignNode stat)
+                                              in Sequence initAssignNode whileNode
+
+-- Helper build functions
+buildDocument ::  [Node] -> Node -> [Node] -> Node -> [Node] -> Node
+buildDocument before opentag stmts = Document before opentag (sequence stmts)
+
+buildAltIf :: Node -> [Node] -> [Node] -> [Node] -> Node
+buildAltIf c t e r = If c (sequence t) e (sequence r)
+
+buildAltElseIf :: Node -> [Node] -> Node
+buildAltElseIf c e = ElseIf c (sequence e)
+
+buildAltWhile :: Node -> [Node] -> Node
+buildAltWhile c e = While c (sequence e)
+
+buildSingleQuotedString :: [Node] -> Node
+buildSingleQuotedString = String . buildLiteralString
+
+buildLiteralString :: [Node] -> String
+buildLiteralString [] = ""
+buildLiteralString ((Literal v):xs) = v ++ buildLiteralString xs
+buildLiteralString ((Escape d):xs) = (chr d):buildLiteralString xs
+
+buildBreak :: Node -> Node
+buildBreak _ = LBreak
+
+buildContinue :: Node -> Node
+buildContinue _ = LContinue
+
 buildInlineHtml :: Node -> [Node] -> Node -> Node
 buildInlineHtml _ _ _ = InlineHTML
+
 buildEcho params = Echo (sequence params)
+
 buildFunctionDecl name params stmt = FunctionDecl name params (sequence stmt)
 buildFunctionCall name params      = FunctionCall name params -- (sequence params)
+
+-------------------------------------------------------------------------------
+-- Parsing
+-------------------------------------------------------------------------------
+
+reader :: Component ATerm Node
+reader = component toTree
 
 }

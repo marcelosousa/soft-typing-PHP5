@@ -1,11 +1,22 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- Pretty printer for input code.
+
+-- NOTE: This file is not synchronized with the current version of the project.
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import CCO.Printing as P hiding (render, join) 
 }
 
+
 -------------------------------------------------------------------------------
 -- Pretty printer for input code
--- Currently not used in the website and not fully maintained 
 -------------------------------------------------------------------------------
 
 attr Node ParamList OptionalString
@@ -120,6 +131,9 @@ sem Node
         lhs.pp = text "print " >|< @e.pp
 
 {
+-------------------------------------------------------------------------------
+-- Printer
+-------------------------------------------------------------------------------
 
 render :: Doc -> String
 render = render_ 1000 

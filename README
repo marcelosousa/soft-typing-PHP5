@@ -7,8 +7,9 @@ NOTE: Look for the README.html file in the same folder, it contains a more
 
 Author
 -------
-Henk Erik van der Hoek (Initial Project (https://github.com/henkerik/typing))
-Marcelo Sousa <dipython@gmail.com> (MSc. Computing Science student Utrecht Universiteit)
+Henk Erik van der Hoek - First version (https://github.com/henkerik/typing)
+
+Marcelo Sousa <dipython@gmail.com> (https://github.com/marcelosousa/soft-typing-PHP5)
 
 NOTE: Building the HTML version of this document requires `asciidoc` with either
       pygments or gnu source highlight. asciidoc can be easily installed from 
@@ -19,14 +20,22 @@ Introduction
 This Experimentation Project is related to my MSc. Computing Science 
 at the University of Utrecht from October 2011 and it's based on previous work of
 Henk Erik van der Hoek (https://github.com/henkerik/typing). 
-The goal of the project continues to be static type inference of variables in 
-PHP programs to provide suitable warnings whenever a program is likely to be incorrect. 
+The goal of this project was to create a useful GUI and to extend the analysis of PHP5 features.
+A list of the current working features can be found below.
+
+Requirements
+------------
+To be able to properly compile and use this tool the following packages must be installed:
+
+.Packages Required
+* Special version of the cco haskell library in lib/
+* sglri tool (http://strategoxt.org/)
+* Graphviz (http://www.graphviz.org/)
+* asciidoc (to be able to generate the html of this README)
 
 Installing
 ----------
-All of these can be installed using cabal. The code itself can
-be compiled with the command:
-
+The code itself can be compiled with the command:
 [source]
 ----
 cabal configure && cabal build.
@@ -39,68 +48,88 @@ or simply:
 make
 ----
 
-Running
--------
-To analyze the file input.php use:
-
+Usage
+-----
+To run the tool use with the command:
 [source]
 ----
-./run
+php5analysis -t=Option inputfile
 ----
 
-To run the testsuite type:
-
-[source]
-----
-typing_tester
-----
+.Options
+* Parse - Prints the output from the parser sglri.
+* Code  - Pretty prints the ast in the form on php code. This component was first implemented by Henk Erik van der Hoek and is not completely up to date. The Analyse option prints the actual file and does not use this component.
+* Check - Performs the analysis and generates warnings concerning the assertions specified by the function check. This component was first implemented by Henk Erik van der Hoek and is not completely up to date, although their integration is easy since only warning generation is missing.
+* Type - Performs the analysis and prints the lattice for all labels. This information might be hard to grasp if not familiarized with code.
+* Flow - Prints the Flow instance for Node and the nodes elements that are used by TreeDot.
+* TreeDot - Prints a dot file representing the AST.
+* Simplify - Prints the code using Code after simplifying the AST.
+* DumpIterations - Dumps all information used by Analyse to build the website. This information are dots files for each iteration of the control flow annotated with the lattice.
+* Analyse - Generates a website under the directory of the testfile with the name (testfile ++ "output"). 
+* Debug - Prints both Flow and Code.
 
 The analysis
 ------------
-The goal of the analysis is to find for each program-point in the program which
+The goal of the analysis is to discover for each program-point which
 variables are in scope and what their possible types are at that point.
-Following the initial approach by Henk Erik this was realized by specifying the 
-problem as a monotone framework instance for a forward analysis and by solving the instance using a iterative work-list algorithm. 
-The theory behind monotone frameworks is described in Principles of Program Analysis by Nielson, Nielson & Hankin (NNH). 
-During the execution of each transfer function constraints for the PHP expression at hand are generated, 
-and the type of an expression is found by resolving these constraints. This idea was described 
-by Camphuijsen in his thesis "Soft typing and analyses on PHP programs".
 
+This work follows Henk Erik's approach by specifying the 
+problem as a monotone framework instance for a forward analysis and by solving the instance using a work-list algorithm. 
+The theory behind monotone frameworks is described in Principles of Program Analysis by Nielson, Nielson & Hankin (NNH). 
+
+During the execution of each transfer function constraints for the PHP expression at hand are generated, 
+and the type of an expression is found by resolving these constraints. 
+This idea was described by Camphuijsen in his thesis "Soft typing and analyses on PHP programs".
 
 General Architecture 
 --------------------
-(heavily based on Henk Erik's work)
 
-At the moment the code base is clearly separated between the monotone framework and a generic work-list algorithm
-on one side and the framework instances on the other side. Beside soft typing, several other analyses were
-implemented as well (*). This was done to get the boundary between framework and instances clear. 
-These additional analyses all operate on the While language, a small imperative language defined by NNH. 
+Following Henk's work the code base continues to be clearly separated between the monotone framework and a generic work-list algorithm
+on one side and the framework instances on the other side. 
 
 The soft typing analyses contains two distinct phases. In the first phase an instance of the monotone
-framework is specified and solved. The result is a mapping between variable and type for any given 
-program point. In the second phase this result is used to check wether these types match the types 
-we expect. The second process doesn't specify or solve a monotone framework instance and could be 
-considered a post processing step. 
+framework is specified and solved. The result is an IntMap where the key represents the iteration number and the value
+a mapping between variable and type set for any given program point. 
 
-The following files and directories might be of special interest:
+The second phase was split into two variants:
+
+a) Henk's initial work whereas this result is used to check wether these types match the types 
+we expect. 
+
+b) Website containing all relevant information to visualization of the analysis. Particularly important are the annotated control flow graphs where we can view the lattice for each program point.
+
+The second process doesn't specify or solve a monotone framework instance and could be considered a post processing step. 
+
+All previous executables were collapsed to options in one executable and also a more refined file structure was created to help code navigation.
+
+File Roadmap
 ----
 
 | File or directory                      | Description                                                           |
 |:---------------------------------------|:----------------------------------------------------------------------|
-| src/grammar                            | sglri php5 definitions (do not change)                                |
-| src/MF/Core.hs                         | Implements the work-list algorithm (look for the 'solve' function)    |
-| src/MF/Languages/PHP/AG/Flow.ag        | Implements the conversion of an AST to a flow graph                   |
-| src/MF/Languages/PHP/AG/Typing.ag      | Implements the constraint generation, the transfer function and       |
+| src/grammar                            | sglri php5 definitions (very sensitive)                               |
+| src/MF/Core                            | Modules related to the Monotone Framework                             |
+| src/MF/Core/Solver.hs                  | Implements the work-list algorithm ('solve' function)                 |
+| src/MF/Language/PHP/AG/Base.ag         | Defines the Node data and also the parser ATerm to Node               |
+| src/MF/Language/PHP/AG/Flow.ag         | Implements the conversion of an AST to a flow graph                   |
+| src/MF/Language/PHP/AG/Typing.ag       | Implements the constraint generation, the transfer function and       |
 |                                        | specifies an instance of the monotone framework                       |
-| src/MF/Languages/PHP/AG/Checking.ag    | Implements the expected constraint generation and generates warnings  |
+| src/MF/Language/PHP/AG/Checking.ag     | Implements the expected constraint generation and generates warnings  |
 |                                        | when the expected constraints don't match the types found by running  |
-|                                        | the work-list algorithm.	                                             |
+|                                        | the work-list algorithm.	(not up to date)                         |
+| src/MF/Language/PHP/Types.hs           | Contains the Type Universe for PHP and function 'updateMapping' which |
+|                                        | is very important for inter procedural analysis.                      |
+| src/MF/Analyses                        | Contains other unfinished analyses                                    |
+| src/Tester.hs                          | Test suite executable not up to date                                  |
+| src/WebApp                             | Website generation                                                    |
+| src/Main.hs                            | Main module                                                           |
+|----------------------------------------------------------------------------------------------------------------|
+----
 
+Supported PHP5 Features
+-----------------------
+By supported I consider usable with option 'Analyse'.
 
-(*) : Currently these analyses additional analyses don't compile due to recent changes in the Flowable class
-
-Done
-~~~~
 1. Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
 2. Simple assignments (tests/simple.php) -- Should we add contexts?
 3. If-constructs with no else clauses (tests/controlstruct/if.php)
@@ -164,7 +193,7 @@ Various
 1. TemplateDocument                           (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
 2. Different code snippets in the same file   (tests/syntax/instructionseparation.php)
 3. Exceptions                                 (tests/exceptions/*)
-4. Classes and Objects                        (tests/oo/*, tests/basicdatatypes/compound/object/*)
+4. Classes and Objects                        (tests/oo/, tests/basicdatatypes/compound/object/*)
 5. Resources                                  (no test file)
 6. Callback                                   (tests/basicdatatypes/callback/callback.php)
 7. Heredoc                                    (tests/basicsdatatypes/scalar/string/heredoc.php)
@@ -188,13 +217,8 @@ Various
 25. function with default parameter           (tests/functions/fundefaultpar.php)
 26. conditional functions                     (tests/functions/funconditional.php)
 
-
-Usage and Graph Generation
---------------------------
-
 Notes on the language
 ---------------------
-PHP 5 is a high-order language.
 
 .Useful functions
 * varmanage functions (tests/varmanage/*)
@@ -205,4 +229,24 @@ PHP 5 is a high-order language.
 * ini_set('html_errors', false);
 * settype()
 * function_exists()
+
+
+Notes for new developers
+------------------------
+.The typical procedure to implement a new feature is
+* New constructor to 'Node' in Base.ag
+* New production to 'toTree' in Base.ag
+* Probably rules for all attributes in Flow.ag
+* Debug with option Flow and check new control flow
+* Add new constraints and (possibly new transfer function) in Typing.ag
+* Debug with option Type
+* Support for PP/PPcfg.ag and PP/PPast.ag
+* Run with option Analyse
+
+Sometimes it's difficult to know how PHP works under the hoods. 
+I used the *Vulcan Logic Dumper* has a debugger and it was quite helpful.
+
+.Vulcan Logic Dumper related links
+* http://fabien.potencier.org/article/8/print-vs-echo-which-one-is-faster
+* http://derickrethans.nl/projects.html#vld
 

@@ -1,3 +1,8 @@
+-------------------------------------------------------------------------------
+-- Module    :  MF.Core.Solver
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-------------------------------------------------------------------------------
+
 module MF.Core.Solver where
 
 import qualified Data.IntMap as IM
@@ -41,11 +46,12 @@ mergeWith f left = IM.mapWithKey (\k -> f $ func $ IM.lookup k left)
 all :: (Flowable node, Lattice l) => (Block node -> l -> l) -> node -> ValueMap l -> ValueMap l
 all transfer program = mergeWith transfer (blocks program)
 
-
 finalFlowOut :: FlowOut
 finalFlowOut = ((-1,-1),[],[])
 
 -- | 'solve' implements the worklist algorithm to compute the MFP solution as described by NNH, page 75
+-- | This function was modified to generate a Map Iteration (ValueMap Mapping, FlowOut) that for each iteration
+-- | records the effect mapping and also the triple (current worklist element, previous worklist, new worklist)
 solve :: (Flowable n, Lattice l, Show l) => (Block n -> l -> l) -> l -> l -> Direction -> n -> ValueMap (ValueMap l, FlowOut)
 solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialValueMap worklist
     where                
@@ -87,6 +93,6 @@ solve transfer extremalValue bottom direction p = solve' 1 IM.empty p initialVal
               foutt = ((start,end), w, worklistTail)
               foute = ((start,end), w, newWorklist)
           in if (effect <: previous)
-             then solve' (n+1) (IM.insert n (valueMap, foutt) it) p valueMap worklistTail
+             then solve' (n+1) (IM.insert n (valueMap   , foutt) it) p valueMap    worklistTail
              else solve' (n+1) (IM.insert n (newValueMap, foute) it) p newValueMap newWorklist                                  
                 

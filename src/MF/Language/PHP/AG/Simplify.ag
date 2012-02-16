@@ -1,8 +1,19 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- This file contains attributes to simplify the AST:
+-- . Collapse all string nodes to String
+-- . Transform FunctionCall in SimplifiedFunctionCall
+-- . Extract functions names and parameters
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import Data.IntMap as IM
 import CCO.Component
-
 }
 
 -------------------------------------------------------------------------------
@@ -150,17 +161,19 @@ extractParameters node mapping = extract build update node filtered
         
         buildParam label expr | isVariable expr = Param expr
                               | otherwise       = Param $ buildVariable label
-              
+
+
+-------------------------------------------------------------------------------
+-- Simplifier
+-------------------------------------------------------------------------------
+
+simplifier :: Component Node Node
+simplifier = component $ return . simplify
+            
 -- | Simplifies Node
 simplify node = let a = simplified_Syn_Node . execute M.empty M.empty undefined $ node
                     b = removed_Syn_Node . execute M.empty M.empty undefined $ a
                     c = fixPoint (extractFunctions_Syn_Node . execute M.empty M.empty undefined) $ b
                     d = extractParameters_Syn_Node . execute M.empty M.empty undefined $ c
                 in d
-
-
-simplifier :: Component Node Node
-simplifier = component $ return . simplify
-
-
 }

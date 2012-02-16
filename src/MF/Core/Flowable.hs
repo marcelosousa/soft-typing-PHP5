@@ -1,3 +1,8 @@
+-------------------------------------------------------------------------------
+-- Module    :  MF.Core.Flowable
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-------------------------------------------------------------------------------
+
 module MF.Core.Flowable where
 
 import qualified Data.IntMap as IM

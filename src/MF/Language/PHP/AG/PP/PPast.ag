@@ -1,3 +1,12 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- Pretty Printer (DOT file) for the AST
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import Data.Graph.Inductive hiding (graphviz', Node, empty, nodes, isSimple)
@@ -113,7 +122,14 @@ sem Node
         +nodeList = (++) [(@label, "InlineHTML")]
         
 {
+-------------------------------------------------------------------------------
+-- Visualizer AST
+-------------------------------------------------------------------------------
 
+visualizerAST :: Component Node String
+visualizerAST = component $ return . visualize
+
+-- Visualize generates a Dot file representing the AST.
 --visualize p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeList ++ ", p: " ++ show p) $ graphviz' (mkGraph nodeList edgeList :: Gr String ())
 visualize p = graphviz' (mkGraph nodeList edgeList :: Gr String ())
     where
@@ -130,7 +146,6 @@ graphviz' g = let n = labNodes g
                   sn (l, a)     = show l ++ " [label=\"" ++ a ++ " (" ++ show l ++ ") \"];"
                   se (l, l', a) = show l ++ " -> " ++ show l' ++ ";"
                   
-              in "digraph AST { bgcolor=transparent; " ++ ns ++ es ++ "}"
-  
+              in "digraph AST { bgcolor=transparent; " ++ ns ++ es ++ "}"  
         
 }

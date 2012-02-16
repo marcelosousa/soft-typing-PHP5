@@ -1,3 +1,14 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- Pretty Printer for control flow graph
+-- Since the Node is a flat structure it's not easy to generate a 
+-- dot file with the DOT package.
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import CCO.Printing as P hiding (render, join) 
@@ -8,12 +19,10 @@ import qualified Debug.Trace as TR
 }
 
 -------------------------------------------------------------------------------
--- Pretty Printer for control flow graph
--- Since the Node is a flat structure it's not easy to generate a 
--- dot file with the DOT package.
+-- Pretty Printer for Control Flow Graph
 -------------------------------------------------------------------------------
 
-attr Node MaybeNode ListNode Pairs
+attr Node MaybeNode ListNode Pairs ParamList
     syn ppcfg use {>|<} {P.empty} :: {Doc}
     syn labstruct use {`IM.union`} {IM.empty} :: {IntMap String}
 
@@ -56,7 +65,7 @@ sem Node
         stmt.res  = @lhs.res
 
     -- Introduced by the simplifier: result = name (params)
-    --    | SimplifiedFunctionCall name :: String params :: ParamList result :: {Maybe Node}
+    -- At the moment parameters are not being pretty printed.
     | SimplifiedFunctionCall
         lhs.ppcfg = text ("subgraph cluster_"++(show @loc.lc)++" {") >-<
                     text "color=green;" >-<
@@ -77,7 +86,6 @@ sem Node
         loc.lattice = \l -> fromMaybe M.empty $ IM.lookup l @lhs.res        
 
     -- Variables
-
     | Variable 
         lhs.ppcfg = dotPort @label >|< 
                     text "$" >|< @n.ppcfg >|< 
@@ -93,8 +101,6 @@ sem Node
                     ppMapping @loc.lattice >|< text " | " >|< @rv.ppcfg
         +labstruct  = IM.union $ IM.singleton @label @lhs.struct
         loc.lattice = fromMaybe M.empty $ IM.lookup @label @lhs.res
-        
-
             
     | Expr
         lhs.ppcfg = text @loc.sname >|< dotLabel @e.ppcfg
@@ -137,7 +143,6 @@ sem Node
                     dotAnnotate @label >|< ppMapping @loc.lattice >|< text " | " >|< @e.ppcfg
         loc.lattice = myfromJust $ IM.lookup @label @lhs.res
         +labstruct  = IM.union $ IM.singleton @label @lhs.struct
-
     
     | Return
         lhs.ppcfg = text @loc.sname >|< 
@@ -156,8 +161,8 @@ sem Node
         c.struct = "cond" ++ show @label
         loc.ppcfg = case @c.self of
                         (SimplifiedFunctionCall _ _ _) -> @c.ppcfg  >|< @l.ppcfg >|< @elseIfs.ppcfg >-< @r.ppcfg
-                        (Expr _)            -> @c.ppcfg  >|< @l.ppcfg >|< @elseIfs.ppcfg >-< @r.ppcfg
-                        _ -> text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @l.ppcfg >|< @elseIfs.ppcfg >-< @r.ppcfg
+                        (Expr _)                       -> @c.ppcfg  >|< @l.ppcfg >|< @elseIfs.ppcfg >-< @r.ppcfg
+                        _                              -> text ("cond" ++ show @label) >|< dotLabel @c.ppcfg >|< @l.ppcfg >|< @elseIfs.ppcfg >-< @r.ppcfg
     
     | ElseIf
         lhs.ppcfg = text ("subgraph cluster_"++(show @label)++" {") >-<
@@ -191,7 +196,6 @@ sem Node
                         (SimplifiedFunctionCall _ _ _) -> @s.ppcfg >|< @c.ppcfg
                         (Expr _)                       -> @s.ppcfg >|< @c.ppcfg
                         _ -> text ("cond" ++ show @label) >|< @s.ppcfg >|< dotLabel @c.ppcfg
-        
 
     | Simple
         lhs.ppcfg = text @value
@@ -222,9 +226,7 @@ sem Node
     
     | String
         lhs.ppcfg = dotPort @label >|< ppString @value >|< dotAnnotate @label
---                >|< ppMapping @loc.lattice
         +labstruct = IM.union $ IM.singleton @label @lhs.struct
---        loc.lattice = myfromJust $ IM.lookup @label @lhs.res
             
     | Skip LBreak LContinue
         lhs.ppcfg = text @loc.labtag >|< dotLabel (dotPort @label >|< text (toString @self) >|< dotAnnotate @label)
@@ -258,6 +260,7 @@ sem Node
     
 
 {
+-- Helper Functions for Pretty Printing
 toString :: Node -> String
 toString LTrue            = "true"
 toString LFalse           = "false"
@@ -311,10 +314,6 @@ toString (PostInc _) = "PostInc"
 toString (PostDec _) = "PostDec"
 toString (Concat _ _) = "Concat"
 
-resfromJust :: Maybe Node -> String
-resfromJust Nothing = ""
-resfromJust (Just a) = name a M.empty
-
 dotAnnotate :: Show a => a -> Doc
 dotAnnotate a = text " (" >|< text (show a) >|< text ") "
 
@@ -353,15 +352,28 @@ ppTypeSet tys = text "\\{ " >|< foldr (\d r -> if P.isEmpty r then d else d >|< 
     where ppType (TyRef (i, ty)) = text "TyRef (" >|< ppIdentifier i >|< text ", " >|< ppType ty >|< text ")"
           ppType x               = text $ show x
 
+-- name is defined in Typing.ag
+resfromJust :: Maybe Node -> String
+resfromJust Nothing = ""
+resfromJust (Just a) = name a M.empty
+
 buildLabelRef :: IntMap String -> Label -> String
 buildLabelRef imap l = case IM.lookup l imap of
                             Just s -> s ++ ":" ++ (show l)
                             Nothing -> show l -- error $ show imap ++ show l
 
-cfgprinter :: Component Node (IM.IntMap (Doc, FlowOut))
-cfgprinter = component $ return . cfgprint
+
+-------------------------------------------------------------------------------
+-- Visualizer Control Flow Graph
+-------------------------------------------------------------------------------
+
+debuggerCFG :: Component (IM.IntMap (String, FlowOut)) String
+debuggerCFG = component $ return . IM.fold ((++) . fst) ""
+
+visualizerCFG :: Component Node (IM.IntMap (String, FlowOut))
+visualizerCFG = component $ return . cfgprint
              
-cfgprint n = IM.map (\(it, w) -> (ppcfg_Syn_Node $ execute M.empty M.empty it n, w)) (typing n)
+cfgprint n = IM.map (\(it, w) -> (render_ 80 (ppcfg_Syn_Node $ execute M.empty M.empty it n), w)) (typing n)
 
 
 --ppcfg_Syn_Node $ execute M.empty (last $ IM.elems $ typing n) n

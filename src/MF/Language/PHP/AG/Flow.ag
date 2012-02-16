@@ -1,3 +1,12 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- This file contains all control flow related issues.
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import Data.IntMap as IM
@@ -23,7 +32,7 @@ attr Node ParamList ListNode Pairs
     syn nodes use {`IM.union`} {IM.empty} :: {IntMap Node}
 
 sem Node
-    | Ternary ElseIf While DoWhile Skip Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign Sequence Simple Number FloatNumber LNull Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return Expect Return FunctionCall Param ParamRef String Expr DQContent FunctionName Literal Echo Print PostInc PreInc PreDec PostDec IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not InlineHTML ReferenceAssign IndirectReference Concat StringAccess LNone Pair Array LBreak LContinue
+    | Ternary ElseIf While DoWhile Skip Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign Sequence Simple Number FloatNumber LNull Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return Expect Return FunctionCall Param ParamRef String Expr DQContent FunctionName Literal Echo Print PostInc PreInc PreDec PostDec IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not InlineHTML ReferenceAssign IndirectReference Concat StringAccess LNone Pair Array LBreak LContinue OpenTag CloseTag Escape
         loc.label :: uniqueref labels
         lhs.label = @loc.label
         +nodes    = IM.union $ IM.singleton @label @self
@@ -49,6 +58,11 @@ sem ParamList ListNode Pairs
         loc.label :: uniqueref labels
         lhs.label = @loc.label
 
+sem MaybeNode
+    | Nothing
+        loc.label :: uniqueref labels
+        lhs.label = @loc.label
+        
 sem ListNode Pairs
     | Cons
         lhs.nodes = @hd.nodes `IM.union` @tl.nodes
@@ -112,6 +126,7 @@ sem Node
 -------------------------------------------------------------------------------
 -- Conditional & Labels
 -------------------------------------------------------------------------------
+
 attr Node ListNode
   syn cond use {<|>} {Nothing} :: {Maybe [Label]}
   syn labelz use {++} {[]} :: {[Label]}
@@ -129,7 +144,7 @@ sem Pairs
     | Nil  lhs.labelz = []
 
 -------------------------------------------------------------------------------
--- Final
+-- Final && Break and Continue Labels
 -------------------------------------------------------------------------------
 {
 (<*|*>) :: Maybe [Label] -> Maybe [Label] -> Maybe [Label]
@@ -271,7 +286,7 @@ lookupDeclaration name declarations = case M.lookup name declarations of
 data Declaration = Declaration { functionName :: String, ln :: Label, lx :: Label }
 }
 
-attr Node ParamList
+attr Node ParamList Pairs ListNode MaybeNode
     syn declarations use {`M.union`} {M.empty} :: {Map String Declaration}
     inh declarations'                          :: {Map String Declaration}
     
@@ -315,11 +330,18 @@ instance Flowable Node where
     flow     = flow_Syn_Node . execute M.empty M.empty undefined
     blocks   = blocks_Syn_Node . execute M.empty M.empty undefined
 
-debugflow n = "Doc: " ++ (show n) ++ 
-              "\nInit: " ++ (show . F.init $ n) ++ 
-              "\nFinal: " ++ (show . F.final $ n) ++ 
+-------------------------------------------------------------------------------
+-- Flow Debugging
+-------------------------------------------------------------------------------
+
+debuggerFlow :: Component Node String
+debuggerFlow = component $ return . debugflow
+
+debugflow n = "Doc: "      ++ (show n) ++ 
+              "\nInit: "   ++ (show . F.init $ n) ++ 
+              "\nFinal: "  ++ (show . F.final $ n) ++ 
               "\nBlocks: " ++ (show . F.blocks $ n) ++
-              "\nFlow: " ++ (show . F.flow $ n) ++ 
+              "\nFlow: "   ++ (show . F.flow $ n) ++ 
               "\nLabels: " ++ (show . F.labels $ n) ++
-              "\nNodes: " ++ (show . nodes_Syn_Node . execute M.empty M.empty undefined $ n)
+              "\nNodes: "  ++ (show . nodes_Syn_Node . execute M.empty M.empty undefined $ n)
 }

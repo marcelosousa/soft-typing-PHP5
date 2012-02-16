@@ -1,6 +1,12 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+
+-------------------------------------------------------------------------------
+-- Module    :  MF.Core.Context
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-------------------------------------------------------------------------------
+
 module MF.Core.Context where
     
 import Data.Map as M

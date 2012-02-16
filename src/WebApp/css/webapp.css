@@ -201,8 +201,8 @@ color:#7D7D7D;
 #container .nextButton:hover{background-position:right bottom;right:0;}
 
 #container ul{
-	width:900px;
-	height:1200px; 
+	width:1200px;
+	height:1300px; 
 	list-style:none outside none;
 	position:relative;
 	overflow:hidden;

@@ -1,3 +1,15 @@
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- Checking contains attributes to process the 
+-- special function 'check' and to generate warnings.
+
+-- NOTE: This file is not synchronized with the current version of the project.
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import CCO.Component

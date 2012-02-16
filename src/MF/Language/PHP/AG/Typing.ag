@@ -2,6 +2,16 @@ optpragmas {
 {-# LANGUAGE TypeOperators #-}
 }
 
+{
+-------------------------------------------------------------------------------
+-- Module    :  MF.Language.PHP.AG
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-- This AG file is part of the module MF.Language.PHP.AG.
+-- This file contains attributes for constraints and 
+-- defined the transfer functions.
+-------------------------------------------------------------------------------
+}
+
 imports
 {
 import MF.Language.PHP.Types
@@ -18,6 +28,7 @@ import Data.Maybe
 
 import qualified Debug.Trace as T
 }
+
 
 -------------------------------------------------------------------------------
 -- Left most variable name and variable depthVar
@@ -54,7 +65,7 @@ getSValue _          = error "Shouldn't be called"
 
 }
   
-attr Node ParamList
+attr Node ParamList ListNode Pairs MaybeNode
     inh simplifiedName :: {Maybe Node}
     
 sem Node
@@ -133,7 +144,7 @@ sem Node
 -- Mapping
 -------------------------------------------------------------------------------
 
-attr Node ParamList
+attr Node ParamList Pairs ListNode MaybeNode
     syn mapping :: {Mapping}
     inh mapping :: {Mapping}
     inh assMap  :: {M.Map String String}
@@ -256,6 +267,7 @@ solve prog = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward pr
                                     else getPointerId x ids
           where getPId x (Parameter (_,x',y,isPRef)) = (isPRef && (x==y),x')
                 getPId x _                           = (False, x)
+
 -------------------------------------------------------------------------------
 -- Typing
 -------------------------------------------------------------------------------
@@ -267,17 +279,17 @@ typing :: Node -> ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)
 typing p = mappings -- trace ("mappings: " ++ show mappings) $ mappings
     where
         solve = MF.Language.PHP.AG.solve
-        mappings = IM.map typing' (solve p) -- IM.map ((m,w) -> ((IM.map (M.fold join M.empty) m), w)) (solve p)        
+        mappings = IM.map typing' (solve p)
 
 typing' :: (ValueMap (Stack :-> Mapping), FlowOut) -> (ValueMap (Identifier :-> TypeSet), FlowOut)
 typing' (m,w) = (IM.map (M.fold join M.empty) m ,w)
 
 -------------------------------------------------------------------------------
--- Report Typing
+-- Debug Typing
 -------------------------------------------------------------------------------
 
-reporterty :: Component (ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)) Doc
-reporterty = component $ return . reporty'     
+debuggerTyping :: Component (ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut)) Doc
+debuggerTyping = component $ return . reporty'     
              
 reporty' ::ValueMap (ValueMap (Identifier :-> TypeSet), FlowOut) -> Doc
 reporty' m = IM.fold (\it r -> reporty (fst it) >-< r) P.empty m

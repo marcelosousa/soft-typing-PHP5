@@ -1,4 +1,10 @@
-{-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
+{-# LANGUAGE TypeOperators, TypeSynonymInstances, FlexibleInstances #-}
+
+-------------------------------------------------------------------------------
+-- Module    :  MF.Core.Flowable
+-- Copyright :  (c) 2012 Marcelo Sousa, Henk Erik van der Hoek
+-------------------------------------------------------------------------------
+
 module MF.Language.PHP.Types where
 
 import Data.Set as S 
@@ -12,7 +18,6 @@ import MF.Core.Flowable
 import MF.Core.Solver
 import MF.Core.Context
 import MF.Core.Lattice
-
 
 --trace' = T.trace
 trace' _ = id
@@ -80,9 +85,6 @@ instance Lattice TypeSet where
     rightjoin = join
     (<:) = S.isSubsetOf
 
-
-
-
 -------------------------------------------------------------------------------
 -- Constraints
 -------------------------------------------------------------------------------
@@ -148,7 +150,6 @@ instance (Ord c) => Lattice (c :-> Mapping) where
 createRef :: Identifier -> TypeSet -> TypeSet
 createRef vname setTy = S.map (\ty -> TyRef (vname, ty)) setTy
 
-
 updateReferences :: Identifier -> Mapping -> TypeSet -> Mapping
 updateReferences vname mapping effect = M.map (\tyset -> updateTypeSet vname tyset effect) mapping
 
@@ -174,7 +175,7 @@ changeTypeRef' (TyRef (n, _)) ty = TyRef (n,ty)
 changeTypeRef' _              ty = ty
 
 -- Marcelo Sousa version
--- We resolve the constraints 
+-- Resolve the constraints 
 -- Filter equality constraints and lift there type in case of any arrays
 -- Create possible references
 -- Update values of references
@@ -197,7 +198,7 @@ updateMapping identifier v label depth isRef constraints mapping =
         isApplicable (l :==: t) = l == label
         isApplicable _          = False
         
--- Previous version
+-- Henk Erik van der Hoek version
 {-
 updateMapping :: Identifier -> Label -> Int -> Bool -> Set Constraint -> Mapping -> Mapping
 updateMapping identifier label depth constraints isRef mapping = 
