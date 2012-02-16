@@ -8,7 +8,7 @@ if($condition){
     $surname = 2;
 }
     
-#echo $name, $surname;
+echo $name;
 
 #check ($condition, "[TyBool]");
 

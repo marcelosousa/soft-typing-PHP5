@@ -3,6 +3,6 @@
 
 $condition = true;
 
-$a = $condition ? 1 : 0; 
+$a = $condition ? 1 : "b"; 
 
 ?>

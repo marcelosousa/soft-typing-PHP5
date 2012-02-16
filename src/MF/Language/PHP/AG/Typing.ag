@@ -151,13 +151,15 @@ attr Node ParamList Pairs ListNode MaybeNode
     
 sem Node
     | Assign
-        lhs.mapping = updateMapping (Identifier $ name @rv.self @lhs.assMap) Nothing @e.label  @level False @constraints @e.mapping
+        lhs.mapping = updateMapping (Identifier $ name @rv.self @lhs.assMap) Nothing @e.label  @loc.flevel False @constraints @e.mapping
     | ReferenceAssign
-        lhs.mapping = updateMapping (Identifier $ name @rv.self M.empty) (Just (Identifier $ name @v.self M.empty)) @v.label  @level True @constraints @v.mapping
+        lhs.mapping = updateMapping (Identifier $ name @rv.self M.empty) (Just (Identifier $ name @v.self M.empty)) @v.label @loc.flevel True @constraints @v.mapping
     | PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign
-        lhs.mapping = updateMapping (Identifier $ name @rv.self M.empty)     Nothing @rv.label @level False @constraints @e.mapping
+        lhs.mapping = updateMapping (Identifier $ name @rv.self M.empty)     Nothing @rv.label @loc.flevel False @constraints @e.mapping
     | Return 
-        lhs.mapping = updateMapping ReturnValue                              Nothing @e.label  @level False @constraints @e.mapping
+        lhs.mapping = updateMapping ReturnValue                              Nothing @e.label  0 False @constraints @e.mapping
+    | Assign ReferenceAssign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign
+        loc.flevel = @level `max` (depthVar @rv.self)
 
 -------------------------------------------------------------------------------
 -- Map Variable String
@@ -200,8 +202,11 @@ solve prog = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward pr
                                                  
         transfer (Entry  (FunctionDecl name params _)) = \m -> let n = M.mapKeys parameterToIdentifier m
                                                                    o = M.mapKeys parameterToParameter m
-                                                               in M.union n o
+                                                               in M.map removeTyRefs $ M.union n o
             where
+                removeTyRefs = S.map removeTyRef
+                removeTyRef (TyRef (_, tyUn)) = removeTyRef tyUn
+                removeTyRef x                 = x
                 parameterName p = (toName . removeParam) (params !! p)
                 parameterToIdentifier (Parameter (p,_,_,_)) = Identifier $ parameterName p
                 parameterToParameter (Parameter (p,x,_,_)) = Parameter (p, x, parameterName p, isParamRef (params !! p))
@@ -257,7 +262,8 @@ solve prog = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward pr
         isIdentifierParamRef' _ _ = False
           
         toName :: Node -> String
-        toName (Variable (Simple name)) = name
+        toName v = name v M.empty
+--        toName (Variable (Simple name)) = name
         
         getPointerId :: String -> [Identifier] -> String
         getPointerId x [] = error "Couldn't find pointer"

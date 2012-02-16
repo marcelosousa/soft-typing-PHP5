@@ -131,7 +131,7 @@ Supported PHP5 Features
 By supported I consider usable with option 'Analyse'.
 
 1. Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
-2. Simple assignments (tests/simple.php) -- Should we add contexts?
+2. Simple assignments (tests/simple.php) 
 3. If-constructs with no else clauses (tests/controlstruct/if.php)
 4. Ifelse constructs (tests/controlstruct/ifelse.php)
 5. Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
@@ -143,7 +143,7 @@ By supported I consider usable with option 'Analyse'.
 11. Return statement (tests/functions/simple.php)
 12. Recursive functions (tests/functions/fac.php, tests/functions/recursive.php)
 13. Print function (tests/print.php)
-14. Echo function (tests/echo.php) - Missing case when echo receives something that not a string as input.
+14. Echo function (tests/echo.php)
 15. Incrementing/Decrementing Operators (tests/preposincrement.php tests/preposdecrement.php)
 16. Assignment operators (Arithmetic, String and Bitwise) (tests/assignop.php)
 17. Comparison Operators (tests/basicdatatypes/scalar/boolean/boolop.php)
@@ -157,15 +157,15 @@ By supported I consider usable with option 'Analyse'.
 25. Else-if (tests/controlstruct/elseif.php)
 26. AltIf, AltIfElse (tests/controlstruct/ifelsealt.php)
 27. AltWhile (tests/controlstruct/while3.php)
-28. Ternary conditional operator (tests/ternaryconditionalop.php)
-29. Creating/modifying with square bracket syntax 
+28. Ternary conditional operator (tests/controlstruct/ternaryconditionalop.php)
+29. Creating/modifying with square bracket syntax  (tests/basicdatatypes/compound/array/3.php)
 30. ReferenceAssign (tests/variables/varreference.php)
 31. IndirectReference (tests/variables/indirectrefvar.php)
 32. ParameterReference (tests/assign.php)
 33. SingleQuoted strings (tests/basicsdatatypes/scalar/string/singlequoted.php)
-34. Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-35. Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-36. Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+34. Negative integers (tests/basicdatatypes/scalar/integer/integerliteral.php)
+35. Octal integers (tests/basicdatatypes/scalar/integer/integerliteral.php)
+36. Hexa integers (tests/basicdatatypes/scalar/integer/integerliteral.php)
 37. Floating-point types (tests/basicdatatypes/scalar/float/*)
 38. NULL type (tests/basicdatatypes/null.php)
 39. StringAccess (tests/basicdatatypes/scalar/string/stringindex.php)
@@ -176,8 +176,8 @@ By supported I consider usable with option 'Analyse'.
 44. Break for while and dowhile (tests/controlstruct/whilebreak.php)
 45. Continue (tests/controlstruct/whilecontinue.php)
 46. For (tests/controlstruct/for.php)
-47. function with array as parameter (tests/functions/funtakesarray.php)
-48. function within a function (tests/functions/funfun.php)
+47. Function with array as parameter (tests/functions/funtakesarray.php)
+48. Function within a function (tests/functions/funfun.php)
 
 Non-Supported PHP5 features
 ---------------------------

@@ -9,14 +9,14 @@ $bar = 1;  // Alter $bar...
 
 $foo = "Bye";
 
-function hello(){
+function hello($bar){
   $bar = 4;
   return $bar;
 }
 
-$a = hello();
+$a = hello($bar);
 $bar = 10;
-
+echo $a;
 //echo $bar;
 //echo $foo;                 // $foo is altered too.
 

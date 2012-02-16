@@ -15,10 +15,5 @@ $b = f($a);
 //$a = "bah";
 print $a;  
 
-//$l[$a] = f($a);
-
-//foreach ($l as $key => $value){
-//    print "#$key = $value\n";
-//}
 
 ?>
