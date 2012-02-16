@@ -65,7 +65,7 @@ php5analysis -t=Option inputfile
 * TreeDot - Prints a dot file representing the AST.
 * Simplify - Prints the code using Code after simplifying the AST.
 * DumpIterations - Dumps all information used by Analyse to build the website. This information are dots files for each iteration of the control flow annotated with the lattice.
-* Analyse - Generates a website under the directory of the testfile with the name (testfile ++ "output"). 
+* Analyse - Generates a website under the directory of the testfile with the name (testfile ++ "output"). If the website seems broken a possible reason might be that the link to the css and the js script is broken since these are hardcoded for simplicity. Change those links in WebApp/WebApp.hs
 * Debug - Prints both Flow and Code.
 
 The analysis
