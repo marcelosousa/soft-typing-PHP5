@@ -2,8 +2,9 @@
 
 $a[1] = ($b = 1) + ($c = 1);
 
-check ($a, "[TyInt]");
-check ($b, "[TyInt]");
-check ($c, "[TyInt]");
+
+//check ($a, "[TyInt]");
+//check ($b, "[TyInt]");
+//check ($c, "[TyInt]");
 
 ?>

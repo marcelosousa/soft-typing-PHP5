@@ -11,18 +11,22 @@ bar();
 if ($makefoo) {
   function foo()
   {
-    echo "I don't exist until program execution reaches me.\n";
+    return 1;
   }
 }
 
 /* Now we can safely call foo()
    since $makefoo evaluated to true */
 
-if ($makefoo) foo();
+if ($makefoo){
+  $a = foo();
+}
 
 function bar() 
 {
   echo "I exist immediately upon program start.\n";
 }
+
+echo $a;
 
 ?>

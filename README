@@ -99,11 +99,10 @@ The following files and directories might be of special interest:
 
 (*) : Currently these analyses additional analyses don't compile due to recent changes in the Flowable class
 
-
 Done
 ~~~~
 1. Comments in the sense that they are removed by sglri (tests/syntax/comment.php)
-2. Simple assignments (tests/simple.php) 
+2. Simple assignments (tests/simple.php) -- Should we add contexts?
 3. If-constructs with no else clauses (tests/controlstruct/if.php)
 4. Ifelse constructs (tests/controlstruct/ifelse.php)
 5. Double quoted strings (tests/basicdatatypes/scalar/string/doublequoted.php)
@@ -113,19 +112,43 @@ Done
 9. Booleans (tests/basicdatatypes/scalar/boolean/boolean.php)
 10. User-defined functions without parameters (tests/functions/simple.php)
 11. Return statement (tests/functions/simple.php)
-12. Recursive functions (tests/functions/fac.php)
+12. Recursive functions (tests/functions/fac.php, tests/functions/recursive.php)
 13. Print function (tests/print.php)
-14. Echo function (tests/echo.php)
-15. PreInc and PostInc (tests/preposincrement.php)
-16. Assignment operators (Arithmetic and String) (tests/assignop.php)
+14. Echo function (tests/echo.php) - Missing case when echo receives something that not a string as input.
+15. Incrementing/Decrementing Operators (tests/preposincrement.php tests/preposdecrement.php)
+16. Assignment operators (Arithmetic, String and Bitwise) (tests/assignop.php)
 17. Comparison Operators (tests/basicdatatypes/scalar/boolean/boolop.php)
 18. Logical Operators (tests/basicdatatypes/scalar/boolean/logicop.php)
 19. Supports HTML Embedding (tests/syntax/htmlembedding.php)
-20. InlineHTML not implemented (tests/syntax/advancedescaping.php)
-
-Supported PHP5 features
------------------------
-6. Creating/modifying with square bracket syntax
+20. InlineHTML implemented (tests/syntax/advancedescaping.php)
+21. Standard tags (tests/syntax/phptagsimple.php)
+22. ASP tags (tests/syntax/phptagasp.php)
+23. "In PHP 5.2 and earlier, the parser does not allow the <?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php)
+24. Circular functions (tests/functions/recursive2.php)
+25. Else-if (tests/controlstruct/elseif.php)
+26. AltIf, AltIfElse (tests/controlstruct/ifelsealt.php)
+27. AltWhile (tests/controlstruct/while3.php)
+28. Ternary conditional operator (tests/ternaryconditionalop.php)
+29. Creating/modifying with square bracket syntax 
+30. ReferenceAssign (tests/variables/varreference.php)
+31. IndirectReference (tests/variables/indirectrefvar.php)
+32. ParameterReference (tests/assign.php)
+33. SingleQuoted strings (tests/basicsdatatypes/scalar/string/singlequoted.php)
+34. Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+35. Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+36. Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
+37. Floating-point types (tests/basicdatatypes/scalar/float/*)
+38. NULL type (tests/basicdatatypes/null.php)
+39. StringAccess (tests/basicdatatypes/scalar/string/stringindex.php)
+40. None (tests/basicdatatypes/compound/array/arraycreation3.php)
+41. Standard array creation (tests/basicdatatypes/compound/array/arraycreation*.php) (check nesting)
+42. Assignments in conditions (tests/controlstruct/conditional.php)
+43. DoWhile (tests/controlstruct/dowhile.php, tests/controlstruct/dowhilebreak.php)
+44. Break for while and dowhile (tests/controlstruct/whilebreak.php)
+45. Continue (tests/controlstruct/whilecontinue.php)
+46. For (tests/controlstruct/for.php)
+47. function with array as parameter (tests/functions/funtakesarray.php)
+48. function within a function (tests/functions/funfun.php)
 
 Non-Supported PHP5 features
 ---------------------------
@@ -133,97 +156,38 @@ Non-Supported PHP5 features
 Parser 
 ~~~~~~
 1. sglri does not allow combination of different sytles of open-close tags (tests/syntax/phptagcombination.php)
+2. sglri seems to now allow lambdas                                        (tests/basicsdatatypes/callback/callbackclosure.php, tests/functions/lambda.php)
+3. sglri does not support Goto                                             (tests/controlstruct/goto.php)
 
-General
+Various
 ~~~~~~~
+1. TemplateDocument                           (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
+2. Different code snippets in the same file   (tests/syntax/instructionseparation.php)
+3. Exceptions                                 (tests/exceptions/*)
+4. Classes and Objects                        (tests/oo/*, tests/basicdatatypes/compound/object/*)
+5. Resources                                  (no test file)
+6. Callback                                   (tests/basicdatatypes/callback/callback.php)
+7. Heredoc                                    (tests/basicsdatatypes/scalar/string/heredoc.php)
+8. Nowdoc                                     (tests/basicsdatatypes/scalar/string/nowdoc.php)
+9. Type Juggling                              (tests/basicdatatypes/typejuggling.php)
+10. InternalFunction                          (tests/variables/varmanage/isset.php, tests/varmanage/empty.php, tests/include.php)
+11. Unset                                     (tests/variables/varmanage/unset.php)
+12. Use of $GLOBALS and variable scope        (tests/variables/varscope/globals*)
+13. Superglobals                              (no test file)
+14. DeclareGlobal                             (tests/variables/varscope/global.php)
+15. define function for constants             (tests/variables/constantvar2.php)
+16. Constant variables                        (tests/constantvar.php)
+17. DeclareStatic not implemented             (tests/varscope/static.php)
+18. Recursive functions with static variables (tests/functions/countTo10.php)
+19. Short-circuiting                          (no test file)
+20. Declare                                   (tests/declare.php)
+21. ListAssign                                (tests/controlstruct/whilebreak.php)
+22. Foreach                                   (tests/controlstruct/foreach.php)
+23. Switch                                    (tests/controlstruct/switch.php)
+24. FunctionDeclRef                           (tests/functions/funretref.php)
+25. function with default parameter           (tests/functions/fundefaultpar.php)
+26. conditional functions                     (tests/functions/funconditional.php)
 
-
-33. XorAssign not implemented (tests/efficientswap.php)
-55. Exceptions (tests/exceptions/*)
-57. Classes and Objects (tests/oo/*)
-
-Syntax
-~~~~~~
-3. TemplateDocument (tests/syntax/phptagecho.php, tests/syntax/phptagscript.php)
-
-17. Error in ATerm: DQContent takes 1 arguments, but 3 were given. (tests/syntax/phptagsimple.php)
-18. ASPOpenTag not implemented (still runs because it's ignored) (tests/syntax/phptagasp.php)
-19. "In PHP 5.2 and earlier, the parser does not allow the <?php opening tag to be the only thing in a file. This is allowed as of PHP 5.3." (tests/syntax/phptagstandard.php, tests/syntax/instructionseparation.php)
-
-
-
-Types
-~~~~~
-9. SingleQuoted strings not implemented (tests/basicsdatatypes/scalar/string/singlequoted.php)
-1. Heredoc (tests/basicsdatatypes/scalar/string/heredoc.php)
-2. Nowdoc (tests/basicsdatatypes/scalar/string/nowdoc.php)
-25. StringAccess not implemented (tests/basicsdatatypes/scalar/string/stringindex.php)
-21. Negative integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-22. Octal integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-23. Hexa integers not implemented (tests/basicdatatypes/scalar/integer/integerliteral.php)
-5. Floating-point types (tests/basicdatatypes/scalar/float/*)
-26. Standard array creation not implemented (tests/basicdatatypes/compound/array/arraycreation*.php)
-43. ListAssign (tests/controlstruct/whilebreak.php)
-27. No support for classes/objects (tests/basicdatatypes/compound/object/*)
-28. Resources are not implemented (no test file)
-29. NULL type not implemented (tests/basicdatatypes/null.php)
-31. Callback (tests/basicdatatypes/callback/callback.php)
-32. tests/basicdatatypes/typejuggling.php analysis is wrong
-
-Variables
-~~~~~~~~~
-6. Use of $GLOBALS and variable scope (tests/variables/varscope/globals*)
-7. IndirectReference not implemented (tests/variables/indirectrefvar.php)
-31. ReferenceAssign not implemented (tests/variables/varreference.php)
-8. InternalFunction not implemented (tests/variables/varmanage/isset.php, tests/varmanage/empty.php, tests/include.php)
-10. Unset not implemented (tests/variables/varmanage/unset.php)
-11. Superglobals (not sure because can't test since SingleQuoted is not working)
-12. DeclareGlobal not implemented (tests/variables/varscope/global.php)
-34. define function for constants not implemented (tests/variables/constantvar2.php)
-16. Constant variables (tests/constantvar.php)
-14. DeclareStatic not implemented (tests/varscope/static.php)
-
-Control Structures
-~~~~~~~~~~~~~~~~~~
-28. Foreach not implemented (tests/foreach.php)
-35. Ternary conditional operator not implemented (tests/ternaryconditionalop.php)
-36. Short-circuiting 
-38. Else-if (tests/controlstruct/elseif.php)
-39. AltIf (tests/controlstruct/ifelsealt.php)
-40. AltWhile (tests/controlstruct/while3.php)
-41. DoWhile (tests/controlstruct/dowhile.php, tests/controlstruct/dowhilebreak.php)
-42. For (tests/controlstruct/for.php)
-44. Break (tests/controlstruct/whilebreak.php)
-45. Continue (tests/controlstruct/whilecontinue.php)
-46. Switch (tests/controlstruct/switch.php)
-47. Declare (tests/controlstruct/declare.php)
-48. sglri does not support Goto (tests/controlstruct/goto.php)
-49. empty block (tests/functions/funconditional.php)
-
-Functions
-~~~~~~~~~
-30. sglri seems to now allow lambdas! (tests/basicsdatatypes/callback/callbackclosure.php, tests/functions/lambda.php)
-15. Recursive functions with static variables (tests/functions/countTo10.php)
-50. conditional functions (tests/functions/funconditional.php)
-51. function within a function (tests/functions/funfun.php)
-52. function with array as parameter (tests/functions/funtakesarray.php)
-53. function with default parameter (tests/functions/fundefaultpar.php)
-54. FunctionDeclRef (tests/functions/funretref.php)
-
-TODO
-----
-3. Implement items not supported 
--- Arrays
--- References
--- The arity in the CCO library does not allow for productions to have more than one rule.
-
-MFP - Minimal Fixed Point
---------------------------
-Elaborate
-
-Embellished monotone framework
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Elaborate
 
 Usage and Graph Generation
 --------------------------

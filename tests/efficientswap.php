@@ -8,7 +8,7 @@ $a^=$b;
 $b^=$a;
 $a^=$b;
 
-echo $a."\n".$b."\n";
+//echo $a."\n".$b."\n";
 /* prints:
 3
 5

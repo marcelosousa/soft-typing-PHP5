@@ -1,11 +1,14 @@
 <?php
 
+$a = true;
+$b = 1;
 if ($a) {
-    echo "a is bigger than b";
-} elseif ($a == $b) {
-    echo "a is equal to b";
+    $b = 2;
+} elseif ($a) {
+    $b = "hi";
 } else {
-    echo "a is smaller than b";
+    $b = false;
 }
+$c = 0;
 
 ?>

@@ -23,3 +23,5 @@ instance Context Stack where
     lift transfer stmt@(Call   lc lr _) = M.map (transfer stmt) . M.mapKeysWith join (take 3 . (:) lc) 
     lift transfer stmt@(Return lc lr _) = M.map (transfer stmt) . M.mapKeys tail . M.filterWithKey (\k v -> not (L.null k) && head k == lc)
     lift transfer stmt@(Normal       _) = M.map (transfer stmt)
+    lift transfer stmt@(Before       _) = M.map (transfer stmt)
+    lift transfer stmt@(After        _) = M.map (transfer stmt)

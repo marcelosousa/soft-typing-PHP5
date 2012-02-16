@@ -4,15 +4,21 @@ $a = 0;
 
 function f(&$b)
 {
- $b = 3;
+ if(true){
+   $b = "Hello";
+ }
  $a = 10;
- return 1;
+ return $a;
 }
 
-$l[$a] = f($a);
+$b = f($a);
+//$a = "bah";
+print $a;  
 
-foreach ($l as $key => $value){
-    print "#$key = $value\n";
-}
+//$l[$a] = f($a);
+
+//foreach ($l as $key => $value){
+//    print "#$key = $value\n";
+//}
 
 ?>

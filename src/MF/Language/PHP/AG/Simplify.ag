@@ -9,7 +9,7 @@ import CCO.Component
 -- Simplify the AST
 -------------------------------------------------------------------------------
 
-attr Node OptionalString ParamList MaybeNode
+attr Node OptionalString ParamList MaybeNode ListNode Pairs
     syn simplified :: SELF
 
 sem Node
@@ -28,17 +28,39 @@ sem OptionalString
 -------------------------------------------------------------------------------
 -- Remove FunctionCalls 
 -------------------------------------------------------------------------------
-
-attr Node OptionalString ParamList MaybeNode
+{
+buildSimplifiedFunctionCall :: Node -> Node
+buildSimplifiedFunctionCall (Assign rv (FunctionCall (FunctionName name) params)) = SimplifiedFunctionCall name params $ Just rv
+buildSimplifiedFunctionCall (FunctionCall (FunctionName name) params)             = SimplifiedFunctionCall name params Nothing
+-- buildSimplifiedFunctionCall (Assign rv e)                                         = Assign rv e
+buildSimplifiedFunctionCall copy                                                  = Expr copy
+}
+attr Node OptionalString ParamList MaybeNode ListNode Pairs
     syn removed :: SELF
 
 sem Node 
-    | Expr 
-        lhs.removed = case @e.self of 
-                          (Assign rv (FunctionCall (FunctionName name) params)) -> SimplifiedFunctionCall name params $ Just rv
-                          (FunctionCall (FunctionName name) params)             -> SimplifiedFunctionCall name params Nothing
-                          copy                                                  -> Expr copy
-        
+    | Expr
+        lhs.removed = buildSimplifiedFunctionCall @e.self
+
+    | If
+        lhs.removed = let nc = buildSimplifiedFunctionCall @c.self
+                      in If nc @l.self @elseIfs.self @r.self 
+    
+    | While
+        lhs.removed = let nc = buildSimplifiedFunctionCall @c.self
+                      in While nc @s.self
+    
+    | DoWhile
+        lhs.removed = let nc = buildSimplifiedFunctionCall @c.self
+                      in DoWhile @s.self nc
+                      
+    | ElseIf 
+        lhs.removed = let nc = buildSimplifiedFunctionCall @c.self
+                      in ElseIf nc @s.self
+    
+    | Ternary
+        lhs.removed = let nc = buildSimplifiedFunctionCall @c.self
+                      in Ternary nc @t.self @f.self
 
 
 -------------------------------------------------------------------------------
@@ -55,16 +77,22 @@ sem Node
 
 
 -- Function extraction
-attr Node OptionalString ParamList MaybeNode
+attr Node OptionalString ParamList MaybeNode ListNode Pairs
     syn extractFunctions :: SELF
 
 sem Node
     | Expr
         lhs.extractFunctions = extractFunctions (Expr @e.extractFunctions) @e.callMapping
     | Return                     
-        lhs.extractFunctions = extractFunctions (Return @e.extractFunctions) @e.callMapping        
+        lhs.extractFunctions = extractFunctions (Return @e.extractFunctions) @e.callMapping
+    | If
+        lhs.extractFunctions = extractFunctions (If @c.extractFunctions @l.extractFunctions @elseIfs.extractFunctions @r.extractFunctions) @c.callMapping
     | While                      
         lhs.extractFunctions = extractFunctions (While @c.extractFunctions @s.extractFunctions) @c.callMapping
+    | ElseIf                      
+        lhs.extractFunctions = extractFunctions (ElseIf @c.extractFunctions @s.extractFunctions) @c.callMapping
+    | DoWhile                      
+        lhs.extractFunctions = extractFunctions (DoWhile @s.extractFunctions @c.extractFunctions) @c.callMapping
     | SimplifiedFunctionCall     
         lhs.extractFunctions = extractFunctions (SimplifiedFunctionCall @name @params.extractFunctions @result.self) @params.callMapping
     | FunctionCall 
@@ -80,20 +108,18 @@ attr Node OptionalString ParamList
     syn paramMapping use {`IM.union`} {IM.empty} :: {IntMap Node}
 
 sem Node
-    | Param
+    | Param ParamRef
         lhs.paramMapping = IM.singleton @label @e.self
 
-attr Node OptionalString ParamList MaybeNode
+attr Node OptionalString ParamList MaybeNode ListNode Pairs
     syn extractParameters :: SELF
 
 sem Node
     | SimplifiedFunctionCall
         lhs.extractParameters = extractParameters @self @params.paramMapping
-
-    
+   
 
 {
-
 buildVariable label = Variable $ Simple $ "#" ++ show label 
 
 -- | Generic function to outline a node based on a mapping
@@ -125,10 +151,11 @@ extractParameters node mapping = extract build update node filtered
         buildParam label expr | isVariable expr = Param expr
                               | otherwise       = Param $ buildVariable label
               
-simplify node = let a = simplified_Syn_Node . execute M.empty undefined $ node
-                    b = removed_Syn_Node . execute M.empty undefined $ a
-                    c = fixPoint (extractFunctions_Syn_Node . execute M.empty undefined) $ b
-                    d = extractParameters_Syn_Node . execute M.empty undefined $ c
+-- | Simplifies Node
+simplify node = let a = simplified_Syn_Node . execute M.empty M.empty undefined $ node
+                    b = removed_Syn_Node . execute M.empty M.empty undefined $ a
+                    c = fixPoint (extractFunctions_Syn_Node . execute M.empty M.empty undefined) $ b
+                    d = extractParameters_Syn_Node . execute M.empty M.empty undefined $ c
                 in d
 
 

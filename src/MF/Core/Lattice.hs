@@ -9,8 +9,6 @@ type c :-> l = M.Map c l
 
 class Lattice a where
     join   :: a -> a -> a
+    leftjoin :: a -> a -> a
+    rightjoin :: a -> a -> a
     (<:)   :: a -> a -> Bool
-
-instance (Lattice l, Ord c) => Lattice (c :-> l) where
-    join = M.unionWith join
-    (<:) = M.isSubmapOfBy (<:)

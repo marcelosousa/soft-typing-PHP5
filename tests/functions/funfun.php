@@ -3,19 +3,22 @@ function foo()
 {
   function bar() 
   {
-    return "I don't exist until foo() is called.";
+    return 1;
   }
+  return "res";
 }
 
 /* We can't call bar() yet
    since it doesn't exist. */
 
-foo();
+$c = foo();
 
 /* Now we can call bar(),
    foo()'s processing has
    made it accessible. */
 
-bar();
+$a = bar();
+$a = false;
+print $a;
 
 ?>

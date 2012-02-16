@@ -59,7 +59,7 @@ sem Node
     | Assign
         lhs.pp = @rv.pp >|< text " = " >|< @e.pp
     -- Arithmetic
-    | Deci
+    | Number FloatNumber
         lhs.pp = text $ show @value
     | Plus 
         lhs.pp = @l.pp >|< text " + " >|< @r.pp
@@ -79,6 +79,8 @@ sem Node
         lhs.pp = text "true"
     | LFalse 
         lhs.pp = text "false"
+    | LNull
+        lhs.pp = text "NULL"
     | Or
         lhs.pp = @l.pp >|< text " || " >|< @r.pp
         
@@ -123,6 +125,6 @@ render :: Doc -> String
 render = render_ 1000 
 
 instance Printable Node where
-    pp = pp_Syn_Node . execute M.empty undefined
+    pp = pp_Syn_Node . execute M.empty M.empty undefined
 
 }      

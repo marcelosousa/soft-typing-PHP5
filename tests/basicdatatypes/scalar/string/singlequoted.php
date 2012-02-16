@@ -1,5 +1,6 @@
 <?php
 
-$name = 'John';
+$name = 'John O\'Maley';
+
 
 ?>

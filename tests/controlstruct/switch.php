@@ -8,8 +8,7 @@ switch ($i) {
     case 1:
         echo "i equals 1";
         break;
-    case 2:
+    default:
         echo "i equals 2";
-        break;
 }
 ?>

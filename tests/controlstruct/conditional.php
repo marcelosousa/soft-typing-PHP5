@@ -1,6 +1,6 @@
 <?php
 /*
-not sure why:
+
 frank at interactinet dot com 02-May-2011 05:15
 Be careful when assigning a value in the if statement, for example:
 
@@ -15,9 +15,9 @@ function myMethod(){
 
 if($val = myMethod()){
     // $val might be 1 instead of the expected 'test'
-    print "$val\n";
+    print $val;
 }
 
-print "$val\n";
+print $val;
 
 ?>

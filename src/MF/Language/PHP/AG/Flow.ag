@@ -13,20 +13,24 @@ import MF.Core.Flowable hiding (Return)
 -- Labelling & Nodes
 -------------------------------------------------------------------------------
 
-attr Node ParamList MaybeNode
+attr Node ParamList MaybeNode ListNode Pairs
     inh labels :: {Label}
     syn labels :: {Label}
 
     syn label  :: {Label}
   
-attr Node ParamList
+attr Node ParamList ListNode Pairs
     syn nodes use {`IM.union`} {IM.empty} :: {IntMap Node}
 
 sem Node
-    | If While Skip Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Sequence Simple Deci Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return Expect Return FunctionCall Param String Expr DQContent FunctionName Literal Echo Print PostInc PreInc IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not InlineHTML
+    | Ternary ElseIf While DoWhile Skip Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign Sequence Simple Number FloatNumber LNull Variable LTrue LFalse Plus Min Mul Mod ArrayAccess Return Expect Return FunctionCall Param ParamRef String Expr DQContent FunctionName Literal Echo Print PostInc PreInc PreDec PostDec IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not InlineHTML ReferenceAssign IndirectReference Concat StringAccess LNone Pair Array LBreak LContinue
         loc.label :: uniqueref labels
         lhs.label = @loc.label
         +nodes    = IM.union $ IM.singleton @label @self
+    | If
+        loc.label :: uniqueref labels
+        lhs.label = @loc.label
+        +nodes = IM.union $ IM.singleton @label @self `IM.union` @elseIfs.nodes
         
     | FunctionDecl
         loc.ln :: uniqueref labels  -- Entry
@@ -40,78 +44,148 @@ sem Node
         loc.la :: uniqueref labels  -- After
         +nodes    = IM.union $ IM.singleton @label @self
 
-sem ParamList
+sem ParamList ListNode Pairs
     | Cons Nil
         loc.label :: uniqueref labels
         lhs.label = @loc.label
+
+sem ListNode Pairs
+    | Cons
+        lhs.nodes = @hd.nodes `IM.union` @tl.nodes
+    | Nil
+        lhs.nodes = IM.empty
 
 -------------------------------------------------------------------------------
 -- Init
 -------------------------------------------------------------------------------
        
-attr Node
+attr Node ListNode Pairs
   syn init use {<|>} {Nothing} :: {Maybe Label}
 
+sem ListNode Pairs
+    | Cons
+        lhs.init = @hd.init
+    | Nil 
+        lhs.init = Nothing
+        
 sem Node
     | Document 
         loc.init = @stmt.init
         lhs.init = @loc.init
     | SimplifiedFunctionCall
         lhs.init = Just @lb
-    | Skip Expect Return InlineHTML
+    | Skip Expect Return InlineHTML LNone
         lhs.init = Just @label
-    | If While
+    | If ElseIf While Ternary
         lhs.init = @c.init
+    | DoWhile
+        lhs.init = @s.init
     | Expr
         lhs.init = @e.init
-    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Not
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign Not 
         lhs.init = @e.init
     | Sequence 
         lhs.init = @f.init <|> @s.init
     | Block
         lhs.init = @s.init
     | FunctionDecl
-        lhs.init = Nothing
+        lhs.init = Nothing -- @stmt.init
     | Variable
         lhs.init = Just @label
-    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or 
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Concat Pair
         lhs.init = @r.init
-    | Deci LTrue LFalse String
+    | Number FloatNumber LTrue LFalse LNull String LBreak LContinue
         lhs.init = Just @label
     | Print Echo
         lhs.init = @e.init
-    | PostInc PreInc
+    | PostInc PreInc PreDec PostDec
         lhs.init = @e.init
+    | ArrayAccess StringAccess
+        lhs.init = @index.init
+    | ReferenceAssign
+        lhs.init = @v.init
+    | IndirectReference
+        lhs.init = @rv.init
+    | Array
+        lhs.init = @pairs.init
         
+-------------------------------------------------------------------------------
+-- Conditional & Labels
+-------------------------------------------------------------------------------
+attr Node ListNode
+  syn cond use {<|>} {Nothing} :: {Maybe [Label]}
+  syn labelz use {++} {[]} :: {[Label]}
+
+sem Node
+    | ElseIf
+        lhs.cond = @c.final
+        lhs.labelz = [@loc.label]
+
+attr Pairs
+  syn labelz use {++} {[]} :: {[Label]}
+
+sem Pairs
+    | Cons lhs.labelz = (:) @hd.label @tl.labelz
+    | Nil  lhs.labelz = []
+
 -------------------------------------------------------------------------------
 -- Final
 -------------------------------------------------------------------------------
-
-attr Node
+{
+(<*|*>) :: Maybe [Label] -> Maybe [Label] -> Maybe [Label]
+l <*|*> r = (++) <$> l <*> r
+}
+        
+attr Node ListNode Pairs
   syn final use {<|>} {Nothing} :: {Maybe [Label]}
+  syn breaks use {<*|*>} {Just []} :: {Maybe [Label]}  
+  syn continues use {<*|*>} {Just []} :: {Maybe [Label]}  
+  
+sem ListNode
+    | Cons lhs.final = (++) <$> @hd.final <*> @tl.final
+    | Nil  lhs.final = Just []
 
+sem Pairs
+    | Cons lhs.final = (\l1 l2 -> (last (l1 ++ l2)):[]) <$> @hd.final <*> @tl.final
+    | Nil  lhs.final = Just []
+    
 sem Node
     | Document 
         loc.final = @stmt.final 
         lhs.final = @loc.final
     | SimplifiedFunctionCall
         lhs.final = Just [@la]
-    | InlineHTML Skip Expect Return Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Variable Print Echo
+    | InlineHTML Skip Expect Return Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign Variable Print Echo ArrayAccess StringAccess LNone
         lhs.final = Just [@label]
-    | While
-        lhs.final = @c.final
+    | While DoWhile
+        lhs.final = (++) <$> @c.final <*> @s.breaks
     | Expr 
         lhs.final = @e.final
-    | Deci LTrue LFalse String Plus Min Mul Mod PostInc PreInc IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not  
+    | Number FloatNumber LTrue LFalse LNull String Plus Min Mul Mod PostInc PreInc PreDec PostDec IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not Concat Array Pair
         lhs.final = Just [@label]
     | Sequence 
         lhs.final = @s.final <|> @f.final
+    | ElseIf
+        lhs.final = @s.final
+    | Ternary
+        lhs.final = (++) <$> @t.final <*> @f.final
     | If
-        lhs.final = pure (++) <*> @l.final <*> @r.final
+        lhs.final = (\x y z -> x ++ y ++ z) <$> @l.final <*> @elseIfs.final <*> @r.final
     | Block 
         lhs.final = @s.final
     | FunctionDecl
         lhs.final = Nothing
+    | ReferenceAssign
+        lhs.final = Just [@label]
+    | IndirectReference
+        lhs.final = Just [@label]
+    | LBreak
+        lhs.final = Just []
+        lhs.breaks = Just [@label]
+    | LContinue
+        lhs.final = Just []
+        lhs.continues = Just [@label]
+    
                              
 -------------------------------------------------------------------------------
 -- Flow
@@ -123,31 +197,67 @@ myfromJust Nothing = error "myfromJust : Nothing"
 myfromJust (Just a) = a
 }
 
-attr Node
+attr Node ListNode Pairs
   syn flow use {++} {[]} :: {Flow}
+  syn hasReturn use {||} {False} :: {Bool}
+
+sem Pairs
+  | Cons +flow = (++) $ if isNothing @tl.init then [] else [(l, fromJust @tl.init) | l <- fromJust @hd.final]
+  | Nil lhs.flow = []
 
 sem Node
     | Sequence 
-        +flow = (++) $ if isNothing @s.init || isNothing @f.final then [] else [(l, fromJust @s.init) | l <- fromJust @f.final]
+        +flow = (++) $ if isNothing @s.init || isNothing @f.final then [] else [(l, myfromJust @s.init) | l <- myfromJust @f.final]
     | If 
-        +flow = (++) $ [(label, myfromJust @l.init) | label <- myfromJust @c.final] ++ [(label, myfromJust @r.init) | label <- myfromJust @c.final]
-    | While 
-        +flow = (++) $ [(l, fromJust @s.init) | l <- fromJust @c.final ] ++ [(l', fromJust @c.init) | l' <- fromJust @s.final]
+        +flow = (++) $ ifFlow @l.init @c.final @r.init @elseIfs.cond
+    | ElseIf
+        +flow = (++) $ [(label, myfromJust @s.init) | label <- myfromJust @c.final]
+    | While DoWhile
+        +flow = (++) $ [(l, fromJust @s.init) | l <- fromJust @c.final] ++ 
+                       [(l, fromJust @c.init) | l <- fromJust @s.final] ++  
+                       [(l, fromJust @c.init) | l <- fromJust @s.continues] 
+    | Ternary
+        +flow = (++) $ [(l, fromJust @t.init) | l <- fromJust @c.final] ++ [(l, fromJust @f.init) | l <- fromJust @c.final]
     | Return
         +flow = (++) $ [(@label, lx @lhs.declaration)]
+        lhs.hasReturn = True
     | FunctionDecl
-        +flow = (++) $ [(@ln, myfromJust @stmt.init)]
+        +flow = (++) $ if isNothing @stmt.init || isNothing @stmt.final 
+                      then [] 
+                      else [(@ln, myfromJust @stmt.init)] ++ (if @stmt.hasReturn then [] else [(l, @lx) | l <- myfromJust @stmt.final])
     | SimplifiedFunctionCall
         +flow = let (Declaration name ln lx) = lookupDeclaration @name @lhs.declarations'
                 in (++) [(@lb, @la), (@lb, @lc), (@lr, @la), (@lc, ln), (lx, @lr)]
-    | Print Echo PostInc PreInc Not
+    | Print Echo PostInc PreInc PreDec PostDec Not 
         +flow = (++) $ [(l', @label) | l' <- fromJust @e.final]
-    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign 
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign
         +flow = (++) $ [(l', fromJust @rv.init) | l' <- fromJust @e.final] ++ [(l', @label) | l' <- fromJust @rv.final]
-    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Concat Pair
         +flow = (++) $ [(l', fromJust @l.init) | l' <- fromJust @r.final] ++ [(l', @label) | l' <- fromJust @l.final]
+    | ArrayAccess StringAccess
+        +flow = (++) $ [(l', fromJust @rv.init) | l' <- fromJust @index.final] ++ [(l', @label) | l' <- fromJust @rv.final]
+    | ReferenceAssign
+        +flow = (++) $ [(l, fromJust @rv.init) | l <- fromJust @v.final] ++ [(l, @label) | l <- fromJust @rv.final]
+    | IndirectReference
+        +flow = (++) $ [(l, @label) | l <- fromJust @rv.final]
+    | Array
+        +flow = (++) $ [(l, @label) | l <- fromJust @pairs.final] 
 
 {
+condFlow :: [Label] -> [Label] -> Flow
+condFlow x [] = []
+condFlow (x:xs) (y:ys) = (x,y):condFlow xs ys
+ 
+ifFlow :: Maybe Label -> Maybe [Label] -> Maybe Label -> Maybe [Label] -> Flow
+ifFlow (Just tinit) (Just cfinal) (Just rinit) Nothing  = [(label, tinit) | label <- cfinal] ++ [(label, rinit) | label <- cfinal]
+ifFlow (Just tinit) (Just cfinal) (Just rinit) (Just econd) = 
+    [(l, tinit) | l <- cfinal] ++       -- Da condição vai para o then
+    [(l, head econd) | l <- cfinal] ++  -- Da condição vai para a proxima condição
+    condFlow econd (tail econd) ++ 
+    [(last econd, rinit)]               -- Da ultima condição vai para o else
+ifFlow Nothing _ _ _ = []
+ifFlow _ _ _ _ = error "ifFlow"
+
 lookupDeclaration name declarations = case M.lookup name declarations of 
                                           Nothing   -> error $ "Calling an undefined function: " ++ name
                                           Just info -> info
@@ -179,17 +289,17 @@ sem Node
 -- Blocks
 -------------------------------------------------------------------------------
         
-attr Node
+attr Node ListNode Pairs
     syn blocks use {`IM.union`} {IM.empty} :: {IntMap (Block Node)}
 
 sem Node
-    | Skip Expect Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign Variable Deci Return LTrue LFalse String Plus Min Mul Mod Print Echo PostInc PreInc IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not
+    | Skip Expect Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign Variable Number FloatNumber Return LTrue LFalse LNull String Plus Min Mul Mod Print Echo PostInc PreInc PreDec PostDec IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Not ArrayAccess StringAccess ReferenceAssign IndirectReference Concat LNone Array Pair DoWhile LBreak LContinue
         +blocks = IM.union $ IM.singleton @label $ Normal @self
     | SimplifiedFunctionCall
-        +blocks = IM.union $ IM.fromList [(@lb, Normal Skip)
+        +blocks = IM.union $ IM.fromList [(@lb, Before Skip)
                                  ,(@lc, Call @lc @lr @self)
                                  ,(@lr, F.Return @lc @lr @self)
-                                 ,(@la, Normal Skip)]
+                                 ,(@la, After Skip)]
     | FunctionDecl 
         +blocks = IM.union $ IM.fromList [(@ln, Entry @self)
                                  ,(@lx, Exit @self)]
@@ -200,10 +310,10 @@ nextUnique u = (u+1, u)
 
 -- Make Node an instance of Flowable, in this way it can be consumed by a monotone framework
 instance Flowable Node where
-    init     = fromJust . init_Syn_Node . execute M.empty undefined
-    final    = fromJust . final_Syn_Node . execute M.empty undefined
-    flow     = flow_Syn_Node . execute M.empty undefined
-    blocks   = blocks_Syn_Node . execute M.empty undefined
+    init     = myfromJust . init_Syn_Node . execute M.empty M.empty undefined
+    final    = fromJust . final_Syn_Node . execute M.empty M.empty undefined
+    flow     = flow_Syn_Node . execute M.empty M.empty undefined
+    blocks   = blocks_Syn_Node . execute M.empty M.empty undefined
 
 debugflow n = "Doc: " ++ (show n) ++ 
               "\nInit: " ++ (show . F.init $ n) ++ 
@@ -211,5 +321,5 @@ debugflow n = "Doc: " ++ (show n) ++
               "\nBlocks: " ++ (show . F.blocks $ n) ++
               "\nFlow: " ++ (show . F.flow $ n) ++ 
               "\nLabels: " ++ (show . F.labels $ n) ++
-              "\nNodes: " ++ (show . nodes_Syn_Node . execute M.empty undefined $ n)
+              "\nNodes: " ++ (show . nodes_Syn_Node . execute M.empty M.empty undefined $ n)
 }

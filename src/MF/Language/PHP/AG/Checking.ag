@@ -8,7 +8,7 @@ import MF.Core.Solver (mergeWith)
 -- Convert the "special" check functions to Expect nodes
 -------------------------------------------------------------------------------
     
-attr Node ParamList OptionalString MaybeNode
+attr Node ParamList OptionalString MaybeNode ListNode Pairs
     syn annotated :: SELF
     
 sem Node
@@ -28,7 +28,7 @@ buildExpect params = Expect expr (read $ "fromList" ++ value)
 annotator :: Component Node Node
 annotator = component $ return . annotate
 
-annotate = annotated_Syn_Node . execute M.empty undefined
+annotate = annotated_Syn_Node . execute M.empty M.empty undefined
 
 }
 
@@ -38,7 +38,7 @@ annotate = annotated_Syn_Node . execute M.empty undefined
 -------------------------------------------------------------------------------
 
 { 
-tyNum = S.fromList [TyInt, TyFloat] 
+tyNum = S.fromList [(Scalar TyInt), (Scalar TyFloat)] 
 }
     
 attr Node
@@ -48,18 +48,20 @@ sem Node
     | Expr Return Assign
         loc.expected = @e.expected
     | If While
-        loc.expected = S.fromList [(@c.label :==: S.singleton TyBool)] `S.union` @c.expected
+        loc.expected = S.fromList [(@c.label :==: S.singleton (Scalar TyBool))] `S.union` @c.expected
         lhs.expected = @loc.expected
     | Mod
-        +expected    = S.union $ S.fromList [(@l.label :==: S.singleton TyInt), (@r.label :==: S.singleton TyInt)]
+        +expected    = S.union $ S.fromList [(@l.label :==: S.singleton (Scalar TyInt)), (@r.label :==: S.singleton (Scalar TyInt))]
     | Plus Min Mul
         +expected    = S.union $ S.fromList [(@l.label :==: tyNum), (@r.label :==: tyNum)]
     | Or 
-        +expected    = S.union $ S.fromList [(@l.label :==: S.singleton TyBool), (@r.label :==: S.singleton TyBool)]
+        +expected    = S.union $ S.fromList [(@l.label :==: S.singleton (Scalar TyBool)), (@r.label :==: S.singleton (Scalar TyBool))]
     | IsEqual 
         +expected    = S.union $ S.singleton (@l.label :<=: @r.label)
-    | Deci
-        lhs.expected = S.singleton (@label :==: S.singleton TyInt)
+    | Number
+        lhs.expected = S.singleton (@label :==: S.singleton (Scalar TyInt))
+    | FloatNumber
+        lhs.expected = S.singleton (@label :==: S.singleton (Scalar TyFloat))
     | Expect
         loc.expected = S.singleton (@expr.label :==: @ty) `S.union` @expr.expected
 
@@ -135,7 +137,7 @@ check p = trace ("mappings: " ++ show mappings) $ concat . L.map S.toList . IM.e
         mappings = IM.map (M.fold join M.empty) undefined -- (solve p)
         nodes' = IM.map toNode (blocks p)
         
-        findWarnings node mapping = trace ("finding warnings for " ++ show node ++ " with " ++ show mapping) $ warnings_Syn_Node . execute mapping undefined $ node
+        findWarnings node mapping = trace ("finding warnings for " ++ show node ++ " with " ++ show mapping) $ warnings_Syn_Node . execute mapping M.empty undefined $ node
 
 -------------------------------------------------------------------------------
 -- Reporting

@@ -1,8 +1,8 @@
 <?php
 # ternary conditional operator
 
-$condition = 1;
+$condition = true;
 
-$condition ? print "John\n" : $else
+$a = $condition ? 1 : 0; 
 
 ?>

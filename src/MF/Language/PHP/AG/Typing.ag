@@ -20,18 +20,38 @@ import qualified Debug.Trace as T
 }
 
 -------------------------------------------------------------------------------
--- Left most variable name and variable depth
+-- Left most variable name and variable depthVar
 -------------------------------------------------------------------------------
 
 {
-levels :: Node -> Int
-levels (ArrayAccess rv index) = 1 + levels rv
-levels (Variable n)           = 0
+depthVar :: Node -> Int
+depthVar (ArrayAccess rv index) = 1 + depthVar rv
+depthVar (StringAccess rv index) = 0
+depthVar (Variable n)           = 0
+depthVar (IndirectReference n)  = 0
       
-name :: Node -> String
-name   (ArrayAccess rv index) = name rv
-name   (Variable n)           = name n
-name   (Simple value)         = value
+name :: Node -> M.Map String String -> String
+name   (ArrayAccess rv index) m = name rv m
+name   (StringAccess rv index) m = name rv m
+name   (Variable n)           m = name n m
+name   (Simple value)         _ = value
+name   (IndirectReference ref) m = let n = name ref m
+                                   in case M.lookup n m of
+                                            Just r -> r
+                                            Nothing -> error $ "Can't find variable pointer of indirect reference\n" ++ show n ++ "\n" ++ show m
+
+isDirectRef :: Node -> Bool
+isDirectRef (IndirectReference _) = False
+isDirectRef _ = True
+
+isString :: Node -> Bool
+isString (String _) = True
+isString _          = False
+
+getSValue :: Node -> String
+getSValue (String v) = v
+getSValue _          = error "Shouldn't be called"
+
 }
   
 attr Node ParamList
@@ -47,43 +67,68 @@ sem Node
 -- Constraints
 -------------------------------------------------------------------------------
 
-attr Node
-    chn constraints :: {Set Constraint}  -- use {`S.union`} {S.empty} :: {Set Constraint} 
+attr Node Pairs
+    syn constraints use {`S.union`} {S.empty} :: {Set Constraint}
+    syn levels use {+} {0} :: {Int}
     
 sem Node 
     | Return Expr Assign
         loc.constraints = @e.constraints
-    | If While
+    | If While DoWhile
         loc.constraints = @c.constraints
+    | Ternary
+        lhs.constraints = S.fromList [(@label :<=: @t.label), (@label :<=: @f.label)] `S.union` @c.constraints `S.union` @t.constraints `S.union` @f.constraints
     | Assign 
         lhs.constraints = S.fromList [(@rv.label :<=: @e.label), (@label :<=: @rv.label)] `S.union` @e.constraints -- `S.union` @rv.constraints
-    | PlusAssign MinAssign MulAssign DivAssign ModAssign 
-        loc.constraints = S.fromList [(@rv.label :==: S.singleton TyInt)] -- `S.union` @e.constraints
+    | ReferenceAssign 
+        loc.constraints = S.fromList [(@rv.label :<=: @v.label), (@label :<=: @rv.label)] `S.union` @v.constraints -- `S.union` @rv.constraints
+    | PlusAssign MinAssign MulAssign DivAssign ModAssign AndAssign OrAssign XorAssign SLAssign SRAssign
+        loc.constraints = S.fromList [(@rv.label :==: S.singleton (Scalar TyInt))] -- `S.union` @e.constraints
     | ConcatAssign 
-        loc.constraints = S.fromList [(@rv.label :==: S.singleton TyString)] -- `S.union` @e.constraints
-    | Deci Print PlusAssign MinAssign
-        lhs.constraints = S.singleton (@label :==: S.singleton TyInt)
+        loc.constraints = S.fromList [(@rv.label :==: S.singleton (Scalar TyString))] -- `S.union` @e.constraints   
+    | Number Print PlusAssign MinAssign
+        lhs.constraints = S.singleton (@label :==: S.singleton (Scalar TyInt))
+    | FloatNumber
+        lhs.constraints = S.singleton (@label :==: S.singleton (Scalar TyFloat))    
+    | LNull
+        lhs.constraints = S.singleton (@label :==: S.singleton Null)
     | LTrue LFalse
-        lhs.constraints = S.singleton (@label :==: S.singleton TyBool)
-    | String
-        lhs.constraints = S.singleton (@label :==: S.singleton TyString)
+        lhs.constraints = S.singleton (@label :==: S.singleton (Scalar TyBool))
+    | String Concat
+        lhs.constraints = S.singleton (@label :==: S.singleton (Scalar TyString))
     | Plus Min Mod Mul
-        +constraints    = S.union $ S.singleton (@label :==: S.singleton TyInt)  
+        +constraints    = S.union $ S.singleton (@label :==: S.singleton (Scalar TyInt))  
     | LAnd LOr LXor And Or Not IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual
-        +constraints    = S.union $ S.singleton (@label :==: S.singleton TyBool)
+        +constraints    = S.union $ S.singleton (@label :==: S.singleton (Scalar TyBool))
     | Variable
-        +constraints    = S.union $ S.singleton (@label :<=: @n.label) 
-    | ArrayAccess  
+        +constraints    = S.union $ S.singleton (@label :<=: @n.label)
+    | Pair
+        +constraints = S.union $ S.singleton (@label :<=: @r.label)
+    | Array
+        +constraints  = S.union $ S.fromList $ L.map (\l -> @label :<=: l) @pairs.labelz
+        +levels = (+) $ 1
+    | ArrayAccess 
+        +constraints    = S.union $ S.singleton (@label :<=: @rv.label)
+    | StringAccess
         +constraints    = S.union $ S.singleton (@label :<=: @rv.label)
     | Simple
         lhs.constraints = case M.lookup (Identifier @value) @lhs.mapping of 
-                              Just c  -> S.singleton (@label :==: fromArrayRepeatedly (levels (fromJust @lhs.simplifiedName)) c)
+                              Just c  -> S.singleton (@label :==: fromArrayRepeatedly (depthVar (myfromJust @lhs.simplifiedName)) c)
                               Nothing -> S.singleton (@label :==: S.empty)
     | Expect 
         loc.constraints = S.singleton (@label :<=: @expr.label) `S.union` @expr.constraints
-    | PostInc PreInc
-        +constraints = S.union $ S.singleton (@label :==: S.singleton TyInt)
-                                                                  
+    | PostInc PreInc PostDec PreDec
+        +constraints = S.union $ S.singleton (@label :==: S.singleton (Scalar TyInt))
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign
+        lhs.levels = 0
+        loc.level = @rv.levels + @e.levels
+    | Return
+        lhs.levels = 0
+        loc.level = @e.levels
+    | ReferenceAssign
+        lhs.levels = 0
+        loc.level = @rv.levels + @v.levels
+                                                            
 -------------------------------------------------------------------------------
 -- Mapping
 -------------------------------------------------------------------------------
@@ -91,22 +136,37 @@ sem Node
 attr Node ParamList
     syn mapping :: {Mapping}
     inh mapping :: {Mapping}
+    inh assMap  :: {M.Map String String}
     
 sem Node
     | Assign
-        lhs.mapping = updateMapping (Identifier $ name @rv.self) @e.label (levels @rv.self) @constraints @e.mapping
+        lhs.mapping = updateMapping (Identifier $ name @rv.self @lhs.assMap) Nothing @e.label  @level False @constraints @e.mapping
+    | ReferenceAssign
+        lhs.mapping = updateMapping (Identifier $ name @rv.self M.empty) (Just (Identifier $ name @v.self M.empty)) @v.label  @level True @constraints @v.mapping
     | PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign
-        lhs.mapping = updateMapping (Identifier $ name @rv.self) @rv.label (levels @rv.self) @constraints @e.mapping
+        lhs.mapping = updateMapping (Identifier $ name @rv.self M.empty)     Nothing @rv.label @level False @constraints @e.mapping
     | Return 
-        lhs.mapping = updateMapping ReturnValue                  @e.label 0                 @constraints @e.mapping
-      
+        lhs.mapping = updateMapping ReturnValue                              Nothing @e.label  @level False @constraints @e.mapping
+
+-------------------------------------------------------------------------------
+-- Map Variable String
+-------------------------------------------------------------------------------
+attr Node ListNode
+    syn assignMap use {`M.union`} {M.empty} :: {M.Map String String}
+
+sem Node
+    | Assign
+        lhs.assignMap = if  ((isString @e.self) && (isDirectRef @rv.self))
+                            then M.singleton (name @rv.self M.empty) (getSValue @e.self)
+                            else M.empty
+
 -------------------------------------------------------------------------------
 -- Solver
 -------------------------------------------------------------------------------
 {
 
 solve :: Node -> ValueMap (ValueMap (Stack :-> Mapping), FlowOut)
-solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
+solve prog = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward prog
     where        
         transfer :: Block Node -> Mapping -> Mapping
         transfer (Normal s@(Assign rv e)) = updateMapping s 
@@ -116,37 +176,86 @@ solve = C.solve (lift transfer) (M.singleton [] M.empty) M.empty Forward
         transfer (Normal s@(DivAssign rv e)) = updateMapping s
         transfer (Normal s@(ModAssign rv e)) = updateMapping s
         transfer (Normal s@(ConcatAssign rv e)) = updateMapping s                   
---        transfer (Normal (Expr e))      = id  this should be irrelevant
+        transfer (Normal s@(ReferenceAssign rv v)) = updateMapping s
 --        transfer (Normal (If c _ _ _ )) = updateMapping c
         transfer (Normal (While c _))   = updateMapping c
         transfer (Normal (Return e))    = updateMapping $ Return e
         transfer (Call lc lr (SimplifiedFunctionCall name params result)) = M.mapKeys identifierToParameter . M.filterWithKey (flip $ const isParameter)
             where
-                isParameter (Identifier x) = x `elem` names
+                isParameter (Identifier x) = x `elem` paramNames
                 isParameter _              = False
-                identifierToParameter (Identifier x) = Parameter $ fromJust (elemIndex x names)
-                names = L.map (toName . removeParam) params                                             
-        transfer (Entry  (FunctionDecl name params _)) = M.mapKeys parameterToIdentifier 
+                identifierToParameter (Identifier x) = Parameter (myfromJust (elemIndex x paramNames), x, "",False)
+                paramNames = L.map (toName . removeParam) params            
+                                                 
+        transfer (Entry  (FunctionDecl name params _)) = \m -> let n = M.mapKeys parameterToIdentifier m
+                                                                   o = M.mapKeys parameterToParameter m
+                                                               in M.union n o
             where
-                parameterToIdentifier (Parameter p) = Identifier $ (toName . removeParam) (params !! p)
-        transfer (Exit   (FunctionDecl name params _)) = M.filterWithKey (flip $ const isReturnValue)
+                parameterName p = (toName . removeParam) (params !! p)
+                parameterToIdentifier (Parameter (p,_,_,_)) = Identifier $ parameterName p
+                parameterToParameter (Parameter (p,x,_,_)) = Parameter (p, x, parameterName p, isParamRef (params !! p))
+                parameterToParameter x = error $ show x
+                
+        transfer (Exit   (FunctionDecl name params _)) = \m -> M.filterWithKey (flip $ const (isReturnValue m)) m
             where
-                isReturnValue ReturnValue = True
-                isReturnValue _           = False
-        transfer (F.Return lc lr (SimplifiedFunctionCall name params result)) = maybe id (\node -> M.mapKeys (returnValueToIdentifier node)) result 
+                isReturnValue _ ReturnValue = True
+                isReturnValue _ (Parameter (_,_,_,b)) = b
+                isReturnValue m (Identifier i) = isIdentifierParamRef i m
+                
+        transfer (F.Return lc lr (SimplifiedFunctionCall name params result)) = \m -> 
+                                                                                let lk = M.keys m
+                                                                                    applyRet = maybe id (\n -> M.mapKeys (returnValueToIdentifier n)) result 
+                                                                                    filterPar = M.filterWithKey (flip $ const isIdentifier)
+                                                                                    renameId = M.mapKeys (renameIdentifiers lk)
+                                                                                    resm = (applyRet . renameId . filterPar) m 
+                                                                                in resm -- T.trace ("Initial Mapping at return " ++ show m ++ "\nFinal Mapping at return "++ show resm) $ resm         
             where
-                returnValueToIdentifier node ReturnValue = Identifier $ toName node
+                returnValueToIdentifier node ReturnValue = let k = toName node
+                                                           in Identifier k -- T.trace ("Assigning return value to identifier " ++ show k) $ Identifier k
+                returnValueToIdentifier _    i           = i
+                
+                isIdentifier (Identifier x) = True
+                isIdentifier ReturnValue = True
+                isIdentifier _              = False
+                renameIdentifiers lkeys (Identifier x) = let x' = getPointerId x lkeys
+                                                         in Identifier x' -- T.trace ("Renaming identifier " ++ show x ++ " to " ++ show x') $ Identifier x'
+                renameIdentifiers lkeys ReturnValue = ReturnValue
+                renameIdentifiers lkeys _ = error "At this point there should only be identifiers or return values"
         transfer _ = id
 
         updateMapping :: Node -> Mapping -> Mapping
-        updateMapping node mapping = mapping_Syn_Node . execute mapping IM.empty $ node
-                
+        updateMapping node mapping = mapping_Syn_Node . execute mapping getAssignMapping undefined $ node
+        
+        getAssignMapping :: M.Map String String
+        getAssignMapping = assignMap_Syn_Node . execute M.empty M.empty undefined $ prog
+                           
         removeParam :: Node -> Node   
-        removeParam (Param expr) = expr 
-
+        removeParam (Param expr)    = expr 
+        removeParam (ParamRef expr) = expr
+        
+        isParamRef :: Node -> Bool
+        isParamRef (ParamRef _) = True
+        isParamRef _ = False
+        
+        isIdentifierParamRef :: String -> Mapping -> Bool
+        isIdentifierParamRef i m = let lk = M.keys m
+                                   in any (isIdentifierParamRef' i) lk
+        
+        isIdentifierParamRef' :: String -> Identifier -> Bool
+        isIdentifierParamRef' i (Parameter (_,_,y,isPRef)) = isPRef && (i == y)
+        isIdentifierParamRef' _ _ = False
+          
         toName :: Node -> String
         toName (Variable (Simple name)) = name
         
+        getPointerId :: String -> [Identifier] -> String
+        getPointerId x [] = error "Couldn't find pointer"
+        getPointerId x (i:ids) = let (pFound,x') = getPId x i
+                                 in if pFound
+                                    then x'
+                                    else getPointerId x ids
+          where getPId x (Parameter (_,x',y,isPRef)) = (isPRef && (x==y),x')
+                getPId x _                           = (False, x)
 -------------------------------------------------------------------------------
 -- Typing
 -------------------------------------------------------------------------------

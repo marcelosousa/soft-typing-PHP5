@@ -21,6 +21,8 @@ data Block node = Normal node
                 | Entry node
                 | Call Label Label node
                 | Return Label Label node
+                | After node
+                | Before node
                 deriving Show
                 
 toNode :: Block node -> node
@@ -29,3 +31,5 @@ toNode (Exit n)         = n
 toNode (Entry n)        = n
 toNode (Call lc lr n)   = n
 toNode (Return lc lr n) = n
+toNode (Before n)       = n
+toNode (After n)        = n

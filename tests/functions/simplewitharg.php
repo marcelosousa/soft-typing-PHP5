@@ -2,7 +2,8 @@
 
 function foo ($x)
 {
-    return $x + $x;
+    $c = $x;
+    return $c + $c;
 }
 
 $a = 1;

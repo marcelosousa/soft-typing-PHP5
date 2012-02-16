@@ -2,7 +2,8 @@
 # Indirect reference to variables
 
 $name = "John";
-$$name = "Registered user\n";
+$hello = 3;
+$$name = $hello;
 
 print $John;
 

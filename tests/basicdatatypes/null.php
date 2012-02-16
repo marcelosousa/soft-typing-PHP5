@@ -1,5 +1,5 @@
 <?php
 
-$var = NULL;       
+$var = null;       
 
 ?>

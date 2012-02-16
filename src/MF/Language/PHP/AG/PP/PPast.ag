@@ -1,6 +1,6 @@
 imports
 {
-import Data.Graph.Inductive hiding (graphviz', Node, empty, nodes)
+import Data.Graph.Inductive hiding (graphviz', Node, empty, nodes, isSimple)
 import Data.Graph.Inductive.Tree
 }
 
@@ -8,7 +8,7 @@ import Data.Graph.Inductive.Tree
 -- Pretty Printer for AST
 -------------------------------------------------------------------------------
 
-attr Node
+attr Node ListNode Pairs
     syn nodeList use {++} {[]}:: {[LNode String]}
     syn edgeList use {++} {[]}:: {[UEdge]}
 
@@ -30,30 +30,46 @@ sem Node
         +nodeList = (++) [(@label, ";")]
         +edgeList = (++) [(@label, @f.label, ()), (@label, @s.label, ())]
     | Skip
-        +nodeList = (++) [(@label, "[skip]")]    
+        +nodeList = (++) [(@label, "[skip]")]
+    | LNone
+        +nodeList = (++) [(@label, "LNone")]
     | Expr 
         +nodeList = (++) [(@label, "expr")]
         +edgeList = (++) [(@label, @e.label, ())]
     | If 
         +nodeList = (++) [(@label, "if")]
-        +edgeList = (++) [(@label, @c.label, ()), (@label, @l.label, ()), (@label, @r.label, ())]
+        +edgeList = (++) $ [(@label, @c.label, ()), (@label, @l.label, ()), (@label, @r.label, ())] ++ [(@label, l, ()) | l <- @elseIfs.labelz]    
+    | ElseIf
+        +nodeList = (++) [(@label, "elseif")]
+        +edgeList = (++) [(@label, @c.label, ()), (@label, @s.label, ())]
+    | Ternary
+        +nodeList = (++) [(@label, "ternary")]
+        +edgeList = (++) [(@label, @c.label, ()), (@label, @t.label, ()), (@label, @f.label, ())]
     | While
         +nodeList = (++) [(@label, "while")]
         +edgeList = (++) [(@label, @c.label, ()), (@label, @s.label, ())]
-    
+    | DoWhile
+        +nodeList = (++) [(@label, "dowhile")]
+        +edgeList = (++) [(@label, @c.label, ()), (@label, @s.label, ())]
+        
     -- Debugging & Unit Testing
     | Expect
         lhs.nodeList = [(@label, "expect: " ++ render @expr.pp ++ " == " ++ show @ty)]
                
     -- Expressions
-    | Deci Plus Min Mul Mod LTrue LFalse LAnd LOr LXor Not And Or Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual
+    | Number FloatNumber Plus Min Mul Mod LTrue LFalse LNull LAnd LOr LXor Not And Or Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign AndAssign OrAssign XorAssign SLAssign SRAssign IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual ReferenceAssign Concat
         +nodeList = (++) [(@label, toString @self)]    
 
-    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign    
-        lhs.edgeList = [(@label, @rv.label, ()), (@label, @e.label, ())] ++ @e.edgeList
+    | Assign PlusAssign MinAssign MulAssign DivAssign ModAssign ConcatAssign 
+        +edgeList = (++) [(@label, @rv.label, ()), (@label, @e.label, ())]
 
+    | ReferenceAssign
+        +edgeList = (++) [(@label, @rv.label, ()), (@label, @v.label, ())]
+        
     | Variable 
         +nodeList = (++) [(@label, "$" ++ render @n.pp)]
+    | IndirectReference
+        +nodeList = (++) [(@label, "$" ++ render @rv.pp)]
     | String
         +nodeList = (++) [(@label, @value)]
 
@@ -61,21 +77,37 @@ sem Node
         +nodeList = (++) [(@label, "echo")]
         +edgeList = (++) [(@label, @e.label, ())]
 
+    | ArrayAccess
+        +nodeList = (++) [(@label, "ArrayAccess")]
+        +edgeList = (++) [(@label, @rv.label, ()), (@label, @index.label, ())]
+    
+    | StringAccess
+        +nodeList = (++) [(@label, "StringAccess")]
+        +edgeList = (++) [(@label, @rv.label, ()), (@label, @index.label, ())]
+    
+    | Pair
+        +nodeList = (++) [(@label, "Pair")]
+        +edgeList = (++) [(@label, @l.label, ()), (@label, @r.label, ())]
+        
+    | Array
+        +nodeList = (++) [(@label, "Array")]
+        +edgeList = (++) [(@label, l, ()) | l <- @pairs.labelz]
+        
     -- | Connect binary operators
-    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or
+    | Plus Min Mul Mod IsEqual IsIdentical IsNotEqual IsNotIdentical Less Greater LessEqual GreaterEqual LAnd LOr LXor And Or Concat
         +edgeList = (++) [(@label, @l.label, ()), (@label, @r.label, ())]
 
     | Not
         +edgeList = (++) [(@label, @e.label, ())]
 
+    | LBreak LContinue
+        +nodeList = (++) [(@label, toString @self)]
+
     | Print
         +nodeList = (++) [(@label, "print")]
         +edgeList = (++) [(@label, @e.label, ())]
-    | PostInc 
-        +nodeList = (++) [(@label, "PostInc")]
-        +edgeList = (++) [(@label, @e.label, ())]
-    | PreInc
-        +nodeList = (++) [(@label, "PreInc")]
+    | PreInc PreDec PostInc PostDec 
+        +nodeList = (++) [(@label, toString @self)]
         +edgeList = (++) [(@label, @e.label, ())]
     | InlineHTML
         +nodeList = (++) [(@label, "InlineHTML")]
@@ -85,8 +117,8 @@ sem Node
 --visualize p = trace ("nodes: " ++ show nodeList ++ ", edges: " ++ show edgeList ++ ", p: " ++ show p) $ graphviz' (mkGraph nodeList edgeList :: Gr String ())
 visualize p = graphviz' (mkGraph nodeList edgeList :: Gr String ())
     where
-        nodeList = nodeList_Syn_Node . execute M.empty undefined $ p
-        edgeList = edgeList_Syn_Node . execute M.empty undefined $ p
+        nodeList = nodeList_Syn_Node . execute M.empty M.empty undefined $ p
+        edgeList = edgeList_Syn_Node . execute M.empty M.empty undefined $ p
         
         
 graphviz' g = let n = labNodes g

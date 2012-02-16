@@ -2,12 +2,15 @@
 do {
     if ($i < 5) {
         echo "i is not big enough";
+        $i = 1;
         break;
     }
+/*    
     $i *= $factor;
     if ($i < $minimum_limit) {
         break;
     }
+*/
    echo "i is ok";
 
     /* process i */
